@@ -1,0 +1,149 @@
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" routerLink="/offers" aria-label="Offers App home">
+      <span class="brand-mark" aria-hidden="true">%</span>
+      <span class="brand-name">Offers</span>
+    </a>
+
+    <!-- Location picker: optional, never blocks browsing (§8.6) -->
+    <div class="location-picker">
+      <button type="button" class="location-btn" (click)="toggleLocation($event)" [attr.aria-expanded]="locationOpen()">
+        <span aria-hidden="true">📍</span>
+        <span class="truncate">{{ locations.location().label }}</span>
+        <span class="caret" aria-hidden="true">▾</span>
+      </button>
+
+      @if (locationOpen()) {
+        <div class="dropdown location-dropdown">
+          <button type="button" class="dropdown-item" (click)="useCurrentLocation()" [disabled]="locations.requesting()">
+            @if (locations.requesting()) {
+              <span class="spinner dark"></span> Locating…
+            } @else {
+              <span aria-hidden="true">🎯</span> Use my current location
+            }
+          </button>
+
+          @if (locations.permissionDenied()) {
+            <p class="dropdown-note">
+              Location access is off. Pick a city below — everything else keeps working.
+            </p>
+          }
+
+          <div class="dropdown-divider"></div>
+          <p class="dropdown-label">Choose a city</p>
+          @for (city of cities; track city.city) {
+            <button type="button" class="dropdown-item" (click)="pickCity(city)">{{ city.city }}</button>
+          }
+
+          @if (locations.hasPosition()) {
+            <div class="dropdown-divider"></div>
+            <button type="button" class="dropdown-item danger" (click)="clearLocation()">Clear location</button>
+          }
+        </div>
+      }
+    </div>
+
+    <nav class="main-nav" [class.open]="menuOpen()" aria-label="Main">
+      <a routerLink="/offers" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Offers</a>
+      <a routerLink="/categories" routerLinkActive="active">Categories</a>
+      <a routerLink="/shops" routerLinkActive="active">Shops</a>
+      <a routerLink="/nearby" routerLinkActive="active">Nearby</a>
+      @if (auth.isAuthenticated()) {
+        <a routerLink="/favorites" routerLinkActive="active">Favourites</a>
+        <a routerLink="/following" routerLinkActive="active">Following</a>
+      }
+      @if (auth.isSuperAdmin || auth.isShopStaff) {
+        <a routerLink="/admin/dashboard" routerLinkActive="active" class="admin-link">Dashboard</a>
+      }
+    </nav>
+
+    <div class="header-actions">
+      @if (auth.isAuthenticated()) {
+        <a routerLink="/notifications" class="icon-btn notif" aria-label="Notifications">
+          🔔
+          @if (auth.unreadCount() > 0) {
+            <span class="dot">{{ auth.unreadCount() > 9 ? '9+' : auth.unreadCount() }}</span>
+          }
+        </a>
+
+        <div class="account-menu">
+          <button type="button" class="avatar" (click)="toggleAccount($event)" [attr.aria-expanded]="accountOpen()" aria-label="Account menu">
+            @if (user()?.avatarUrl) {
+              <img [src]="user()!.avatarUrl" [alt]="user()!.name" />
+            } @else {
+              <span>{{ initials() }}</span>
+            }
+          </button>
+
+          @if (accountOpen()) {
+            <div class="dropdown account-dropdown">
+              <div class="account-head">
+                <strong class="truncate">{{ user()?.name }}</strong>
+                <span class="small muted truncate">{{ user()?.email }}</span>
+                @if (user()?.isSuperAdmin) {
+                  <span class="badge badge-brand mt-1">Super Admin</span>
+                } @else if (user()?.shops?.length) {
+                  <span class="badge badge-info mt-1">{{ user()!.shops[0].shopName }} · {{ user()!.shops[0].roleName }}</span>
+                }
+              </div>
+              <div class="dropdown-divider"></div>
+              <a class="dropdown-item" routerLink="/profile">My profile</a>
+              <a class="dropdown-item" routerLink="/favorites">Saved offers</a>
+              <a class="dropdown-item" routerLink="/following">Following</a>
+              @if (auth.isSuperAdmin || auth.isShopStaff) {
+                <a class="dropdown-item" routerLink="/admin/dashboard">Admin dashboard</a>
+              }
+              <div class="dropdown-divider"></div>
+              <button type="button" class="dropdown-item danger" (click)="logout()">Sign out</button>
+            </div>
+          }
+        </div>
+      } @else {
+        <a routerLink="/auth/login" class="btn btn-secondary btn-sm">Sign in</a>
+        <a routerLink="/auth/register" class="btn btn-sm register-btn">Register</a>
+      }
+
+      <button type="button" class="menu-toggle" (click)="toggleMenu()" [attr.aria-expanded]="menuOpen()" aria-label="Toggle navigation">
+        ☰
+      </button>
+    </div>
+  </div>
+</header>
+
+<main [class.admin-main]="isAdminArea()">
+  <router-outlet />
+</main>
+
+@if (!isAdminArea()) {
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <strong>Offers App</strong>
+          <p class="small muted">Discover discounts from shops near you.</p>
+        </div>
+        <div>
+          <span class="footer-title">Browse</span>
+          <a routerLink="/offers">All offers</a>
+          <a routerLink="/categories">Categories</a>
+          <a routerLink="/shops">Shops</a>
+          <a routerLink="/nearby">Nearby offers</a>
+        </div>
+        <div>
+          <span class="footer-title">Account</span>
+          @if (auth.isAuthenticated()) {
+            <a routerLink="/profile">My profile</a>
+            <a routerLink="/favorites">Saved offers</a>
+            <a routerLink="/notifications">Notifications</a>
+          } @else {
+            <a routerLink="/auth/login">Sign in</a>
+            <a routerLink="/auth/register">Create an account</a>
+          }
+        </div>
+      </div>
+      <p class="small subtle center mt-2 mb-0">© {{ 2026 }} Offers App</p>
+    </div>
+  </footer>
+}
+
+<app-toasts />

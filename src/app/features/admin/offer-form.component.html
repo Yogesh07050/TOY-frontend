@@ -1,0 +1,400 @@
+<div class="container page">
+  <div class="page-header">
+    <div>
+      <h1>{{ isEdit() ? 'Edit offer' : 'Post an offer' }}</h1>
+      <p class="subtitle">
+        @if (isEdit()) {
+          Changes are visible to customers as soon as you save.
+        } @else {
+          Save as a draft, schedule it, or publish it straight away.
+        }
+      </p>
+    </div>
+    <a routerLink="/admin/offers" class="btn btn-ghost">← Back to offers</a>
+  </div>
+
+  @if (loading()) {
+    <div class="skeleton" style="height: 400px"></div>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="save('active')" novalidate>
+      @if (formError()) {
+        <div class="alert" role="alert">{{ formError() }}</div>
+      }
+
+      <div class="form-layout">
+        <div>
+          <!-- Basic information (§13) -->
+          <fieldset>
+            <legend>Basic information</legend>
+
+            <div class="form-grid">
+              <div class="field">
+                <label for="shopId">Shop *</label>
+                <select id="shopId" formControlName="shopId" (change)="onShopChange()" [class.invalid]="error('shopId', 'Shop')">
+                  <option [ngValue]="null">Choose a shop</option>
+                  @for (shop of shops(); track shop.id) {
+                    <option [ngValue]="shop.id">{{ shop.name }}</option>
+                  }
+                </select>
+                @if (error('shopId', 'Shop'); as message) {
+                  <span class="error-text">{{ message }}</span>
+                }
+                @if (isEdit()) {
+                  <span class="hint">An offer cannot be moved to a different shop.</span>
+                }
+              </div>
+
+              <div class="field">
+                <label for="categoryId">Category</label>
+                <select id="categoryId" formControlName="categoryId">
+                  <option [ngValue]="null">No category</option>
+                  @for (category of categories(); track category.id) {
+                    <option [ngValue]="category.id">{{ category.name }}</option>
+                  }
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="subcategoryId">Subcategory</label>
+                <select id="subcategoryId" formControlName="subcategoryId">
+                  <option [ngValue]="null">None</option>
+                  @for (category of categories(); track category.id) {
+                    <option [ngValue]="category.id">{{ category.name }}</option>
+                  }
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="productName">Product name</label>
+                <input id="productName" type="text" formControlName="productName" placeholder="e.g. Shirts" />
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="title">Offer title *</label>
+              <input
+                id="title"
+                type="text"
+                formControlName="title"
+                placeholder="e.g. Buy 3 Get 3 Free on shirts"
+                [class.invalid]="error('title', 'Title')"
+              />
+              @if (error('title', 'Title'); as message) {
+                <span class="error-text">{{ message }}</span>
+              }
+            </div>
+
+            <div class="field">
+              <label for="description">Description</label>
+              <textarea
+                id="description"
+                formControlName="description"
+                rows="3"
+                placeholder="What is included, and anything a customer should know."
+              ></textarea>
+            </div>
+          </fieldset>
+
+          <!-- Promotion + discount (§13, §31) -->
+          <fieldset>
+            <legend>Discount and promotion</legend>
+
+            <div class="form-grid">
+              <div class="field">
+                <label for="offerType">Offer type *</label>
+                <select id="offerType" formControlName="offerType" (change)="onOfferTypeChange()">
+                  <option value="percentage">Percentage discount (30% OFF)</option>
+                  <option value="flat">Flat discount (₹500 OFF)</option>
+                  <option value="buy_x_get_y">Buy X get Y (Buy 2 Get 1 Free)</option>
+                  <option value="price_drop">Price based (₹999 instead of ₹1,499)</option>
+                  <option value="up_to">Up to discount (Up to 70% OFF)</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
+              @if (showPercentage) {
+                <div class="field">
+                  <label for="discountValue">Discount percentage *</label>
+                  <input id="discountValue" type="number" min="0" max="100" step="1" formControlName="discountValue" />
+                  @if (error('discountValue', 'Discount'); as message) {
+                    <span class="error-text">{{ message }}</span>
+                  }
+                </div>
+              }
+
+              @if (showFlat) {
+                <div class="field">
+                  <label for="discountValueFlat">Flat discount amount (₹) *</label>
+                  <input id="discountValueFlat" type="number" min="0" step="1" formControlName="discountValue" />
+                  @if (error('discountValue', 'Discount'); as message) {
+                    <span class="error-text">{{ message }}</span>
+                  }
+                </div>
+              }
+
+              @if (showBuyGet) {
+                <div class="field">
+                  <label for="buyQuantity">Buy quantity *</label>
+                  <input id="buyQuantity" type="number" min="1" formControlName="buyQuantity" />
+                </div>
+                <div class="field">
+                  <label for="getQuantity">Get free quantity *</label>
+                  <input id="getQuantity" type="number" min="1" formControlName="getQuantity" />
+                </div>
+              }
+
+              @if (showPricing) {
+                <div class="field">
+                  <label for="originalPrice">Original price (₹)</label>
+                  <input id="originalPrice" type="number" min="0" step="0.01" formControlName="originalPrice" />
+                </div>
+                <div class="field">
+                  <label for="discountedPrice">Discounted price (₹)</label>
+                  <input id="discountedPrice" type="number" min="0" step="0.01" formControlName="discountedPrice" />
+                  @if (error('discountedPrice', 'Discounted price'); as message) {
+                    <span class="error-text">{{ message }}</span>
+                  }
+                </div>
+              }
+            </div>
+
+            <div class="field">
+              <label for="offerText">Headline shown on the card</label>
+              <input id="offerText" type="text" formControlName="offerText" placeholder="e.g. Buy 3 Get 3 Free" />
+              <span class="hint">Leave blank and we will generate one from the discount details.</span>
+              <div class="presets">
+                @for (preset of headlinePresets; track preset) {
+                  <button type="button" class="chip" (click)="applyPreset(preset)">{{ preset }}</button>
+                }
+              </div>
+            </div>
+          </fieldset>
+
+          <!-- Validity (§13) -->
+          <fieldset>
+            <legend>Validity</legend>
+
+            <div class="form-grid">
+              <div class="field">
+                <label for="startDate">Starts *</label>
+                <input id="startDate" type="datetime-local" formControlName="startDate" [class.invalid]="error('startDate', 'Start date')" />
+                @if (error('startDate', 'Start date'); as message) {
+                  <span class="error-text">{{ message }}</span>
+                }
+              </div>
+
+              <div class="field">
+                <label for="endDate">Ends *</label>
+                <input id="endDate" type="datetime-local" formControlName="endDate" [class.invalid]="error('endDate', 'End date')" />
+                @if (error('endDate', 'End date'); as message) {
+                  <span class="error-text">{{ message }}</span>
+                }
+              </div>
+            </div>
+
+            <label class="checkbox">
+              <input type="checkbox" formControlName="isRecurring" />
+              <span>This offer recurs</span>
+            </label>
+
+            @if (form.controls.isRecurring.value) {
+              <div class="field mt-1">
+                <label for="recurrenceType">Recurrence</label>
+                <select id="recurrenceType" formControlName="recurrenceType">
+                  <option value="">Choose a frequency</option>
+                  <option value="daily">Daily</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="monthly">Monthly</option>
+                </select>
+              </div>
+            }
+
+            <p class="hint mt-1">
+              A start date in the future saves the offer as <strong>scheduled</strong>; it goes live
+              automatically when the start time is reached.
+            </p>
+          </fieldset>
+
+          <!-- Location (§13, §8.3) -->
+          <fieldset>
+            <legend>Where the offer applies</legend>
+
+            <div class="radio-row">
+              <label class="radio-card">
+                <input type="radio" formControlName="applicabilityType" value="shop_wide" />
+                <span>
+                  <strong>All shop locations</strong>
+                  <span class="small muted">Every active branch of this shop.</span>
+                </span>
+              </label>
+
+              <label class="radio-card">
+                <input type="radio" formControlName="applicabilityType" value="selected_branches" />
+                <span>
+                  <strong>Selected branches</strong>
+                  <span class="small muted">Pick exactly where it is valid.</span>
+                </span>
+              </label>
+
+              <label class="radio-card">
+                <input type="radio" formControlName="applicabilityType" value="online" />
+                <span>
+                  <strong>Online</strong>
+                  <span class="small muted">No store visit required.</span>
+                </span>
+              </label>
+            </div>
+
+            @if (form.controls.applicabilityType.value === 'selected_branches') {
+              @if (branches().length === 0) {
+                <p class="small muted">
+                  This shop has no branches yet. Add one from the shop's branches page first.
+                </p>
+              } @else {
+                <div class="row mb-1">
+                  <span class="small muted">{{ selectedBranchIds().length }} of {{ branches().length }} selected</span>
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="selectAllBranches()">Select all</button>
+                </div>
+                <div class="branch-picker">
+                  @for (branch of branches(); track branch.id) {
+                    <label class="branch-option" [class.selected]="isBranchSelected(branch.id)">
+                      <input
+                        type="checkbox"
+                        [checked]="isBranchSelected(branch.id)"
+                        (change)="toggleBranch(branch.id)"
+                      />
+                      <span>
+                        <strong>{{ branch.branchName }}</strong>
+                        <span class="small muted">{{ branch.city }}@if (branch.pincode) { – {{ branch.pincode }} }</span>
+                      </span>
+                    </label>
+                  }
+                </div>
+              }
+            }
+          </fieldset>
+
+          <!-- Terms (§13) -->
+          <fieldset>
+            <legend>Terms and conditions</legend>
+
+            <div class="form-grid">
+              <div class="field">
+                <label for="minPurchase">Minimum purchase (₹)</label>
+                <input id="minPurchase" type="number" min="0" step="0.01" formControlName="minPurchase" />
+              </div>
+
+              <div class="field">
+                <label for="applicableProducts">Applicable products</label>
+                <input id="applicableProducts" type="text" formControlName="applicableProducts" placeholder="e.g. Selected styles only" />
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="eligibility">Customer eligibility</label>
+              <textarea id="eligibility" formControlName="eligibility" rows="2" placeholder="e.g. New customers only"></textarea>
+            </div>
+
+            <div class="field">
+              <label for="usageRestrictions">Usage restrictions</label>
+              <textarea id="usageRestrictions" formControlName="usageRestrictions" rows="2" placeholder="e.g. One redemption per customer per day"></textarea>
+            </div>
+
+            <div class="field">
+              <label for="termsConditions">Other conditions</label>
+              <textarea id="termsConditions" formControlName="termsConditions" rows="3" placeholder="Anything else a customer should know before visiting."></textarea>
+            </div>
+          </fieldset>
+        </div>
+
+        <!-- Sidebar: images, preview, actions -->
+        <aside class="stack">
+          <section class="card">
+            <div class="card-header"><h3>Images</h3></div>
+            <div class="card-body">
+              <label class="btn btn-secondary btn-block btn-sm" for="offer-images">
+                {{ uploading() ? 'Uploading…' : '＋ Add images' }}
+              </label>
+              <input
+                id="offer-images"
+                type="file"
+                accept="image/*"
+                multiple
+                class="sr-only"
+                (change)="uploadImages($event)"
+              />
+              <p class="hint mt-1">Up to 8 images. The first one is used on the offer card.</p>
+
+              @if (images().length) {
+                <ul class="image-list">
+                  @for (image of images(); track image.url; let i = $index) {
+                    <li>
+                      <img [src]="image.thumbnailUrl || image.url" [alt]="'Image ' + (i + 1)" />
+                      <span class="image-meta">
+                        @if (i === 0) {
+                          <span class="badge badge-brand">Cover</span>
+                        }
+                      </span>
+                      <span class="image-actions">
+                        <button type="button" class="icon-btn" [disabled]="i === 0" (click)="moveImage(i, -1)" title="Move up">↑</button>
+                        <button type="button" class="icon-btn" [disabled]="i === images().length - 1" (click)="moveImage(i, 1)" title="Move down">↓</button>
+                        <button type="button" class="icon-btn" (click)="removeImage(i)" title="Remove">×</button>
+                      </span>
+                    </li>
+                  }
+                </ul>
+              }
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card-header"><h3>Card preview</h3></div>
+            <div class="card-body">
+              <div class="preview">
+                @if (images().length) {
+                  <img [src]="images()[0].thumbnailUrl || images()[0].url" alt="Offer preview" />
+                } @else {
+                  <div class="preview-placeholder">Offer image</div>
+                }
+                <div class="preview-body">
+                  <span class="preview-shop">
+                    {{ shops().length ? (form.controls.shopId.value ? shopName() : 'YOUR SHOP') : 'YOUR SHOP' }}
+                  </span>
+                  <strong>{{ previewHeadline }}</strong>
+                  <span class="small muted">{{ form.controls.productName.value || form.controls.title.value }}</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card-header"><h3>Publish</h3></div>
+            <div class="card-body stack" style="gap: 0.5rem">
+              <button type="button" class="btn btn-block" [disabled]="saving()" (click)="save('active')">
+                @if (saving()) {
+                  <span class="spinner"></span> Saving…
+                } @else {
+                  {{ isEdit() ? 'Save and publish' : 'Publish offer' }}
+                }
+              </button>
+              <button type="button" class="btn btn-secondary btn-block" [disabled]="saving()" (click)="save('scheduled')">
+                Schedule
+              </button>
+              <button type="button" class="btn btn-ghost btn-block" [disabled]="saving()" (click)="save('draft')">
+                Save as draft
+              </button>
+              @if (existing(); as offer) {
+                <p class="small muted mb-0 mt-1">
+                  Current status: <strong>{{ offer.status }}</strong>
+                  @if (offer.updatedBy) {
+                    <br />Last edited by {{ offer.updatedBy.name }}
+                  }
+                </p>
+              }
+            </div>
+          </section>
+        </aside>
+      </div>
+    </form>
+  }
+</div>

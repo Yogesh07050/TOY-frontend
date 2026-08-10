@@ -1,0 +1,387 @@
+@if (loading()) {
+  <div class="container page">
+    <div class="skeleton" style="height: 320px; margin-bottom: 1rem"></div>
+    <div class="skeleton" style="height: 24px; width: 50%; margin-bottom: 0.5rem"></div>
+    <div class="skeleton" style="height: 16px; width: 30%"></div>
+  </div>
+} @else if (notFound()) {
+  <div class="container page">
+    <app-empty-state
+      emoji="🏷️"
+      title="Offer not available"
+      message="This offer may have expired, been withdrawn, or never existed."
+    >
+      <a routerLink="/offers" class="btn mt-2">Browse other offers</a>
+    </app-empty-state>
+  </div>
+} @else if (offer(); as o) {
+  <div class="container page">
+    <nav class="crumbs small muted" aria-label="Breadcrumb">
+      <a routerLink="/offers">Offers</a>
+      @if (o.category) {
+        <span aria-hidden="true">›</span>
+        <a routerLink="/offers" [queryParams]="{ categoryId: o.category.id }">{{ o.category.name }}</a>
+      }
+      <span aria-hidden="true">›</span>
+      <span class="truncate">{{ o.title }}</span>
+    </nav>
+
+    <div class="detail-grid">
+      <!-- Gallery -->
+      <section class="gallery">
+        <div class="main-image">
+          @if (o.images?.length) {
+            <img [src]="o.images![activeImage()].url" [alt]="o.title" />
+          } @else if (o.imageUrl) {
+            <img [src]="o.imageUrl" [alt]="o.title" />
+          } @else {
+            <div class="placeholder"><span>{{ o.shop.name.charAt(0) }}</span></div>
+          }
+
+          @if (o | discountChip; as chip) {
+            <span class="discount-flag">{{ chip }}</span>
+          }
+        </div>
+
+        @if ((o.images?.length ?? 0) > 1) {
+          <div class="thumbs">
+            @for (image of o.images!; track image.id; let i = $index) {
+              <button type="button" [class.active]="activeImage() === i" (click)="activeImage.set(i)">
+                <img [src]="image.thumbnailUrl || image.url" [alt]="'Image ' + (i + 1)" />
+              </button>
+            }
+          </div>
+        }
+      </section>
+
+      <!-- Summary -->
+      <section class="summary">
+        <div class="shop-line">
+          <a class="shop" [routerLink]="['/shops', o.shop.slug]">
+            @if (o.shop.logoUrl) {
+              <img [src]="o.shop.logoUrl" [alt]="o.shop.name" />
+            }
+            <span>{{ o.shop.name }}</span>
+          </a>
+          <span [class]="o.status | statusClass">{{ o.status }}</span>
+        </div>
+
+        <h1>{{ o | offerHeadline }}</h1>
+        @if (o.title !== (o | offerHeadline)) {
+          <p class="lede">{{ o.title }}</p>
+        }
+
+        <div class="tags">
+          @if (o.category) {
+            <a class="badge badge-brand" routerLink="/offers" [queryParams]="{ categoryId: o.category.id }">
+              {{ o.category.name }}
+            </a>
+          }
+          @if (o.subcategory) {
+            <span class="badge">{{ o.subcategory.name }}</span>
+          }
+          @if (o.productName) {
+            <span class="badge">{{ o.productName }}</span>
+          }
+          @if (o.rating && o.rating.count > 0) {
+            <app-stars [value]="o.rating.average ?? 0" [count]="o.rating.count" />
+          }
+        </div>
+
+        @if (o.originalPrice || o.discountedPrice) {
+          <div class="pricing">
+            @if (o.discountedPrice) {
+              <span class="now">₹{{ o.discountedPrice | number: '1.0-2' }}</span>
+            }
+            @if (o.originalPrice) {
+              <span class="was">₹{{ o.originalPrice | number: '1.0-2' }}</span>
+            }
+            @if (savings) {
+              <span class="badge badge-success">Save ₹{{ savings | number: '1.0-2' }}</span>
+            }
+          </div>
+        }
+
+        <!-- Remaining validity / countdown (§11) -->
+        @if (countdown(); as c) {
+          <div class="countdown" [class.expired]="c.expired">
+            @if (c.expired) {
+              <strong>This offer has ended</strong>
+            } @else {
+              <span class="label">Ends in</span>
+              <span class="units">
+                <span class="unit"><b>{{ c.days }}</b>d</span>
+                <span class="unit"><b>{{ c.hours }}</b>h</span>
+                <span class="unit"><b>{{ c.minutes }}</b>m</span>
+                <span class="unit"><b>{{ c.seconds }}</b>s</span>
+              </span>
+            }
+          </div>
+        }
+
+        <p class="validity small muted">
+          Valid {{ formatDate(o.startDate) }} – {{ formatDate(o.endDate) }}
+          @if (o.isRecurring) {
+            · repeats {{ o.recurrenceType }}
+          }
+        </p>
+
+        @if (o.distanceKm !== null) {
+          <p class="small"><strong>📍 {{ o.distanceKm | distance }}</strong> from {{ locations.location().label }}</p>
+        }
+
+        <div class="actions">
+          <button type="button" class="btn" [class.btn-secondary]="o.isFavorite" (click)="toggleFavorite()">
+            {{ o.isFavorite ? '♥ Saved' : '♡ Save offer' }}
+          </button>
+
+          <div class="share-wrap">
+            <button type="button" class="btn btn-secondary" (click)="shareOpen.set(!shareOpen())">
+              ↗ Share
+            </button>
+            @if (shareOpen()) {
+              <div class="share-menu card">
+                @if (canUseNativeShare) {
+                  <button type="button" (click)="share('native')">📲 Share…</button>
+                }
+                <button type="button" (click)="share('whatsapp')">💬 WhatsApp</button>
+                <button type="button" (click)="share('email')">✉️ Email</button>
+                <button type="button" (click)="share('copy')">🔗 Copy link</button>
+              </div>
+            }
+          </div>
+
+          <button type="button" class="btn btn-secondary" (click)="followShop()">+ Follow shop</button>
+
+          @if (canEdit()) {
+            <a class="btn btn-ghost" [routerLink]="['/admin/offers', o.id, 'edit']">Edit offer</a>
+          }
+        </div>
+
+        <p class="small subtle mt-2">
+          {{ o.viewCount }} view{{ o.viewCount === 1 ? '' : 's' }} · {{ o.favoriteCount }} saved
+        </p>
+      </section>
+    </div>
+
+    <!-- Details -->
+    <div class="content-grid">
+      <div class="stack">
+        @if (o.description) {
+          <section class="card">
+            <div class="card-header"><h2>About this offer</h2></div>
+            <div class="card-body"><p class="mb-0">{{ o.description }}</p></div>
+          </section>
+        }
+
+        @if (o.termsConditions || o.eligibility || o.usageRestrictions || o.minPurchase || o.applicableProducts) {
+          <section class="card">
+            <div class="card-header"><h2>Terms and conditions</h2></div>
+            <div class="card-body">
+              <dl class="terms">
+                @if (o.minPurchase) {
+                  <dt>Minimum purchase</dt>
+                  <dd>₹{{ o.minPurchase | number: '1.0-2' }}</dd>
+                }
+                @if (o.applicableProducts) {
+                  <dt>Applicable products</dt>
+                  <dd>{{ o.applicableProducts }}</dd>
+                }
+                @if (o.eligibility) {
+                  <dt>Customer eligibility</dt>
+                  <dd>{{ o.eligibility }}</dd>
+                }
+                @if (o.usageRestrictions) {
+                  <dt>Usage restrictions</dt>
+                  <dd>{{ o.usageRestrictions }}</dd>
+                }
+                @if (o.termsConditions) {
+                  <dt>Other conditions</dt>
+                  <dd>{{ o.termsConditions }}</dd>
+                }
+              </dl>
+            </div>
+          </section>
+        }
+
+        <!-- Where the offer applies (§11 location information) -->
+        <section class="card">
+          <div class="card-header">
+            <h2>Where it applies</h2>
+            <span class="badge">
+              @switch (o.applicabilityType) {
+                @case ('shop_wide') { All shop locations }
+                @case ('selected_branches') { Selected branches }
+                @case ('online') { Online only }
+              }
+            </span>
+          </div>
+          <div class="card-body">
+            @if (o.applicabilityType === 'online') {
+              <p class="mb-0 muted">This is an online offer — no store visit needed.</p>
+            } @else if (!o.branches?.length) {
+              <p class="mb-0 muted">No active branch is listed for this offer yet.</p>
+            } @else {
+              <div class="branches">
+                @for (branch of o.branches!; track branch.id) {
+                  <div class="branch">
+                    <div class="branch-info">
+                      <strong>{{ branch.branchName }}</strong>
+                      @if (branch.isPrimary) {
+                        <span class="badge badge-brand">Main</span>
+                      }
+                      <p class="small muted mb-0">
+                        {{ branch.address }}@if (branch.address && branch.city) {, }{{ branch.city }}
+                        @if (branch.pincode) { – {{ branch.pincode }} }
+                      </p>
+                      @if (branch.contactNumber) {
+                        <p class="small mb-0">☎ <a [href]="'tel:' + branch.contactNumber">{{ branch.contactNumber }}</a></p>
+                      }
+                      @if (branch.distanceKm !== null) {
+                        <p class="small strong mb-0">📍 {{ branch.distanceKm | distance }}</p>
+                      }
+                      <a
+                        class="btn btn-secondary btn-sm mt-1"
+                        [href]="directionsUrl(branch)"
+                        target="_blank"
+                        rel="noopener"
+                        (click)="trackClick(branch)"
+                      >
+                        Get directions ↗
+                      </a>
+                    </div>
+
+                    @if (mapUrl(branch); as src) {
+                      <iframe
+                        class="map"
+                        [src]="src"
+                        [title]="'Map showing ' + branch.branchName"
+                        loading="lazy"
+                        referrerpolicy="no-referrer-when-downgrade"
+                      ></iframe>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </section>
+
+        <!-- Reviews -->
+        <section class="card">
+          <div class="card-header">
+            <h2>Ratings and reviews</h2>
+            @if (o.rating) {
+              <app-stars [value]="o.rating.average ?? 0" [count]="o.rating.count" />
+            }
+          </div>
+          <div class="card-body">
+            @if (auth.isAuthenticated()) {
+              <div class="review-form">
+                <span class="label">Your rating</span>
+                <app-stars [value]="myRating" [interactive]="true" (valueChange)="myRating = $event" />
+                <textarea
+                  [(ngModel)]="myComment"
+                  placeholder="Share what you thought of this offer (optional)"
+                  maxlength="2000"
+                ></textarea>
+                <button type="button" class="btn btn-sm" [disabled]="submittingReview()" (click)="submitReview()">
+                  @if (submittingReview()) {
+                    <span class="spinner"></span> Saving…
+                  } @else {
+                    Submit review
+                  }
+                </button>
+              </div>
+            } @else {
+              <p class="muted small">
+                <a routerLink="/auth/login" [queryParams]="{ returnUrl: '/offers/' + o.id }">Sign in</a>
+                to leave a review.
+              </p>
+            }
+
+            @if (reviews().length === 0) {
+              <p class="muted small mb-0">No reviews yet — be the first.</p>
+            } @else {
+              <ul class="review-list">
+                @for (review of reviews(); track review.id) {
+                  <li>
+                    <div class="row">
+                      <strong>{{ review.user.name }}</strong>
+                      <app-stars [value]="review.rating" />
+                      <span class="spacer"></span>
+                      <span class="small subtle">{{ formatDate(review.createdAt) }}</span>
+                    </div>
+                    @if (review.comment) {
+                      <p class="small mb-0">{{ review.comment }}</p>
+                    }
+                    @if (review.status !== 'approved') {
+                      <span class="badge badge-warning">{{ review.status }}</span>
+                    }
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+        </section>
+      </div>
+
+      <!-- Sidebar -->
+      <aside class="stack">
+        <section class="card">
+          <div class="card-header"><h3>About {{ o.shop.name }}</h3></div>
+          <div class="card-body">
+            @if (o.shop.description) {
+              <p class="small">{{ o.shop.description }}</p>
+            }
+            @if (o.shop.contactNumber) {
+              <p class="small mb-1">☎ <a [href]="'tel:' + o.shop.contactNumber">{{ o.shop.contactNumber }}</a></p>
+            }
+            <a class="btn btn-secondary btn-block btn-sm" [routerLink]="['/shops', o.shop.slug]">
+              View shop and all offers
+            </a>
+          </div>
+        </section>
+
+        @if (relatedOffers().length) {
+          <section class="card">
+            <div class="card-header"><h3>More from this shop</h3></div>
+            <div class="card-body stack" style="gap: 0.75rem">
+              @for (related of relatedOffers(); track related.id) {
+                <a class="related" [routerLink]="['/offers', related.id]">
+                  @if (related.thumbnailUrl || related.imageUrl) {
+                    <img [src]="related.thumbnailUrl || related.imageUrl" [alt]="related.title" />
+                  } @else {
+                    <span class="related-placeholder">%</span>
+                  }
+                  <span class="related-body">
+                    <strong class="clamp-2">{{ related | offerHeadline }}</strong>
+                    <span class="small muted">{{ related.category?.name }}</span>
+                  </span>
+                </a>
+              }
+            </div>
+          </section>
+        }
+
+        <section class="card">
+          <div class="card-header"><h3>Offer details</h3></div>
+          <div class="card-body">
+            <dl class="facts small">
+              <dt>Offer type</dt>
+              <dd>{{ o.offerType.replace('_', ' ') }}</dd>
+              <dt>Starts</dt>
+              <dd>{{ formatDate(o.startDate) }}</dd>
+              <dt>Ends</dt>
+              <dd>{{ formatDate(o.endDate) }}</dd>
+              @if (o.createdBy) {
+                <dt>Published by</dt>
+                <dd>{{ o.createdBy.name }}</dd>
+              }
+            </dl>
+          </div>
+        </section>
+      </aside>
+    </div>
+  </div>
+}

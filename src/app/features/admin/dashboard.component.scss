@@ -1,0 +1,155 @@
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.9rem 1rem;
+}
+
+.stat.alert {
+  border-color: var(--warning);
+}
+
+.stat-label {
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.stat-value {
+  font-size: 1.7rem;
+  font-weight: 750;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-value.success {
+  color: var(--success);
+}
+.stat-value.info {
+  color: var(--info);
+}
+.stat-value.warning {
+  color: var(--warning);
+}
+
+.dash-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+/* ---- Bar chart ----------------------------------------------------------- */
+
+.chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 160px;
+  padding-bottom: 1.25rem;
+  overflow-x: auto;
+}
+
+.bar-group {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 100%;
+  flex: 1;
+  min-width: 22px;
+}
+
+.bar {
+  flex: 1;
+  border-radius: 3px 3px 0 0;
+  min-height: 2px;
+  transition: opacity 0.15s ease;
+}
+
+.bar.views {
+  background: var(--brand);
+}
+
+.bar.created {
+  background: var(--accent);
+}
+
+.bar-group:hover .bar {
+  opacity: 0.75;
+}
+
+.bar-label {
+  position: absolute;
+  bottom: -1.15rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.66rem;
+  color: var(--text-subtle);
+  white-space: nowrap;
+}
+
+.legend {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.legend .swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  margin-right: 0.3rem;
+}
+
+.legend .swatch.views {
+  background: var(--brand);
+}
+
+.legend .swatch.created {
+  background: var(--accent);
+}
+
+/* ---- Lists --------------------------------------------------------------- */
+
+ul.plain {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+ul.plain li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border);
+  min-width: 0;
+}
+
+ul.plain li:last-child {
+  border-bottom: none;
+}
+
+ul.plain li .badge {
+  align-self: flex-start;
+  margin-top: 0.2rem;
+}
+
+ul.activity li {
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+@media (max-width: 900px) {
+  .dash-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

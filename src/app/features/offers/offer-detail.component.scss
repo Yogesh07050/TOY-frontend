@@ -1,0 +1,386 @@
+.crumbs {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  margin-bottom: 1rem;
+  min-width: 0;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+/* ---- Gallery ------------------------------------------------------------ */
+
+.main-image {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+}
+
+.main-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.placeholder {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, var(--brand-light), #e0e7ff);
+  color: var(--brand);
+  font-size: 4rem;
+  font-weight: 700;
+}
+
+.discount-flag {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  background: var(--accent);
+  color: #fff;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  font-weight: 700;
+  box-shadow: var(--shadow);
+}
+
+.thumbs {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+  overflow-x: auto;
+}
+
+.thumbs button {
+  width: 72px;
+  height: 56px;
+  border-radius: var(--radius-sm);
+  border: 2px solid transparent;
+  overflow: hidden;
+  padding: 0;
+  cursor: pointer;
+  background: none;
+  flex-shrink: 0;
+}
+
+.thumbs button.active {
+  border-color: var(--brand);
+}
+
+.thumbs img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ---- Summary ------------------------------------------------------------ */
+
+.shop-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.shop {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-weight: 700;
+  color: var(--text);
+  text-transform: uppercase;
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+}
+
+.shop img {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.summary h1 {
+  font-size: 1.75rem;
+  margin-bottom: 0.35rem;
+}
+
+.lede {
+  color: var(--text-muted);
+  margin-bottom: 0.75rem;
+}
+
+.tags {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 0.9rem;
+}
+
+.tags a.badge:hover {
+  text-decoration: none;
+}
+
+.pricing {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.now {
+  font-size: 1.6rem;
+  font-weight: 750;
+  color: var(--text);
+}
+
+.was {
+  color: var(--text-subtle);
+  text-decoration: line-through;
+}
+
+.countdown {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--radius);
+  background: var(--warning-bg);
+  color: var(--warning);
+  margin-bottom: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.countdown.expired {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.countdown .label {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+}
+
+.units {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.unit b {
+  font-size: 1.1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.validity {
+  margin-bottom: 0.5rem;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+}
+
+/* ---- Share -------------------------------------------------------------- */
+
+.share-wrap {
+  position: relative;
+}
+
+.share-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 50;
+  padding: 0.35rem;
+  min-width: 180px;
+  box-shadow: var(--shadow-lg);
+}
+
+.share-menu button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem 0.6rem;
+  border: none;
+  background: none;
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.share-menu button:hover {
+  background: var(--surface-alt);
+}
+
+/* ---- Content ------------------------------------------------------------ */
+
+.content-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+dl.terms,
+dl.facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.4rem 1rem;
+  margin: 0;
+}
+
+dl.terms dt,
+dl.facts dt {
+  font-weight: 650;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+dl.terms dd,
+dl.facts dd {
+  margin: 0;
+}
+
+dl.facts dd {
+  text-transform: capitalize;
+}
+
+/* ---- Branches ----------------------------------------------------------- */
+
+.branches {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.branch {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.branch:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.branch-info strong {
+  margin-right: 0.4rem;
+}
+
+.map {
+  width: 100%;
+  height: 180px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+/* ---- Reviews ------------------------------------------------------------ */
+
+.review-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: flex-start;
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.review-form textarea {
+  width: 100%;
+}
+
+.review-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.review-list li {
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.review-list li:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+/* ---- Related ------------------------------------------------------------ */
+
+.related {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  color: var(--text);
+}
+
+.related:hover {
+  text-decoration: none;
+}
+
+.related:hover strong {
+  color: var(--brand);
+}
+
+.related img,
+.related-placeholder {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.related-placeholder {
+  display: grid;
+  place-items: center;
+  background: var(--brand-light);
+  color: var(--brand);
+  font-weight: 700;
+}
+
+.related-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* ---- Responsive --------------------------------------------------------- */
+
+@media (max-width: 900px) {
+  .detail-grid,
+  .content-grid,
+  .branch {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .summary h1 {
+    font-size: 1.4rem;
+  }
+}

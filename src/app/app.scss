@@ -1,0 +1,354 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+main {
+  flex: 1;
+}
+
+/* ---- Header -------------------------------------------------------------- */
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 500;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  height: var(--header-height);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-weight: 750;
+  font-size: 1.15rem;
+  color: var(--text);
+  flex-shrink: 0;
+}
+
+.brand:hover {
+  text-decoration: none;
+}
+
+.brand-mark {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: var(--brand);
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+/* ---- Location picker ----------------------------------------------------- */
+
+.location-picker {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.location-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  max-width: 190px;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  color: var(--text);
+}
+
+.location-btn:hover {
+  border-color: var(--brand);
+}
+
+.caret {
+  color: var(--text-subtle);
+  font-size: 0.7rem;
+}
+
+/* ---- Navigation ---------------------------------------------------------- */
+
+.main-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: auto;
+}
+
+.main-nav a {
+  padding: 0.45rem 0.7rem;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-size: 0.92rem;
+  font-weight: 550;
+  white-space: nowrap;
+}
+
+.main-nav a:hover {
+  background: var(--surface-alt);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.main-nav a.active {
+  color: var(--brand);
+  background: var(--brand-light);
+}
+
+.main-nav a.admin-link {
+  color: var(--brand);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.register-btn {
+  color: #fff;
+}
+
+.register-btn:hover {
+  text-decoration: none;
+}
+
+.notif {
+  position: relative;
+  text-decoration: none;
+}
+
+.notif .dot {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+}
+
+.menu-toggle {
+  display: none;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  width: 38px;
+  height: 38px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  color: var(--text);
+}
+
+/* ---- Account ------------------------------------------------------------- */
+
+.account-menu {
+  position: relative;
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: var(--brand);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.8rem;
+  cursor: pointer;
+  overflow: hidden;
+  padding: 0;
+  display: grid;
+  place-items: center;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ---- Dropdowns ----------------------------------------------------------- */
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  min-width: 220px;
+  padding: 0.4rem;
+  z-index: 600;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.location-dropdown {
+  left: 0;
+}
+
+.account-dropdown {
+  right: 0;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem 0.65rem;
+  border: none;
+  background: none;
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+  cursor: pointer;
+  color: var(--text);
+}
+
+.dropdown-item:hover:not(:disabled) {
+  background: var(--surface-alt);
+  text-decoration: none;
+}
+
+.dropdown-item.danger {
+  color: var(--danger);
+}
+
+.dropdown-item:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.dropdown-label {
+  margin: 0.35rem 0.65rem 0.15rem;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-subtle);
+  font-weight: 700;
+}
+
+.dropdown-note {
+  margin: 0.25rem 0.65rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 0.35rem 0;
+}
+
+.account-head {
+  display: flex;
+  flex-direction: column;
+  padding: 0.5rem 0.65rem 0.2rem;
+}
+
+.account-head .badge {
+  align-self: flex-start;
+}
+
+/* ---- Footer -------------------------------------------------------------- */
+
+.site-footer {
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 2rem 0 1.5rem;
+  margin-top: 2rem;
+}
+
+.footer-grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.footer-title {
+  display: block;
+  font-weight: 650;
+  font-size: 0.85rem;
+  margin-bottom: 0.4rem;
+}
+
+.footer-grid a {
+  display: block;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  padding: 0.15rem 0;
+}
+
+.footer-grid a:hover {
+  color: var(--brand);
+}
+
+/* ---- Responsive ---------------------------------------------------------- */
+
+@media (max-width: 960px) {
+  .menu-toggle {
+    display: grid;
+    place-items: center;
+  }
+
+  .main-nav {
+    display: none;
+    position: absolute;
+    top: var(--header-height);
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    align-items: stretch;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    padding: 0.5rem;
+    gap: 0.1rem;
+  }
+
+  .main-nav.open {
+    display: flex;
+  }
+
+  .main-nav a {
+    padding: 0.7rem 0.8rem;
+  }
+}
+
+@media (max-width: 560px) {
+  .brand-name {
+    display: none;
+  }
+
+  .location-btn {
+    max-width: 120px;
+  }
+}

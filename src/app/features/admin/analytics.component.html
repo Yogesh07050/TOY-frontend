@@ -1,0 +1,291 @@
+<div class="container page">
+  <div class="page-header">
+    <div>
+      <h1>Analytics</h1>
+      <p class="subtitle">
+        @if (overview()?.scope === 'platform') {
+          Platform-wide performance across every shop.
+        } @else {
+          Restricted to the shops you manage.
+        }
+      </p>
+    </div>
+    <div class="row">
+      @if (shops().length > 1 || auth.isSuperAdmin) {
+        <select [(ngModel)]="shopId" (change)="onScopeChange()" aria-label="Scope to a shop">
+          <option [ngValue]="null">{{ auth.isSuperAdmin ? 'All shops' : 'All my shops' }}</option>
+          @for (shop of shops(); track shop.id) {
+            <option [ngValue]="shop.id">{{ shop.name }}</option>
+          }
+        </select>
+      }
+      <select [(ngModel)]="days" (change)="load()" aria-label="Time range">
+        <option [ngValue]="7">Last 7 days</option>
+        <option [ngValue]="30">Last 30 days</option>
+        <option [ngValue]="90">Last 90 days</option>
+        <option [ngValue]="365">Last year</option>
+      </select>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="grid grid-stats">
+      @for (item of [1, 2, 3, 4, 5, 6]; track item) {
+        <div class="skeleton" style="height: 92px"></div>
+      }
+    </div>
+  } @else if (overview(); as o) {
+    <div class="grid grid-stats mb-2">
+      <div class="stat card">
+        <span class="stat-label">Total offers</span>
+        <span class="stat-value">{{ o.offers.total }}</span>
+      </div>
+      <div class="stat card">
+        <span class="stat-label">Active</span>
+        <span class="stat-value success">{{ o.offers.active }}</span>
+      </div>
+      <div class="stat card">
+        <span class="stat-label">Scheduled</span>
+        <span class="stat-value info">{{ o.offers.scheduled }}</span>
+      </div>
+      <div class="stat card">
+        <span class="stat-label">Expired</span>
+        <span class="stat-value">{{ o.offers.expired }}</span>
+      </div>
+      <div class="stat card">
+        <span class="stat-label">Views</span>
+        <span class="stat-value">{{ o.engagement.views }}</span>
+      </div>
+      <div class="stat card">
+        <span class="stat-label">Clicks</span>
+        <span class="stat-value">{{ o.engagement.clicks }}</span>
+        <span class="small muted">CTR {{ ctr(o.engagement.views, o.engagement.clicks) }}</span>
+      </div>
+      <div class="stat card">
+        <span class="stat-label">Saves</span>
+        <span class="stat-value">{{ o.engagement.favorites }}</span>
+      </div>
+      <div class="stat card" [class.alert]="o.offers.expiringSoon > 0">
+        <span class="stat-label">Expiring in 7 days</span>
+        <span class="stat-value warning">{{ o.offers.expiringSoon }}</span>
+      </div>
+
+      @if (o.platform; as p) {
+        <div class="stat card">
+          <span class="stat-label">Users</span>
+          <span class="stat-value">{{ p.totalUsers }}</span>
+          <span class="small muted">{{ p.activeUsers }} active</span>
+        </div>
+        <div class="stat card">
+          <span class="stat-label">Shops</span>
+          <span class="stat-value">{{ p.totalShops }}</span>
+          <span class="small muted">{{ p.totalBranches }} branches</span>
+        </div>
+        <div class="stat card">
+          <span class="stat-label">Follows</span>
+          <span class="stat-value">{{ p.totalFollows }}</span>
+        </div>
+      }
+    </div>
+
+    <!-- Activity over time -->
+    @if (offerStats(); as stats) {
+      <section class="card mb-2">
+        <div class="card-header"><h2>Activity over the last {{ days }} days</h2></div>
+        <div class="card-body">
+          @if (stats.timeline.length === 0) {
+            <p class="muted small mb-0">No activity in this window.</p>
+          } @else {
+            <div class="chart" role="img" aria-label="Daily views and offers created">
+              @for (day of stats.timeline; track day.day) {
+                <div class="bar-group" [title]="shortDay(day.day) + ': ' + day.views + ' views, ' + day.created + ' created'">
+                  <div class="bar views" [style.height.%]="barHeight(day.views)"></div>
+                  <div class="bar created" [style.height.%]="barHeight(day.created)"></div>
+                  <span class="bar-label">{{ shortDay(day.day) }}</span>
+                </div>
+              }
+            </div>
+            <div class="legend small muted">
+              <span><i class="swatch views"></i> Views</span>
+              <span><i class="swatch created"></i> Offers created</span>
+            </div>
+          }
+        </div>
+      </section>
+
+      <div class="dash-grid">
+        <div class="stack">
+          <section class="card">
+            <div class="card-header"><h2>Most viewed offers</h2></div>
+            <div class="card-body">
+              @if (stats.mostViewed.length === 0) {
+                <p class="muted small mb-0">No data yet.</p>
+              } @else {
+                <div class="table-wrap">
+                  <table class="data">
+                    <thead>
+                      <tr>
+                        <th>Offer</th>
+                        <th>Shop</th>
+                        <th>Views</th>
+                        <th>Clicks</th>
+                        <th>CTR</th>
+                        <th>Saves</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (offer of stats.mostViewed; track offer.id) {
+                        <tr>
+                          <td><a [routerLink]="['/offers', offer.id]">{{ offer.title }}</a></td>
+                          <td class="muted small">{{ offer.shopName }}</td>
+                          <td>{{ offer.views }}</td>
+                          <td>{{ offer.clicks }}</td>
+                          <td>{{ ctr(offer.views, offer.clicks) }}</td>
+                          <td>{{ offer.favorites }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              }
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card-header"><h2>Most popular offers</h2></div>
+            <div class="card-body">
+              @if (stats.mostPopular.length === 0) {
+                <p class="muted small mb-0">No data yet.</p>
+              } @else {
+                <ul class="plain">
+                  @for (offer of stats.mostPopular; track offer.id) {
+                    <li>
+                      <a [routerLink]="['/offers', offer.id]">{{ offer.title }}</a>
+                      <span class="small muted">
+                        {{ offer.shopName }} · {{ offer.views }} views · {{ offer.favorites }} saves
+                      </span>
+                    </li>
+                  }
+                </ul>
+              }
+            </div>
+          </section>
+
+          <!-- Branch performance (§27 Admin analytics) -->
+          @if (shopDetail(); as detail) {
+            <section class="card">
+              <div class="card-header"><h2>Performance by branch — {{ detail.shop.name }}</h2></div>
+              <div class="card-body">
+                @if (detail.branches.length === 0) {
+                  <p class="muted small mb-0">This shop has no branches yet.</p>
+                } @else {
+                  <div class="table-wrap">
+                    <table class="data">
+                      <thead>
+                        <tr>
+                          <th>Branch</th>
+                          <th>City</th>
+                          <th>Active offers</th>
+                          <th>Views</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (branch of detail.branches; track branch.id) {
+                          <tr>
+                            <td>{{ branch.branchName }}</td>
+                            <td class="muted small">{{ branch.city }}</td>
+                            <td>{{ branch.activeOffers }}</td>
+                            <td>{{ branch.views }}</td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                }
+              </div>
+            </section>
+          }
+        </div>
+
+        <aside class="stack">
+          <section class="card">
+            <div class="card-header"><h3>Popular categories</h3></div>
+            <div class="card-body">
+              @if (categories().length === 0) {
+                <p class="muted small mb-0">No data yet.</p>
+              } @else {
+                <ul class="plain">
+                  @for (category of categories(); track category.id) {
+                    <li>
+                      <strong>{{ category.name }}</strong>
+                      <span class="small muted">
+                        {{ category.offerCount }} offers · {{ category.views }} views ·
+                        {{ category.followers }} followers
+                      </span>
+                    </li>
+                  }
+                </ul>
+              }
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card-header"><h3>Popular locations</h3></div>
+            <div class="card-body">
+              @if (locations().length === 0) {
+                <p class="muted small mb-0">No data yet.</p>
+              } @else {
+                <ul class="plain">
+                  @for (location of locations(); track location.city) {
+                    <li>
+                      <strong>{{ location.city }}</strong>
+                      <span class="small muted">
+                        {{ location.activeOffers }} offers · {{ location.branchCount }} branches ·
+                        {{ location.shopCount }} shops
+                      </span>
+                    </li>
+                  }
+                </ul>
+              }
+            </div>
+          </section>
+
+          @if (shopStats().length) {
+            <section class="card">
+              <div class="card-header"><h3>Popular shops</h3></div>
+              <div class="card-body">
+                <ul class="plain">
+                  @for (shop of shopStats(); track shop.id) {
+                    <li>
+                      <strong class="truncate">{{ shop.name }}</strong>
+                      <span class="small muted">
+                        {{ shop.followers }} followers · {{ shop.activeOffers }} offers ·
+                        {{ shop.views }} views
+                      </span>
+                    </li>
+                  }
+                </ul>
+              </div>
+            </section>
+          }
+
+          @if (offerStats()?.expiringSoon?.length) {
+            <section class="card">
+              <div class="card-header"><h3>Nearing expiry</h3></div>
+              <div class="card-body">
+                <ul class="plain">
+                  @for (offer of offerStats()!.expiringSoon; track offer.id) {
+                    <li>
+                      <a [routerLink]="['/offers', offer.id]">{{ offer.title }}</a>
+                      <span class="small muted">{{ offer.shopName }} · ends {{ offer.endDate | date: 'd MMM' }}</span>
+                    </li>
+                  }
+                </ul>
+              </div>
+            </section>
+          }
+        </aside>
+      </div>
+    }
+  }
+</div>

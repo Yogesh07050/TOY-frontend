@@ -1,0 +1,154 @@
+<div class="container page">
+  <div class="page-header">
+    <div>
+      <h1>Offers</h1>
+      <p class="subtitle">
+        @if (meta()) {
+          {{ meta()!.total }} offer{{ meta()!.total === 1 ? '' : 's' }} you can manage
+        } @else {
+          Create, publish and retire your shop's offers.
+        }
+      </p>
+    </div>
+    @if (canCreate) {
+      <a routerLink="/admin/offers/new" class="btn">➕ Post an offer</a>
+    }
+  </div>
+
+  <div class="tabs">
+    @for (tab of tabs; track tab.value) {
+      <button type="button" class="chip" [class.active]="status === tab.value" (click)="setStatus(tab.value)">
+        {{ tab.label }}
+      </button>
+    }
+  </div>
+
+  <div class="filters card">
+    <div class="card-body row">
+      <input
+        type="search"
+        class="grow"
+        placeholder="Search by title, product or description"
+        [value]="search"
+        (input)="searchInput$.next($any($event.target).value)"
+        aria-label="Search offers"
+      />
+
+      @if (shops().length > 1) {
+        <select [(ngModel)]="shopId" (change)="reload()" aria-label="Filter by shop">
+          <option [ngValue]="null">All my shops</option>
+          @for (shop of shops(); track shop.id) {
+            <option [ngValue]="shop.id">{{ shop.name }}</option>
+          }
+        </select>
+      }
+
+      <select [(ngModel)]="sort" (change)="reload()" aria-label="Sort offers">
+        <option value="newest">Newest first</option>
+        <option value="endingSoon">Ending soonest</option>
+        <option value="mostViewed">Most viewed</option>
+      </select>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="skeleton" style="height: 320px"></div>
+  } @else if (offers().length === 0) {
+    <app-empty-state
+      emoji="🏷️"
+      title="No offers here"
+      message="Nothing matches this filter yet."
+    >
+      @if (canCreate) {
+        <a routerLink="/admin/offers/new" class="btn mt-2">Post your first offer</a>
+      }
+    </app-empty-state>
+  } @else {
+    <div class="card">
+      <div class="table-wrap">
+        <table class="data">
+          <thead>
+            <tr>
+              <th>Offer</th>
+              <th>Shop</th>
+              <th>Status</th>
+              <th>Validity</th>
+              <th>Views</th>
+              <th>Saves</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (offer of offers(); track offer.id) {
+              <tr>
+                <td>
+                  <div class="offer-cell">
+                    @if (offer.thumbnailUrl || offer.imageUrl) {
+                      <img class="thumb" [src]="offer.thumbnailUrl || offer.imageUrl" [alt]="offer.title" />
+                    } @else {
+                      <span class="thumb placeholder">{{ offer.shop.name.charAt(0) }}</span>
+                    }
+                    <span class="body">
+                      <a [routerLink]="['/offers', offer.id]" class="truncate">{{ offer.title }}</a>
+                      <span class="small muted truncate">
+                        {{ offer.category?.name }}
+                        @if (offer | discountChip; as chip) { · {{ chip }} }
+                      </span>
+                    </span>
+                  </div>
+                </td>
+                <td class="muted small">{{ offer.shop.name }}</td>
+                <td><span [class]="offer.status | statusClass">{{ offer.status }}</span></td>
+                <td class="small">
+                  {{ formatDate(offer.startDate) }} – {{ formatDate(offer.endDate) }}
+                  <br />
+                  <span class="muted">{{ offer | validity }}</span>
+                </td>
+                <td>{{ offer.viewCount }}</td>
+                <td>{{ offer.favoriteCount }}</td>
+                <td>
+                  <div class="actions-cell">
+                    @if (canEdit(offer)) {
+                      <a class="btn btn-secondary btn-sm" [routerLink]="['/admin/offers', offer.id, 'edit']">
+                        Edit
+                      </a>
+                      @for (option of nextStatuses(offer); track option.value) {
+                        <button
+                          type="button"
+                          class="btn btn-ghost btn-sm"
+                          (click)="changeStatus(offer, option.value)"
+                        >
+                          {{ option.label }}
+                        </button>
+                      }
+                    }
+                    @if (canDelete(offer)) {
+                      <button type="button" class="btn btn-ghost btn-sm" (click)="pendingDelete.set(offer)">
+                        Delete
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <app-pagination [meta]="meta()" (pageChange)="goToPage($event)" />
+  }
+
+  <app-confirm
+    [open]="pendingDelete() !== null"
+    title="Delete this offer?"
+    [message]="
+      'This permanently removes &quot;' +
+      (pendingDelete()?.title || '') +
+      '&quot; along with its images, views and saves. Consider deactivating it instead.'
+    "
+    confirmLabel="Delete offer"
+    (confirm)="confirmDelete()"
+    (cancel)="pendingDelete.set(null)"
+  />
+</div>

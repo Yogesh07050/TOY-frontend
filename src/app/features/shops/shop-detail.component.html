@@ -1,0 +1,195 @@
+@if (loading()) {
+  <div class="container page">
+    <div class="skeleton" style="height: 180px; margin-bottom: 1rem"></div>
+    <div class="skeleton" style="height: 24px; width: 40%"></div>
+  </div>
+} @else if (notFound()) {
+  <div class="container page">
+    <app-empty-state emoji="🏬" title="Shop not found" message="This shop may have been removed.">
+      <a routerLink="/shops" class="btn mt-2">Browse shops</a>
+    </app-empty-state>
+  </div>
+} @else if (shop(); as s) {
+  <header class="shop-hero">
+    <div class="container hero-inner">
+      @if (s.logoUrl) {
+        <img class="logo" [src]="s.logoUrl" [alt]="s.name" />
+      } @else {
+        <span class="logo placeholder">{{ s.name.charAt(0) }}</span>
+      }
+
+      <div class="hero-body">
+        <div class="row">
+          <h1>{{ s.name }}</h1>
+          @if (s.status !== 'active') {
+            <span class="badge badge-danger">Inactive</span>
+          }
+        </div>
+
+        @if (s.description) {
+          <p class="muted mb-1">{{ s.description }}</p>
+        }
+
+        <div class="cats">
+          @for (category of s.categories; track category.id) {
+            <a class="badge badge-brand" routerLink="/offers" [queryParams]="{ categoryId: category.id }">
+              {{ category.name }}
+            </a>
+          }
+        </div>
+
+        <p class="small muted mb-1">
+          {{ s.activeOfferCount || 0 }} active offer{{ s.activeOfferCount === 1 ? '' : 's' }}
+          · {{ s.followerCount || 0 }} follower{{ s.followerCount === 1 ? '' : 's' }}
+          @if (s.branches?.length) {
+            · {{ s.branches!.length }} branch{{ s.branches!.length === 1 ? '' : 'es' }}
+          }
+        </p>
+
+        @if (s.rating && s.rating.count > 0) {
+          <app-stars [value]="s.rating.average ?? 0" [count]="s.rating.count" />
+        }
+
+        <div class="row mt-2">
+          <button type="button" class="btn" [class.btn-secondary]="s.isFollowing" (click)="toggleFollow()">
+            {{ s.isFollowing ? '✓ Following' : '+ Follow shop' }}
+          </button>
+          @if (canManage()) {
+            <a class="btn btn-ghost" [routerLink]="['/admin/shops', s.id, 'edit']">Edit shop</a>
+          }
+        </div>
+      </div>
+
+      <!-- Contact details (§12) -->
+      <div class="contact card">
+        <div class="card-body">
+          <h3 class="small">Contact</h3>
+          @if (s.contactNumber) {
+            <p class="small mb-1">☎ <a [href]="'tel:' + s.contactNumber">{{ s.contactNumber }}</a></p>
+          }
+          @if (s.email) {
+            <p class="small mb-1">✉ <a [href]="'mailto:' + s.email">{{ s.email }}</a></p>
+          }
+          @if (s.websiteUrl) {
+            <p class="small mb-1">
+              🌐 <a [href]="s.websiteUrl" target="_blank" rel="noopener">{{ websiteLabel(s.websiteUrl) }}</a>
+            </p>
+          }
+          @for (link of socialEntries(s.socialLinks); track link.key) {
+            <p class="small mb-1">
+              <a [href]="link.url" target="_blank" rel="noopener">{{ link.key }}</a>
+            </p>
+          }
+          @if (!s.contactNumber && !s.email && !s.websiteUrl) {
+            <p class="small muted mb-0">No contact details published.</p>
+          }
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="container page">
+    <!-- Branches (§17) -->
+    @if (s.branches?.length) {
+      <section class="card mb-2">
+        <div class="card-header">
+          <h2>Branch locations</h2>
+          @if (selectedBranch()) {
+            <button type="button" class="btn btn-ghost btn-sm" (click)="selectBranch(null)">
+              Show all branches
+            </button>
+          }
+        </div>
+        <div class="card-body branch-list">
+          @for (branch of s.branches!; track branch.id) {
+            <div class="branch" [class.selected]="selectedBranch() === branch.id">
+              <div>
+                <div class="row">
+                  <strong>{{ branch.branchName }}</strong>
+                  @if (branch.isPrimary) {
+                    <span class="badge badge-brand">Main</span>
+                  }
+                  @if (branch.status !== 'active') {
+                    <span class="badge badge-danger">Inactive</span>
+                  }
+                </div>
+                <p class="small muted mb-1">
+                  {{ branch.address }}@if (branch.address && branch.city) {, }{{ branch.city }}
+                  @if (branch.pincode) { – {{ branch.pincode }} }
+                </p>
+                @if (branch.contactNumber) {
+                  <p class="small mb-1">☎ <a [href]="'tel:' + branch.contactNumber">{{ branch.contactNumber }}</a></p>
+                }
+                @if (branch.distanceKm !== null) {
+                  <p class="small strong mb-1">📍 {{ branch.distanceKm | distance }}</p>
+                }
+                <div class="row">
+                  <button type="button" class="btn btn-secondary btn-sm" (click)="selectBranch(branch.id)">
+                    {{ selectedBranch() === branch.id ? 'Showing this branch' : 'Offers at this branch' }}
+                    @if (branch.offerCount !== undefined) {
+                      ({{ branch.offerCount }})
+                    }
+                  </button>
+                  <a class="btn btn-ghost btn-sm" [href]="directionsUrl(branch)" target="_blank" rel="noopener">
+                    Directions ↗
+                  </a>
+                </div>
+              </div>
+
+              @if (mapUrl(branch); as src) {
+                <iframe
+                  class="map"
+                  [src]="src"
+                  [title]="'Map showing ' + branch.branchName"
+                  loading="lazy"
+                  referrerpolicy="no-referrer-when-downgrade"
+                ></iframe>
+              }
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- Offers -->
+    <div class="row mb-2">
+      <button type="button" class="chip" [class.active]="tab() === 'active'" (click)="selectTab('active')">
+        Active offers
+      </button>
+      @if (canManage()) {
+        <button type="button" class="chip" [class.active]="tab() === 'expired'" (click)="selectTab('expired')">
+          Expired offers
+        </button>
+      }
+    </div>
+
+    @if (loadingOffers()) {
+      <div class="grid grid-cards">
+        @for (item of [1, 2, 3, 4]; track item) {
+          <div class="skeleton" style="height: 300px"></div>
+        }
+      </div>
+    } @else if (offers().length === 0) {
+      <app-empty-state
+        emoji="🏷️"
+        [title]="tab() === 'active' ? 'No active offers right now' : 'No expired offers'"
+        [message]="
+          tab() === 'active'
+            ? 'Follow this shop to be notified when it publishes something new.'
+            : 'Nothing in the archive yet.'
+        "
+      />
+    } @else {
+      <div class="grid grid-cards">
+        @for (offer of offers(); track offer.id) {
+          <app-offer-card
+            [offer]="offer"
+            [showStatus]="tab() === 'expired'"
+            (toggleFavorite)="toggleFavorite($event)"
+            (requireLogin)="promptLogin()"
+          />
+        }
+      </div>
+    }
+  </div>
+}

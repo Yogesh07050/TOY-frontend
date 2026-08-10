@@ -1,0 +1,152 @@
+<div class="container page">
+  <div class="page-header">
+    <div>
+      <h1>Roles &amp; permissions</h1>
+      <p class="subtitle">
+        Permissions are checked by the API on every request — hiding a button here is not access control.
+      </p>
+    </div>
+    <button type="button" class="btn" (click)="startCreate()">➕ New role</button>
+  </div>
+
+  @if (loading()) {
+    <div class="skeleton" style="height: 320px"></div>
+  } @else {
+    <div class="role-layout">
+      <section class="card">
+        <div class="card-header"><h3>Roles</h3></div>
+        <ul class="role-list">
+          @for (role of roles(); track role.id) {
+            <li>
+              <button type="button" [class.active]="selectedRole()?.id === role.id" (click)="select(role)">
+                <strong>{{ role.name }}</strong>
+                @if (role.isSystem) {
+                  <span class="badge">built-in</span>
+                }
+                @if (role.status !== 'active') {
+                  <span class="badge badge-danger">inactive</span>
+                }
+                <br />
+                <span class="small muted">
+                  {{ role.permissions.length }} permission{{ role.permissions.length === 1 ? '' : 's' }}
+                  · {{ role.userCount ?? 0 }} user{{ role.userCount === 1 ? '' : 's' }}
+                </span>
+              </button>
+            </li>
+          }
+        </ul>
+      </section>
+
+      <section class="card">
+        <div class="card-header">
+          <h3>
+            @if (creating()) {
+              New role
+            } @else {
+              {{ selectedRole()?.name || 'Select a role' }}
+            }
+          </h3>
+          @if (selectedRole() && !selectedRole()!.isSystem) {
+            <button type="button" class="btn btn-ghost btn-sm" (click)="pendingDelete.set(selectedRole())">
+              Delete role
+            </button>
+          }
+        </div>
+
+        <div class="card-body">
+          @if (!selectedRole() && !creating()) {
+            <p class="muted mb-0">Choose a role on the left, or create a new one.</p>
+          } @else {
+            <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+              @if (formError()) {
+                <div class="error-text mb-2">{{ formError() }}</div>
+              }
+
+              <div class="form-grid">
+                <div class="field">
+                  <label for="name">Role name *</label>
+                  <input
+                    id="name"
+                    type="text"
+                    formControlName="name"
+                    [attr.disabled]="selectedRole()?.isSystem ? true : null"
+                    [class.invalid]="error('name', 'Role name')"
+                  />
+                  @if (error('name', 'Role name'); as message) {
+                    <span class="error-text">{{ message }}</span>
+                  }
+                  @if (selectedRole()?.isSystem) {
+                    <span class="hint">Built-in roles cannot be renamed, but their permissions are editable.</span>
+                  } @else {
+                    <span class="hint">Saved in SCREAMING_SNAKE_CASE, e.g. BRANCH_MANAGER.</span>
+                  }
+                </div>
+
+                <div class="field">
+                  <label for="status">Status</label>
+                  <select id="status" formControlName="status" [attr.disabled]="selectedRole()?.isSystem ? true : null">
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="description">Description</label>
+                <input id="description" type="text" formControlName="description" />
+              </div>
+
+              <h3 class="mt-2">Permissions</h3>
+              <p class="hint mb-2">
+                {{ selectedPermissions().length }} of {{ permissions().length }} selected.
+              </p>
+
+              @for (group of groupedPermissions(); track group.category) {
+                <div class="permission-group">
+                  <h4>
+                    {{ group.category }}
+                    <button type="button" class="btn btn-ghost btn-sm" (click)="toggleGroup(group.items)">
+                      {{ groupState(group.items) === 'all' ? 'Clear all' : 'Select all' }}
+                    </button>
+                  </h4>
+                  <div class="permission-grid">
+                    @for (permission of group.items; track permission.id) {
+                      <label class="permission-option" [class.selected]="isSelected(permission.id)">
+                        <input
+                          type="checkbox"
+                          [checked]="isSelected(permission.id)"
+                          (change)="togglePermission(permission.id)"
+                        />
+                        <span>
+                          <code>{{ permission.name }}</code>
+                          <span class="small muted">{{ permission.description }}</span>
+                        </span>
+                      </label>
+                    }
+                  </div>
+                </div>
+              }
+
+              <button type="submit" class="btn" [disabled]="saving()">
+                @if (saving()) {
+                  <span class="spinner"></span> Saving…
+                } @else {
+                  {{ creating() ? 'Create role' : 'Save role' }}
+                }
+              </button>
+            </form>
+          }
+        </div>
+      </section>
+    </div>
+  }
+
+  <app-confirm
+    [open]="pendingDelete() !== null"
+    title="Delete this role?"
+    message="Roles that are still assigned to users cannot be deleted — reassign those users first."
+    confirmLabel="Delete role"
+    (confirm)="confirmDelete()"
+    (cancel)="pendingDelete.set(null)"
+  />
+</div>

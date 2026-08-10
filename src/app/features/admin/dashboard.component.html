@@ -1,0 +1,268 @@
+<div class="container page">
+  <div class="page-header">
+    <div>
+      <h1>{{ greeting }}, {{ firstName }}</h1>
+      <p class="subtitle">
+        @if (overview()?.scope === 'platform') {
+          Platform-wide overview across every shop.
+        } @else {
+          Performance for the shop{{ (auth.user()?.shops?.length ?? 0) > 1 ? 's' : '' }} you manage.
+        }
+      </p>
+    </div>
+    <div class="row">
+      @if (auth.has('CREATE_OFFER')) {
+        <a routerLink="/admin/offers/new" class="btn">➕ Post an offer</a>
+      }
+      @if (auth.has('CREATE_SHOP')) {
+        <a routerLink="/admin/shops/new" class="btn btn-secondary">Create a shop</a>
+      }
+    </div>
+  </div>
+
+  @if (!canSeeAnalytics) {
+    <div class="card">
+      <div class="card-body">
+        <p class="mb-0 muted">
+          You do not have the analytics permission, so this dashboard is empty. Use the menu to reach the
+          areas you can manage.
+        </p>
+      </div>
+    </div>
+  } @else if (loading()) {
+    <div class="grid grid-stats">
+      @for (item of [1, 2, 3, 4, 5, 6]; track item) {
+        <div class="skeleton" style="height: 92px"></div>
+      }
+    </div>
+  } @else if (overview(); as o) {
+    <!-- Headline counters -->
+    <div class="grid grid-stats mb-2">
+      @if (o.platform; as p) {
+        <div class="stat card">
+          <span class="stat-label">Total users</span>
+          <span class="stat-value">{{ p.totalUsers }}</span>
+          <span class="small muted">{{ p.activeUsers }} active</span>
+        </div>
+        <div class="stat card">
+          <span class="stat-label">Shops</span>
+          <span class="stat-value">{{ p.totalShops }}</span>
+          <span class="small muted">{{ p.activeShops }} active</span>
+        </div>
+        <div class="stat card">
+          <span class="stat-label">Branches</span>
+          <span class="stat-value">{{ p.totalBranches }}</span>
+          <span class="small muted">{{ p.activeBranches }} active</span>
+        </div>
+      } @else if (o.shop; as s) {
+        <div class="stat card">
+          <span class="stat-label">My branches</span>
+          <span class="stat-value">{{ s.branches }}</span>
+          @if (primaryShopId) {
+            <a class="small" [routerLink]="['/admin/shops', primaryShopId, 'branches']">Manage</a>
+          }
+        </div>
+        <div class="stat card">
+          <span class="stat-label">Team members</span>
+          <span class="stat-value">{{ s.members }}</span>
+          @if (primaryShopId && auth.has('VIEW_SHOP_MEMBERS')) {
+            <a class="small" [routerLink]="['/admin/shops', primaryShopId, 'members']">View</a>
+          }
+        </div>
+      }
+
+      <div class="stat card">
+        <span class="stat-label">Active offers</span>
+        <span class="stat-value success">{{ o.offers.active }}</span>
+        <a class="small" routerLink="/admin/offers" [queryParams]="{ status: 'active' }">View</a>
+      </div>
+      <div class="stat card">
+        <span class="stat-label">Scheduled</span>
+        <span class="stat-value info">{{ o.offers.scheduled }}</span>
+        <a class="small" routerLink="/admin/offers" [queryParams]="{ status: 'scheduled' }">View</a>
+      </div>
+      <div class="stat card">
+        <span class="stat-label">Expired</span>
+        <span class="stat-value">{{ o.offers.expired }}</span>
+        <a class="small" routerLink="/admin/offers" [queryParams]="{ status: 'expired' }">View</a>
+      </div>
+      <div class="stat card" [class.alert]="o.offers.expiringSoon > 0">
+        <span class="stat-label">Expiring in 7 days</span>
+        <span class="stat-value warning">{{ o.offers.expiringSoon }}</span>
+        <span class="small muted">needs attention</span>
+      </div>
+      <div class="stat card">
+        <span class="stat-label">Total views</span>
+        <span class="stat-value">{{ o.engagement.views }}</span>
+        <span class="small muted">{{ o.engagement.clicks }} clicks</span>
+      </div>
+      <div class="stat card">
+        <span class="stat-label">Saves</span>
+        <span class="stat-value">{{ o.engagement.favorites }}</span>
+        <span class="small muted">across all offers</span>
+      </div>
+    </div>
+
+    <div class="dash-grid">
+      <div class="stack">
+        <!-- Activity over time -->
+        @if (offerStats(); as stats) {
+          <section class="card">
+            <div class="card-header">
+              <h2>Activity over the last 30 days</h2>
+              <a routerLink="/admin/analytics" class="small">Full analytics →</a>
+            </div>
+            <div class="card-body">
+              @if (stats.timeline.length === 0) {
+                <p class="muted small mb-0">No activity recorded yet.</p>
+              } @else {
+                <div class="chart" role="img" aria-label="Daily offer views and offers created">
+                  @for (day of stats.timeline; track day.day) {
+                    <div class="bar-group" [title]="shortDay(day.day) + ': ' + day.views + ' views, ' + day.created + ' created'">
+                      <div class="bar views" [style.height.%]="barHeight(day.views)"></div>
+                      <div class="bar created" [style.height.%]="barHeight(day.created)"></div>
+                      <span class="bar-label">{{ shortDay(day.day) }}</span>
+                    </div>
+                  }
+                </div>
+                <div class="legend small muted">
+                  <span><i class="swatch views"></i> Views</span>
+                  <span><i class="swatch created"></i> Offers created</span>
+                </div>
+              }
+            </div>
+          </section>
+
+          <!-- Most viewed -->
+          <section class="card">
+            <div class="card-header"><h2>Most viewed offers</h2></div>
+            <div class="card-body">
+              @if (stats.mostViewed.length === 0) {
+                <p class="muted small mb-0">No offers yet.</p>
+              } @else {
+                <div class="table-wrap">
+                  <table class="data">
+                    <thead>
+                      <tr>
+                        <th>Offer</th>
+                        <th>Shop</th>
+                        <th>Views</th>
+                        <th>Clicks</th>
+                        <th>Saves</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (offer of stats.mostViewed; track offer.id) {
+                        <tr>
+                          <td><a [routerLink]="['/offers', offer.id]">{{ offer.title }}</a></td>
+                          <td class="muted">{{ offer.shopName }}</td>
+                          <td>{{ offer.views }}</td>
+                          <td>{{ offer.clicks }}</td>
+                          <td>{{ offer.favorites }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              }
+            </div>
+          </section>
+
+          <!-- Expiring soon -->
+          @if (stats.expiringSoon.length) {
+            <section class="card">
+              <div class="card-header"><h2>Offers expiring soon</h2></div>
+              <div class="card-body">
+                <ul class="plain">
+                  @for (offer of stats.expiringSoon; track offer.id) {
+                    <li>
+                      <a [routerLink]="['/offers', offer.id]">{{ offer.title }}</a>
+                      <span class="small muted">{{ offer.shopName }}</span>
+                      <span class="badge badge-warning">
+                        ends {{ offer.endDate | date: 'd MMM' }}
+                      </span>
+                    </li>
+                  }
+                </ul>
+              </div>
+            </section>
+          }
+        }
+      </div>
+
+      <aside class="stack">
+        @if (topShops().length) {
+          <section class="card">
+            <div class="card-header"><h3>Popular shops</h3></div>
+            <div class="card-body">
+              <ul class="plain">
+                @for (shop of topShops(); track shop.id) {
+                  <li>
+                    <strong class="truncate">{{ shop.name }}</strong>
+                    <span class="small muted">{{ shop.followers }} followers · {{ shop.activeOffers }} offers</span>
+                  </li>
+                }
+              </ul>
+            </div>
+          </section>
+        }
+
+        @if (categories().length) {
+          <section class="card">
+            <div class="card-header"><h3>Popular categories</h3></div>
+            <div class="card-body">
+              <ul class="plain">
+                @for (category of categories(); track category.id) {
+                  <li>
+                    <strong>{{ category.name }}</strong>
+                    <span class="small muted">{{ category.offerCount }} offers · {{ category.views }} views</span>
+                  </li>
+                }
+              </ul>
+            </div>
+          </section>
+        }
+
+        @if (locations().length) {
+          <section class="card">
+            <div class="card-header"><h3>Popular locations</h3></div>
+            <div class="card-body">
+              <ul class="plain">
+                @for (location of locations(); track location.city) {
+                  <li>
+                    <strong>{{ location.city }}</strong>
+                    <span class="small muted">
+                      {{ location.activeOffers }} offers · {{ location.branchCount }} branches
+                    </span>
+                  </li>
+                }
+              </ul>
+            </div>
+          </section>
+        }
+
+        @if (recentActivity().length) {
+          <section class="card">
+            <div class="card-header">
+              <h3>Recent activity</h3>
+              <a routerLink="/admin/audit-logs" class="small">All logs →</a>
+            </div>
+            <div class="card-body">
+              <ul class="plain activity">
+                @for (entry of recentActivity(); track entry.id) {
+                  <li>
+                    <span class="small">
+                      <strong>{{ entry.user?.name || 'System' }}</strong>
+                      {{ formatAction(entry.action) }}
+                    </span>
+                    <span class="small subtle">{{ timeAgo(entry.createdAt) }}</span>
+                  </li>
+                }
+              </ul>
+            </div>
+          </section>
+        }
+      </aside>
+    </div>
+  }
+</div>

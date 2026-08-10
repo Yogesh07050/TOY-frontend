@@ -1,0 +1,197 @@
+<div class="container page">
+  <div class="page-header">
+    <div>
+      <h1>{{ isEdit() ? 'Edit shop' : 'Create a shop' }}</h1>
+      <p class="subtitle">
+        {{
+          isEdit()
+            ? 'Update the shop profile, categories and status.'
+            : 'Set up the shop profile and, optionally, its first branch.'
+        }}
+      </p>
+    </div>
+    <a routerLink="/admin/shops" class="btn btn-ghost">← Back to shops</a>
+  </div>
+
+  @if (loading()) {
+    <div class="skeleton" style="height: 380px"></div>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+      @if (formError()) {
+        <div class="alert" role="alert">{{ formError() }}</div>
+      }
+
+      <div class="form-layout">
+        <div>
+          <fieldset>
+            <legend>Shop profile</legend>
+
+            <div class="field">
+              <label for="name">Shop name *</label>
+              <input id="name" type="text" formControlName="name" [class.invalid]="error('name', 'Shop name')" />
+              @if (error('name', 'Shop name'); as message) {
+                <span class="error-text">{{ message }}</span>
+              }
+            </div>
+
+            <div class="field">
+              <label for="description">Description</label>
+              <textarea id="description" formControlName="description" rows="3" placeholder="What the shop sells, in a sentence or two."></textarea>
+            </div>
+
+            <div class="form-grid">
+              <div class="field">
+                <label for="contactNumber">Contact number</label>
+                <input id="contactNumber" type="tel" formControlName="contactNumber" />
+              </div>
+
+              <div class="field">
+                <label for="email">Email</label>
+                <input id="email" type="email" formControlName="email" [class.invalid]="error('email', 'Email')" />
+                @if (error('email', 'Email'); as message) {
+                  <span class="error-text">{{ message }}</span>
+                }
+              </div>
+
+              <div class="field">
+                <label for="websiteUrl">Website</label>
+                <input id="websiteUrl" type="url" formControlName="websiteUrl" placeholder="https://" />
+              </div>
+
+              <div class="field">
+                <label for="status">Status</label>
+                <select id="status" formControlName="status">
+                  <option value="active">Active — visible to customers</option>
+                  <option value="inactive">Inactive — hidden from discovery</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="instagram">Instagram</label>
+                <input id="instagram" type="url" formControlName="instagram" placeholder="https://instagram.com/…" />
+              </div>
+
+              <div class="field">
+                <label for="facebook">Facebook</label>
+                <input id="facebook" type="url" formControlName="facebook" placeholder="https://facebook.com/…" />
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Categories</legend>
+            <p class="hint mb-2">A shop can belong to several categories.</p>
+            <div class="cat-picker">
+              @for (category of categories(); track category.id) {
+                <label class="cat-option" [class.selected]="isCategorySelected(category.id)">
+                  <input
+                    type="checkbox"
+                    [checked]="isCategorySelected(category.id)"
+                    (change)="toggleCategory(category.id)"
+                  />
+                  <span>{{ category.name }}</span>
+                </label>
+              }
+            </div>
+          </fieldset>
+
+          @if (!isEdit()) {
+            <fieldset>
+              <legend>First branch (optional)</legend>
+              <p class="hint mb-2">
+                Add the main location now, or skip it and manage branches afterwards. Latitude and
+                longitude power distance-based search.
+              </p>
+
+              <div class="form-grid">
+                <div class="field">
+                  <label for="branchName">Branch name</label>
+                  <input id="branchName" type="text" formControlName="branchName" placeholder="e.g. Zara – Avinashi Road" />
+                </div>
+
+                <div class="field">
+                  <label for="city">City</label>
+                  <input id="city" type="text" formControlName="city" />
+                </div>
+
+                <div class="field">
+                  <label for="state">State</label>
+                  <input id="state" type="text" formControlName="state" />
+                </div>
+
+                <div class="field">
+                  <label for="country">Country</label>
+                  <input id="country" type="text" formControlName="country" />
+                </div>
+
+                <div class="field">
+                  <label for="pincode">Pincode</label>
+                  <input id="pincode" type="text" formControlName="pincode" />
+                </div>
+
+                <div class="field">
+                  <label for="latitude">Latitude</label>
+                  <input id="latitude" type="number" step="0.0000001" min="-90" max="90" formControlName="latitude" />
+                </div>
+
+                <div class="field">
+                  <label for="longitude">Longitude</label>
+                  <input id="longitude" type="number" step="0.0000001" min="-180" max="180" formControlName="longitude" />
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="address">Address</label>
+                <textarea id="address" formControlName="address" rows="2"></textarea>
+              </div>
+            </fieldset>
+          }
+        </div>
+
+        <aside class="stack">
+          <section class="card">
+            <div class="card-header"><h3>Shop logo</h3></div>
+            <div class="card-body">
+              @if (logoUrl()) {
+                <img class="logo-preview" [src]="logoUrl()!" alt="Shop logo" />
+              } @else {
+                <div class="logo-preview logo-placeholder">No logo</div>
+              }
+
+              <label class="btn btn-secondary btn-block btn-sm" for="logo-input">
+                {{ uploading() ? 'Uploading…' : logoUrl() ? 'Replace logo' : 'Upload logo' }}
+              </label>
+              <input id="logo-input" type="file" accept="image/*" class="sr-only" (change)="uploadLogo($event)" />
+              @if (logoUrl()) {
+                <button type="button" class="btn btn-ghost btn-block btn-sm mt-1" (click)="logoUrl.set(null)">
+                  Remove logo
+                </button>
+              }
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card-header"><h3>Save</h3></div>
+            <div class="card-body">
+              <button type="submit" class="btn btn-block" [disabled]="saving()">
+                @if (saving()) {
+                  <span class="spinner"></span> Saving…
+                } @else {
+                  {{ isEdit() ? 'Save changes' : 'Create shop' }}
+                }
+              </button>
+              @if (isEdit() && shopId(); as id) {
+                <a class="btn btn-secondary btn-block btn-sm mt-1" [routerLink]="['/admin/shops', id, 'branches']">
+                  Manage branches
+                </a>
+                <a class="btn btn-ghost btn-block btn-sm mt-1" [routerLink]="['/admin/shops', id, 'members']">
+                  Manage members
+                </a>
+              }
+            </div>
+          </section>
+        </aside>
+      </div>
+    </form>
+  }
+</div>

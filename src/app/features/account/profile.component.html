@@ -1,0 +1,256 @@
+<div class="container page">
+  <div class="page-header">
+    <div>
+      <h1>My profile</h1>
+      <p class="subtitle">Manage your details, location and notification preferences.</p>
+    </div>
+  </div>
+
+  @if (auth.user(); as user) {
+    @if (!user.emailVerified) {
+      <div class="verify-banner">
+        Your email address is not verified yet.
+        <button type="button" class="btn btn-sm btn-secondary" (click)="resendVerification()">
+          Resend the link
+        </button>
+      </div>
+    }
+
+    <div class="profile-grid">
+      <!-- Details -->
+      <section class="card">
+        <div class="card-header"><h2>Your details</h2></div>
+        <div class="card-body">
+          <div class="avatar-row">
+            @if (user.avatarUrl) {
+              <img class="avatar" [src]="user.avatarUrl" [alt]="user.name" />
+            } @else {
+              <span class="avatar">{{ initials }}</span>
+            }
+            <div>
+              <label class="btn btn-secondary btn-sm" for="avatar-input">
+                {{ uploading() ? 'Uploading…' : 'Change photo' }}
+              </label>
+              <input
+                id="avatar-input"
+                type="file"
+                accept="image/*"
+                class="sr-only"
+                (change)="uploadAvatar($event)"
+              />
+              <p class="small muted mb-0 mt-1">JPEG, PNG or WebP, up to 5 MB.</p>
+            </div>
+          </div>
+
+          <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" novalidate>
+            @if (profileError()) {
+              <div class="error-text mb-2">{{ profileError() }}</div>
+            }
+
+            <div class="field">
+              <label for="p-name">Name</label>
+              <input id="p-name" type="text" formControlName="name" [class.invalid]="error('profile', 'name', 'Name')" />
+              @if (error('profile', 'name', 'Name'); as message) {
+                <span class="error-text">{{ message }}</span>
+              }
+            </div>
+
+            <div class="field">
+              <label for="p-email">Email</label>
+              <input id="p-email" type="email" [value]="user.email" disabled />
+              <span class="hint">Contact support to change the email on your account.</span>
+            </div>
+
+            <div class="field">
+              <label for="p-phone">Phone number</label>
+              <input id="p-phone" type="tel" formControlName="phone" [class.invalid]="error('profile', 'phone', 'Phone')" />
+            </div>
+
+            <div class="field">
+              <label for="p-city">Preferred location</label>
+              <select id="p-city" formControlName="city">
+                <option value="">No preference</option>
+                @for (city of cities; track city.city) {
+                  <option [value]="city.city">{{ city.city }}</option>
+                }
+              </select>
+              <span class="hint">Used for "near me" results and nearby-offer alerts.</span>
+            </div>
+
+            <button type="submit" class="btn" [disabled]="savingProfile()">
+              @if (savingProfile()) {
+                <span class="spinner"></span> Saving…
+              } @else {
+                Save changes
+              }
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <div class="stack">
+        <!-- Notification preferences (§24) -->
+        <section class="card">
+          <div class="card-header">
+            <h2>Notifications</h2>
+            @if (savingPreferences()) {
+              <span class="spinner dark"></span>
+            }
+          </div>
+          <div class="card-body">
+            @if (preferences(); as prefs) {
+              <div class="toggle-row">
+                <span class="label-block">
+                  <strong>Email notifications</strong>
+                  <span class="small muted">Turn off to receive in-app notifications only.</span>
+                </span>
+                <label class="switch">
+                  <input type="checkbox" [checked]="prefs.emailEnabled" (change)="togglePreference('emailEnabled')" />
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+              <div class="toggle-row">
+                <span class="label-block">
+                  <strong>New offers from shops I follow</strong>
+                </span>
+                <label class="switch">
+                  <input type="checkbox" [checked]="prefs.followedShopOffers" (change)="togglePreference('followedShopOffers')" />
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+              <div class="toggle-row">
+                <span class="label-block">
+                  <strong>New offers in categories I follow</strong>
+                </span>
+                <label class="switch">
+                  <input type="checkbox" [checked]="prefs.followedCategoryOffers" (change)="togglePreference('followedCategoryOffers')" />
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+              <div class="toggle-row">
+                <span class="label-block">
+                  <strong>Offers near my location</strong>
+                  <span class="small muted">Within 10 km of your preferred location.</span>
+                </span>
+                <label class="switch">
+                  <input type="checkbox" [checked]="prefs.nearbyOffers" (change)="togglePreference('nearbyOffers')" />
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+              <div class="toggle-row">
+                <span class="label-block">
+                  <strong>Saved offers ending soon</strong>
+                </span>
+                <label class="switch">
+                  <input type="checkbox" [checked]="prefs.favoriteExpiring" (change)="togglePreference('favoriteExpiring')" />
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+              <div class="toggle-row">
+                <span class="label-block">
+                  <strong>Updates to offers I saved</strong>
+                </span>
+                <label class="switch">
+                  <input type="checkbox" [checked]="prefs.offerUpdates" (change)="togglePreference('offerUpdates')" />
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+              <div class="toggle-row">
+                <span class="label-block">
+                  <strong>Announcements</strong>
+                </span>
+                <label class="switch">
+                  <input type="checkbox" [checked]="prefs.adminAnnouncements" (change)="togglePreference('adminAnnouncements')" />
+                  <span class="slider"></span>
+                </label>
+              </div>
+            } @else {
+              <div class="skeleton" style="height: 140px"></div>
+            }
+          </div>
+        </section>
+
+        <!-- Password -->
+        <section class="card">
+          <div class="card-header"><h2>Change password</h2></div>
+          <div class="card-body">
+            <form [formGroup]="passwordForm" (ngSubmit)="changePassword()" novalidate>
+              @if (passwordError()) {
+                <div class="error-text mb-2">{{ passwordError() }}</div>
+              }
+
+              <div class="field">
+                <label for="cp-current">Current password</label>
+                <input id="cp-current" type="password" formControlName="currentPassword" autocomplete="current-password" />
+                @if (error('password', 'currentPassword', 'Current password'); as message) {
+                  <span class="error-text">{{ message }}</span>
+                }
+              </div>
+
+              <div class="field">
+                <label for="cp-new">New password</label>
+                <input id="cp-new" type="password" formControlName="password" autocomplete="new-password" />
+                @if (error('password', 'password', 'New password'); as message) {
+                  <span class="error-text">{{ message }}</span>
+                }
+              </div>
+
+              <div class="field">
+                <label for="cp-confirm">Confirm new password</label>
+                <input id="cp-confirm" type="password" formControlName="confirmPassword" autocomplete="new-password" />
+                @if (error('password', 'confirmPassword', 'Confirmation'); as message) {
+                  <span class="error-text">{{ message }}</span>
+                }
+              </div>
+
+              <button type="submit" class="btn" [disabled]="savingPassword()">
+                @if (savingPassword()) {
+                  <span class="spinner"></span> Updating…
+                } @else {
+                  Update password
+                }
+              </button>
+            </form>
+          </div>
+        </section>
+
+        <!-- Roles / memberships -->
+        <section class="card">
+          <div class="card-header"><h2>Access</h2></div>
+          <div class="card-body">
+            <p class="small muted mb-1">Roles</p>
+            <div class="row mb-2">
+              @for (role of user.roles; track role) {
+                <span class="badge badge-brand">{{ role }}</span>
+              }
+              @if (user.roles.length === 0) {
+                <span class="small muted">No roles assigned.</span>
+              }
+            </div>
+
+            @if (user.shops.length) {
+              <p class="small muted mb-1">Shop memberships</p>
+              <ul class="small" style="padding-left: 1.1rem; margin: 0">
+                @for (membership of user.shops; track membership.shopId) {
+                  <li>
+                    <strong>{{ membership.shopName }}</strong>
+                    @if (membership.designation) { — {{ membership.designation }} }
+                    @if (membership.roleName) {
+                      <span class="badge">{{ membership.roleName }}</span>
+                    }
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+        </section>
+      </div>
+    </div>
+  }
+</div>
