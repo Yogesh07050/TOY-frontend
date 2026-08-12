@@ -180,3 +180,42 @@ fieldset {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* ---- Shop, taken from the user's role ------------------------------------ */
+
+.locked-shop {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--brand-tint);
+}
+
+.shop-mark {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: var(--gradient-brand);
+  color: var(--brand-ink);
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.shop-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.no-shop {
+  padding: 0.65rem 0.8rem;
+  border-radius: var(--radius-sm);
+  background: var(--warning-bg);
+  color: var(--warning);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}

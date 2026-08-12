@@ -248,8 +248,8 @@ export class CardSkeletonsComponent {
       .page.current {
         background: var(--gradient-brand);
         border-color: transparent;
-        color: #fff;
-        font-weight: 660;
+        color: var(--brand-ink);
+        font-weight: 680;
         box-shadow: var(--shadow-brand);
       }
 

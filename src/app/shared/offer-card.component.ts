@@ -171,8 +171,8 @@ import {
         height: 100%;
         display: grid;
         place-items: center;
-        background: linear-gradient(135deg, var(--brand-light) 0%, #dcd8fb 100%);
-        color: var(--brand);
+        background: linear-gradient(135deg, var(--brand-light) 0%, #fcd34d 100%);
+        color: var(--brand-strong);
         font-size: 2.6rem;
         font-weight: 800;
         transition: transform var(--slow) var(--ease-out);

@@ -65,8 +65,8 @@ import { HttpErrorResponse } from '@angular/common/http';
         width: 28px;
         height: 28px;
         border-radius: 8px;
-        background: var(--brand);
-        color: #fff;
+        background: var(--gradient-brand);
+        color: var(--brand-ink);
         font-weight: 800;
         font-size: 0.9rem;
       }

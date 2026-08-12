@@ -63,7 +63,7 @@ main {
   height: 32px;
   border-radius: 10px;
   background: var(--gradient-brand);
-  color: #fff;
+  color: var(--brand-ink);
   font-size: 0.95rem;
   font-weight: 800;
   transition: transform var(--normal) var(--ease-spring), box-shadow var(--normal) var(--ease);
@@ -178,12 +178,12 @@ main {
 }
 
 .register-btn {
-  color: #fff;
+  color: var(--brand-ink);
 }
 
 .register-btn:hover {
   text-decoration: none;
-  color: #fff;
+  color: var(--brand-ink);
 }
 
 .notif {
@@ -243,7 +243,7 @@ main {
   border-radius: 50%;
   border: none;
   background: var(--gradient-brand);
-  color: #fff;
+  color: var(--brand-ink);
   font-weight: 700;
   font-size: 0.8rem;
   cursor: pointer;

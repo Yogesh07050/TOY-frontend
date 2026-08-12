@@ -16,12 +16,21 @@ import { AuthShellComponent, applyServerErrors, errorFor } from './auth-shell';
       subheading="Enter your email and we will send you a reset link."
     >
       @if (sent()) {
-        <div class="notice">
-          <p class="mb-0">
-            If an account exists for <strong>{{ form.controls.email.value }}</strong>, a reset link is on
-            its way. The link expires in one hour.
-          </p>
-        </div>
+        @if (delivered()) {
+          <div class="notice">
+            <p class="mb-0">
+              If an account exists for <strong>{{ form.controls.email.value }}</strong>, a reset link is
+              on its way. The link expires in one hour.
+            </p>
+          </div>
+        } @else {
+          <div class="warn">
+            <p class="mb-0">
+              <strong>No email was sent.</strong> This server has no SMTP configured. The reset link was
+              written to the server log and to <code>TOY-backend/mail-outbox/</code> instead.
+            </p>
+          </div>
+        }
         <a routerLink="/auth/login" class="btn btn-block mt-2">Back to sign in</a>
       } @else {
         <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
@@ -68,6 +77,21 @@ import { AuthShellComponent, applyServerErrors, errorFor } from './auth-shell';
         border-radius: var(--radius-sm);
         font-size: 0.9rem;
       }
+
+      .warn {
+        background: var(--warning-bg);
+        color: var(--warning);
+        padding: 0.85rem 1rem;
+        border-radius: var(--radius-sm);
+        font-size: 0.88rem;
+        line-height: 1.55;
+      }
+
+      .warn code {
+        background: rgba(0, 0, 0, 0.06);
+        padding: 0.05rem 0.3rem;
+        border-radius: 4px;
+      }
     `,
   ],
 })
@@ -77,6 +101,7 @@ export class ForgotPasswordComponent {
 
   readonly submitting = signal(false);
   readonly sent = signal(false);
+  readonly delivered = signal(true);
   readonly formError = signal<string | null>(null);
 
   readonly form = this.fb.nonNullable.group({
@@ -96,8 +121,9 @@ export class ForgotPasswordComponent {
 
     this.submitting.set(true);
     this.auth.forgotPassword(this.form.controls.email.value).subscribe({
-      next: () => {
+      next: (response) => {
         this.submitting.set(false);
+        this.delivered.set(response.data.delivered);
         this.sent.set(true);
       },
       error: (error: unknown) => {

@@ -37,8 +37,8 @@ import { passwordStrength, passwordsMatch } from '../auth/password.validators';
         height: 72px;
         border-radius: 50%;
         object-fit: cover;
-        background: var(--brand);
-        color: #fff;
+        background: var(--gradient-brand);
+        color: var(--brand-ink);
         display: grid;
         place-items: center;
         font-size: 1.5rem;
@@ -285,7 +285,18 @@ export class ProfileComponent {
     const email = this.auth.user()?.email;
     if (!email) return;
     this.auth.resendVerification(email).subscribe({
-      next: () => this.toast.success('Verification email sent.'),
+      next: (response) => {
+        if (response.data.delivered) {
+          this.toast.success('Verification email sent. Check your inbox.');
+        } else {
+          // Saying "sent" when nothing left the server is what made this
+          // look broken in the first place.
+          this.toast.error(
+            'Email delivery is not configured on the server, so nothing was sent. ' +
+              'The link is in the server log and in TOY-backend/mail-outbox/.',
+          );
+        }
+      },
     });
   }
 }

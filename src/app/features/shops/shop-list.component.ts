@@ -201,8 +201,8 @@ import { EmptyStateComponent, PaginationComponent } from '../../shared/ui.compon
       .logo.placeholder {
         display: grid;
         place-items: center;
-        background: linear-gradient(135deg, var(--brand-light) 0%, #dcd8fb 100%);
-        color: var(--brand);
+        background: linear-gradient(135deg, var(--brand-light) 0%, #fcd34d 100%);
+        color: var(--brand-strong);
         font-size: 1.35rem;
         font-weight: 800;
       }

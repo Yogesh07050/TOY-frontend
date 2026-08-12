@@ -10,6 +10,12 @@ import { PermissionName } from './permissions';
 const ACCESS_TOKEN_KEY = 'offers.accessToken';
 const REFRESH_TOKEN_KEY = 'offers.refreshToken';
 
+/** Whether the server actually managed to send the email it promised. */
+export interface MailResult {
+  message: string;
+  delivered: boolean;
+}
+
 export interface RegisterPayload {
   name: string;
   email: string;
@@ -90,7 +96,7 @@ export class AuthService {
   }
 
   forgotPassword(email: string) {
-    return this.http.post<ApiEnvelope<{ message: string }>>(`${this.base}/forgot-password`, { email });
+    return this.http.post<ApiEnvelope<MailResult>>(`${this.base}/forgot-password`, { email });
   }
 
   resetPassword(token: string, password: string, confirmPassword: string) {
@@ -106,7 +112,7 @@ export class AuthService {
   }
 
   resendVerification(email: string) {
-    return this.http.post<ApiEnvelope<{ message: string }>>(`${this.base}/resend-verification`, { email });
+    return this.http.post<ApiEnvelope<MailResult>>(`${this.base}/resend-verification`, { email });
   }
 
   changePassword(currentPassword: string, password: string, confirmPassword: string) {

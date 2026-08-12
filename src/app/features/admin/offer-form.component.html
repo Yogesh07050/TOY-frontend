@@ -30,17 +30,38 @@
             <div class="form-grid">
               <div class="field">
                 <label for="shopId">Shop *</label>
-                <select id="shopId" formControlName="shopId" (change)="onShopChange()" [class.invalid]="error('shopId', 'Shop')">
-                  <option [ngValue]="null">Choose a shop</option>
-                  @for (shop of shops(); track shop.id) {
-                    <option [ngValue]="shop.id">{{ shop.name }}</option>
-                  }
-                </select>
+
+                @if (!shopsLoaded()) {
+                  <div class="skeleton" style="height: 40px"></div>
+                } @else if (shops().length === 0) {
+                  <!-- A shop role with no shop behind it cannot post anything. -->
+                  <div class="no-shop">
+                    You are not assigned to a shop yet, so there is nothing to post an offer for.
+                    Ask a Super Admin to assign you to one from <em>Users → Shops</em>.
+                  </div>
+                } @else if (hasSingleShop || isEdit()) {
+                  <!-- Nothing to choose: the shop comes from the user's role. -->
+                  <div class="locked-shop">
+                    <span class="shop-mark" aria-hidden="true">{{ selectedShopName.charAt(0) }}</span>
+                    <span class="shop-text">
+                      <strong>{{ selectedShopName }}</strong>
+                      <span class="small muted">
+                        {{ isEdit() ? 'An offer cannot be moved to another shop.' : 'Taken from your role.' }}
+                      </span>
+                    </span>
+                  </div>
+                } @else {
+                  <select id="shopId" formControlName="shopId" (change)="onShopChange()" [class.invalid]="error('shopId', 'Shop')">
+                    <option [ngValue]="null">Choose a shop</option>
+                    @for (shop of shops(); track shop.id) {
+                      <option [ngValue]="shop.id">{{ shop.name }}</option>
+                    }
+                  </select>
+                  <span class="hint">You administer more than one shop — pick the right one.</span>
+                }
+
                 @if (error('shopId', 'Shop'); as message) {
                   <span class="error-text">{{ message }}</span>
-                }
-                @if (isEdit()) {
-                  <span class="hint">An offer cannot be moved to a different shop.</span>
                 }
               </div>
 

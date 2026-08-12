@@ -48,6 +48,7 @@ export class OfferFormComponent {
   readonly selectedBranchIds = signal<number[]>([]);
 
   readonly offerId = signal<number | null>(null);
+  readonly shopsLoaded = signal(false);
   readonly loading = signal(false);
   readonly saving = signal(false);
   readonly uploading = signal(false);
@@ -91,20 +92,32 @@ export class OfferFormComponent {
 
   constructor() {
     // Only shops the user may post for; the API enforces the same restriction.
-    this.api.listShops({ mine: !this.auth.isSuperAdmin, limit: 100, status: 'all' }).subscribe({
-      next: (page) => {
-        const allowed = page.items.filter((shop) =>
-          this.auth.hasForShop(shop.id, PERMISSIONS.CREATE_OFFER) ||
-          this.auth.hasForShop(shop.id, PERMISSIONS.EDIT_OFFER),
-        );
-        this.shops.set(allowed.length ? allowed : page.items);
-        if (!this.isEdit() && this.shops().length === 1) {
-          this.form.patchValue({ shopId: this.shops()[0].id });
-          this.onShopChange();
-        }
-      },
-      error: () => undefined,
-    });
+    // `mine` keeps an Admin scoped to their own shops without needing the
+    // wider EDIT_SHOP permission that listing every shop would require.
+    this.api
+      .listShops(
+        this.auth.isSuperAdmin
+          ? { limit: 100, status: 'all', sort: 'name' }
+          : { mine: true, limit: 100, status: 'all', sort: 'name' },
+      )
+      .subscribe({
+        next: (page) => {
+          const allowed = page.items.filter(
+            (shop) =>
+              this.auth.hasForShop(shop.id, PERMISSIONS.CREATE_OFFER) ||
+              this.auth.hasForShop(shop.id, PERMISSIONS.EDIT_OFFER),
+          );
+          this.shops.set(allowed.length ? allowed : page.items);
+          this.shopsLoaded.set(true);
+          // The shop comes from the user's role, so pick it for them rather
+          // than presenting a one-option dropdown.
+          if (!this.isEdit() && !this.form.controls.shopId.value && this.shops().length) {
+            this.form.patchValue({ shopId: this.shops()[0].id });
+            this.onShopChange();
+          }
+        },
+        error: () => this.shopsLoaded.set(true),
+      });
 
     this.api.listCategories().subscribe((categories) => this.categories.set(categories));
 
@@ -366,6 +379,16 @@ export class OfferFormComponent {
   shopName(): string {
     const id = this.form.controls.shopId.value;
     return this.shops().find((shop) => shop.id === id)?.name ?? 'YOUR SHOP';
+  }
+
+  /** With a single shop there is nothing to choose - show it as a fact. */
+  get hasSingleShop(): boolean {
+    return this.shops().length === 1;
+  }
+
+  get selectedShopName(): string {
+    const id = this.form.controls.shopId.value;
+    return this.shops().find((shop) => shop.id === id)?.name ?? '';
   }
 
   /** Live preview of what the card will say. */

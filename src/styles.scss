@@ -5,36 +5,49 @@
    ========================================================================== */
 
 :root {
-  /* ---- Brand ------------------------------------------------------------ */
-  --brand: #5b4bdb;
-  --brand-strong: #4436c4;
-  --brand-dark: #372aa3;
-  --brand-light: #eeecfe;
-  --brand-tint: #f6f5ff;
-  --accent: #f97316;
-  --accent-soft: #fff1e6;
+  /* ---- Brand ------------------------------------------------------------
+     Amber/gold. Yellow is bright, so the roles are split deliberately:
+       --brand*      dark ambers, used wherever text sits on a light surface
+       --gradient-*  bright golds, used as *backgrounds* only
+       --brand-ink   near-black brown, the only text colour placed on gold
+     Contrast on white: --brand 5.0:1, --brand-strong 7.4:1.
+     --brand-ink on the gold gradient stays above 7:1 at both ends, which a
+     white-on-yellow button could not manage (2.1:1). */
+  --brand: #b45309;
+  --brand-strong: #92400e;
+  --brand-dark: #78350f;
+  --brand-light: #fef3c7;
+  --brand-tint: #fffbeb;
+  --brand-ink: #3b2600;
 
-  --gradient-brand: linear-gradient(135deg, #6d5cf5 0%, #4436c4 100%);
-  --gradient-accent: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
-  --gradient-sheen: linear-gradient(115deg, transparent 20%, rgba(255, 255, 255, 0.45) 50%, transparent 80%);
+  /* Discounts stay a distinct warm red so they still read as urgent next to
+     all the gold, rather than blending into it. */
+  --accent: #c2410c;
+  --accent-soft: #ffedd5;
 
-  /* ---- Text & surfaces -------------------------------------------------- */
-  --text: #14161f;
-  --text-muted: #61667a;
-  --text-subtle: #9aa0b4;
+  --gradient-brand: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  --gradient-brand-deep: linear-gradient(135deg, #b45309 0%, #78350f 100%);
+  --gradient-accent: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
+  --gradient-sheen: linear-gradient(115deg, transparent 20%, rgba(255, 255, 255, 0.5) 50%, transparent 80%);
+
+  /* ---- Text & surfaces --------------------------------------------------
+     Warmed slightly so the neutrals sit with the gold instead of against it. */
+  --text: #1a1611;
+  --text-muted: #6b6355;
+  --text-subtle: #a19684;
 
   --surface: #ffffff;
-  --surface-alt: #f7f8fb;
-  --page: #f2f3f8;
-  --border: #e8e9f0;
-  --border-strong: #d5d7e3;
+  --surface-alt: #fbf9f4;
+  --page: #f6f3ec;
+  --border: #ece6d9;
+  --border-strong: #d9d1be;
 
-  --success: #059669;
-  --success-bg: #e9fbf3;
-  --warning: #c2710c;
-  --warning-bg: #fff6e8;
-  --danger: #dc2626;
-  --danger-bg: #fef1f1;
+  --success: #047857;
+  --success-bg: #e7f8f1;
+  --warning: #a16207;
+  --warning-bg: #fef8e7;
+  --danger: #c81e1e;
+  --danger-bg: #fdf0f0;
   --info: #0369a1;
   --info-bg: #eff8ff;
 
@@ -44,11 +57,11 @@
   --radius-lg: 22px;
 
   /* Layered shadows read as depth rather than a grey halo. */
-  --shadow-sm: 0 1px 2px rgba(20, 22, 31, 0.05), 0 1px 3px rgba(20, 22, 31, 0.04);
-  --shadow: 0 2px 6px rgba(20, 22, 31, 0.06), 0 8px 20px -6px rgba(20, 22, 31, 0.1);
-  --shadow-lg: 0 4px 12px rgba(20, 22, 31, 0.07), 0 24px 48px -12px rgba(20, 22, 31, 0.18);
-  --shadow-brand: 0 6px 20px -6px rgba(91, 75, 219, 0.5);
-  --ring: 0 0 0 3px rgba(91, 75, 219, 0.18);
+  --shadow-sm: 0 1px 2px rgba(60, 43, 12, 0.05), 0 1px 3px rgba(60, 43, 12, 0.04);
+  --shadow: 0 2px 6px rgba(60, 43, 12, 0.07), 0 8px 20px -6px rgba(60, 43, 12, 0.12);
+  --shadow-lg: 0 4px 12px rgba(60, 43, 12, 0.08), 0 24px 48px -12px rgba(60, 43, 12, 0.2);
+  --shadow-brand: 0 6px 18px -6px rgba(245, 158, 11, 0.65);
+  --ring: 0 0 0 3px rgba(245, 158, 11, 0.3);
 
   /* ---- Motion ------------------------------------------------------------
      One easing vocabulary, so unrelated components still feel related.
@@ -146,8 +159,8 @@ img {
 }
 
 ::selection {
-  background: var(--brand-light);
-  color: var(--brand-dark);
+  background: #fde68a;
+  color: var(--brand-ink);
 }
 
 /* Thin, unobtrusive scrollbars on the horizontal strips. */
@@ -348,9 +361,9 @@ img {
   border-radius: var(--radius-sm);
   border: 1px solid transparent;
   background: var(--gradient-brand);
-  color: #fff;
+  color: var(--brand-ink);
   font: inherit;
-  font-weight: 560;
+  font-weight: 620;
   cursor: pointer;
   white-space: nowrap;
   overflow: hidden;
@@ -377,9 +390,9 @@ img {
 
 .btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 10px 24px -8px rgba(91, 75, 219, 0.6);
+  box-shadow: 0 10px 24px -8px rgba(245, 158, 11, 0.75);
   text-decoration: none;
-  color: #fff;
+  color: var(--brand-ink);
 }
 
 .btn:hover:not(:disabled)::after {
@@ -430,8 +443,13 @@ img {
 }
 
 .btn-danger {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-  box-shadow: 0 6px 20px -6px rgba(220, 38, 38, 0.5);
+  background: linear-gradient(135deg, #ef4444 0%, #c81e1e 100%);
+  color: #fff;
+  box-shadow: 0 6px 20px -6px rgba(200, 30, 30, 0.5);
+}
+
+.btn-danger:hover:not(:disabled) {
+  color: #fff;
 }
 
 .btn-danger:hover:not(:disabled) {
@@ -686,7 +704,8 @@ legend {
 .chip.active {
   background: var(--gradient-brand);
   border-color: transparent;
-  color: #fff;
+  color: var(--brand-ink);
+  font-weight: 620;
   box-shadow: var(--shadow-brand);
 }
 
@@ -767,7 +786,7 @@ table.data tbody tr:last-child td {
 }
 
 .skeleton {
-  background: linear-gradient(90deg, #e9ebf1 25%, #f4f5f9 37%, #e9ebf1 63%);
+  background: linear-gradient(90deg, #eee8db 25%, #f8f5ee 37%, #eee8db 63%);
   background-size: 400% 100%;
   animation: shimmer 1.4s var(--ease) infinite;
   border-radius: var(--radius-sm);
@@ -776,8 +795,8 @@ table.data tbody tr:last-child td {
 .spinner {
   width: 16px;
   height: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.4);
-  border-top-color: #fff;
+  border: 2px solid rgba(59, 38, 0, 0.25);
+  border-top-color: var(--brand-ink);
   border-radius: 50%;
   animation: spin 0.65s linear infinite;
   display: inline-block;

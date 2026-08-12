@@ -38,7 +38,17 @@ import { AuthShellComponent } from './auth-shell';
           </button>
         }
         @case ('resent') {
-          <div class="notice">If that address still needs verifying, a new link is on its way.</div>
+          @if (delivered()) {
+            <div class="notice">If that address still needs verifying, a new link is on its way.</div>
+          } @else {
+            <div class="warn">
+              <strong>No email was sent.</strong>
+              This server has no SMTP configured, so verification emails cannot be delivered.
+              The link was written to the server log and to
+              <code>TOY-backend/mail-outbox/</code> instead — open the newest file there, or set
+              <code>SMTP_HOST</code> in <code>TOY-backend/.env</code> to send mail for real.
+            </div>
+          }
           <a routerLink="/offers" class="btn btn-block mt-2">Continue browsing</a>
         }
       }
@@ -62,6 +72,22 @@ import { AuthShellComponent } from './auth-shell';
         border-radius: var(--radius-sm);
         font-size: 0.9rem;
       }
+
+      .warn {
+        background: var(--warning-bg);
+        color: var(--warning);
+        padding: 0.85rem 1rem;
+        border-radius: var(--radius-sm);
+        font-size: 0.88rem;
+        line-height: 1.55;
+      }
+
+      .warn code {
+        background: rgba(0, 0, 0, 0.06);
+        padding: 0.05rem 0.3rem;
+        border-radius: 4px;
+        font-size: 0.85em;
+      }
     `,
   ],
 })
@@ -73,6 +99,8 @@ export class VerifyEmailComponent {
   readonly message = signal('This verification link is invalid or has expired.');
   readonly email = signal('');
   readonly resending = signal(false);
+  /** False when the server could not actually deliver the message. */
+  readonly delivered = signal(true);
 
   constructor() {
     const token = this.route.snapshot.queryParamMap.get('token');
@@ -101,8 +129,9 @@ export class VerifyEmailComponent {
     if (!this.email()) return;
     this.resending.set(true);
     this.auth.resendVerification(this.email()).subscribe({
-      next: () => {
+      next: (response) => {
         this.resending.set(false);
+        this.delivered.set(response.data.delivered);
         this.state.set('resent');
       },
       error: () => this.resending.set(false),

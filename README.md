@@ -86,6 +86,13 @@ instead of silently dropping them into the customer view.
 Assign shop access from **Users → the Shops column**, which expands into an
 editor for adding, viewing and removing a person's shops.
 
+### Email delivery
+
+The auth screens report what the server actually did. If SMTP is not configured
+the API answers `delivered: false`, and "Resend the link", "Forgot password" and
+the profile banner say plainly that no email was sent and where to find the link
+— instead of showing a success message for mail that never left the building.
+
 ### Location
 
 `LocationService` keeps the customer's current or selected location in local
@@ -115,6 +122,10 @@ Profile (details, preferred location, notification preferences, password).
 form (all offer types, validity, branch applicability, terms, images, live card
 preview), Branches, Members, Analytics with branch performance.
 
+On the offer form the shop is taken from the user's role: with a single shop it
+is filled in and shown as a fact rather than a one-option dropdown, several
+shops give a picker, and none explains that a shop assignment is missing.
+
 **Super Admin** — everything above across all shops, plus Shops CRUD,
 Categories, Users and role assignment, Roles & permissions matrix, Review
 moderation, Audit logs.
@@ -127,6 +138,11 @@ moderation, Audit logs.
   map API key is needed. URLs are built from numeric coordinates and marked
   trusted via `DomSanitizer`; they are cached per branch so the iframe does not
   reload on every change-detection pass.
+- The palette is amber/gold. Because yellow is bright, the roles are split: the
+  `--brand*` tokens are dark ambers for text on light surfaces, the gradients
+  are bright golds used only as backgrounds, and `--brand-ink` (a near-black
+  brown) is the only colour placed on gold. That keeps buttons at 6.7:1 where
+  white-on-yellow would have been 2.1:1. Every pairing meets WCAG AA.
 - Styling is hand-written SCSS with CSS custom properties in `src/styles.scss` —
   no UI framework dependency. Mobile-first, with loading skeletons, empty states
   and error toasts throughout.

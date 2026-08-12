@@ -79,7 +79,7 @@ interface NavItem {
       }
 
       .sidebar-head strong {
-        background: var(--gradient-brand);
+        background: var(--gradient-brand-deep);
         -webkit-background-clip: text;
         background-clip: text;
         color: transparent;

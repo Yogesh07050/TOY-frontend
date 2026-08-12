@@ -107,7 +107,7 @@
 }
 
 .bar.views {
-  background: var(--gradient-brand);
+  background: var(--gradient-brand-deep);
 }
 
 .bar.created {
@@ -155,6 +155,10 @@
 
 .legend .swatch.created {
   background: var(--accent);
+}
+
+.stat::before {
+  background: var(--gradient-brand-deep);
 }
 
 /* ---- Lists --------------------------------------------------------------- */
