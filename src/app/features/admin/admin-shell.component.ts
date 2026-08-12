@@ -78,6 +78,14 @@ interface NavItem {
         overflow-y: auto;
       }
 
+      .sidebar-head strong {
+        background: var(--gradient-brand);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        font-size: 1.05rem;
+      }
+
       .sidebar-head {
         padding: 1rem 1rem 0.75rem;
         border-bottom: 1px solid var(--border);
@@ -94,25 +102,66 @@ interface NavItem {
       }
 
       .sidebar nav a {
+        position: relative;
         display: flex;
         align-items: center;
         gap: 0.6rem;
-        padding: 0.55rem 0.7rem;
+        padding: 0.58rem 0.7rem;
         border-radius: var(--radius-sm);
         color: var(--text-muted);
         font-size: 0.9rem;
-        font-weight: 550;
+        font-weight: 560;
+        overflow: hidden;
+        transition:
+          background var(--fast) var(--ease),
+          color var(--fast) var(--ease),
+          padding-left var(--normal) var(--ease-out);
+      }
+
+      /* Accent bar slides in from the left on hover and locks for the active route. */
+      .sidebar nav a::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 20%;
+        bottom: 20%;
+        width: 3px;
+        border-radius: 0 3px 3px 0;
+        background: var(--gradient-brand);
+        transform: translateX(-4px);
+        opacity: 0;
+        transition: transform var(--normal) var(--ease-out), opacity var(--fast) var(--ease);
       }
 
       .sidebar nav a:hover {
         background: var(--surface-alt);
         color: var(--text);
         text-decoration: none;
+        padding-left: 0.9rem;
+      }
+
+      .sidebar nav a:hover::before {
+        transform: translateX(0);
+        opacity: 0.5;
       }
 
       .sidebar nav a.active {
         background: var(--brand-light);
-        color: var(--brand);
+        color: var(--brand-strong);
+        padding-left: 0.9rem;
+      }
+
+      .sidebar nav a.active::before {
+        transform: translateX(0);
+        opacity: 1;
+      }
+
+      .sidebar nav a .icon {
+        transition: transform var(--normal) var(--ease-spring);
+      }
+
+      .sidebar nav a:hover .icon {
+        transform: scale(1.15);
       }
 
       .icon {
@@ -150,6 +199,7 @@ interface NavItem {
 
         .sidebar.open {
           display: flex;
+          animation: slide-down var(--normal) var(--ease-out);
         }
 
         .sidebar-toggle {
@@ -167,7 +217,12 @@ export class AdminShellComponent {
     { label: 'Dashboard', route: '/admin/dashboard', icon: '📊' },
     { label: 'Offers', route: '/admin/offers', icon: '🏷️', permissions: [PERMISSIONS.VIEW_OFFERS] },
     { label: 'Post an offer', route: '/admin/offers/new', icon: '➕', permissions: [PERMISSIONS.CREATE_OFFER] },
-    { label: 'Shops', route: '/admin/shops', icon: '🏬' },
+    {
+      label: 'Shops',
+      route: '/admin/shops',
+      icon: '🏬',
+      permissions: [PERMISSIONS.VIEW_SHOP_MEMBERS, PERMISSIONS.EDIT_SHOP, PERMISSIONS.MANAGE_LOCATIONS],
+    },
     { label: 'Analytics', route: '/admin/analytics', icon: '📈', permissions: [PERMISSIONS.VIEW_ANALYTICS] },
     { label: 'Categories', route: '/admin/categories', icon: '📚', permissions: [PERMISSIONS.MANAGE_CATEGORIES] },
     { label: 'Reviews', route: '/admin/reviews', icon: '⭐', permissions: [PERMISSIONS.MODERATE_REVIEWS] },

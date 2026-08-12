@@ -316,6 +316,30 @@ export class ApiService {
     );
   }
 
+  /** Shop access managed from the user's side (assigning an Admin to a shop). */
+  addUserMembership(userId: number, payload: Record<string, unknown>): Observable<ShopMember> {
+    return this.data(
+      this.http.post<ApiEnvelope<ShopMember>>(`${this.base}/users/${userId}/memberships`, payload),
+    );
+  }
+
+  updateUserMembership(
+    userId: number,
+    membershipId: number,
+    payload: Record<string, unknown>,
+  ): Observable<ShopMember> {
+    return this.data(
+      this.http.put<ApiEnvelope<ShopMember>>(
+        `${this.base}/users/${userId}/memberships/${membershipId}`,
+        payload,
+      ),
+    );
+  }
+
+  removeUserMembership(userId: number, membershipId: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/users/${userId}/memberships/${membershipId}`);
+  }
+
   updateProfile(payload: Record<string, unknown>): Observable<ManagedUser> {
     return this.data(this.http.put<ApiEnvelope<ManagedUser>>(`${this.base}/users/me`, payload));
   }

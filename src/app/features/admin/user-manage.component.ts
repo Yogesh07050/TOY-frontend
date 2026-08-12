@@ -6,15 +6,23 @@ import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { ToastService } from '../../core/toast.service';
-import { ManagedUser, PageMeta, Role } from '../../core/models';
+import { ManagedUser, PageMeta, Role, Shop } from '../../core/models';
 import { PERMISSIONS } from '../../core/permissions';
 import { ConfirmComponent, EmptyStateComponent, PaginationComponent } from '../../shared/ui.components';
+import { ShopAccessComponent } from './shop-access.component';
 
 /** User administration and role assignment (§3.1, §4). */
 @Component({
   selector: 'app-user-manage',
   standalone: true,
-  imports: [CommonModule, FormsModule, PaginationComponent, EmptyStateComponent, ConfirmComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    PaginationComponent,
+    EmptyStateComponent,
+    ConfirmComponent,
+    ShopAccessComponent,
+  ],
   template: `
     <div class="container page">
       <div class="page-header">
@@ -114,12 +122,16 @@ import { ConfirmComponent, EmptyStateComponent, PaginationComponent } from '../.
                         }
                       }
                     </td>
-                    <td class="small muted">
-                      @if (user.shops.length) {
-                        {{ shopNames(user) }}
-                      } @else {
-                        —
-                      }
+                    <td class="small">
+                      <button type="button" class="link-btn" (click)="toggleAccess(user)">
+                        @if (user.shops.length) {
+                          <span class="truncate">{{ shopNames(user) }}</span>
+                        } @else if (needsShopAssignment(user)) {
+                          <span class="badge badge-warning">Needs a shop</span>
+                        } @else {
+                          <span class="muted">—</span>
+                        }
+                      </button>
                     </td>
                     <td>
                       @if (user.emailVerified) {
@@ -159,6 +171,23 @@ import { ConfirmComponent, EmptyStateComponent, PaginationComponent } from '../.
                       </td>
                     }
                   </tr>
+
+                  @if (accessFor() === user.id) {
+                    <tr class="access-row">
+                      <td [attr.colspan]="canManage ? 7 : 6">
+                        @if (accessUser(); as detailed) {
+                          <app-shop-access
+                            [user]="detailed"
+                            [shops]="shops()"
+                            [roles]="roles()"
+                            (changed)="onAccessChanged()"
+                          />
+                        } @else {
+                          <div class="skeleton" style="height: 90px"></div>
+                        }
+                      </td>
+                    </tr>
+                  }
                 }
               </tbody>
             </table>
@@ -207,6 +236,25 @@ import { ConfirmComponent, EmptyStateComponent, PaginationComponent } from '../.
         gap: 0.25rem;
         white-space: nowrap;
       }
+
+      .link-btn {
+        background: none;
+        border: none;
+        padding: 0;
+        font: inherit;
+        color: var(--brand);
+        cursor: pointer;
+        text-align: left;
+        max-width: 200px;
+      }
+
+      .link-btn:hover {
+        text-decoration: underline;
+      }
+
+      .access-row > td {
+        background: var(--surface-alt);
+      }
     `,
   ],
 })
@@ -222,6 +270,10 @@ export class UserManageComponent {
   readonly editingRolesFor = signal<number | null>(null);
   readonly draftRoles = signal<number[]>([]);
   readonly pendingToggle = signal<ManagedUser | null>(null);
+  readonly shops = signal<Shop[]>([]);
+  /** Id of the user whose shop-access panel is expanded. */
+  readonly accessFor = signal<number | null>(null);
+  readonly accessUser = signal<ManagedUser | null>(null);
 
   readonly canManage = this.auth.has(PERMISSIONS.MANAGE_USERS);
 
@@ -245,6 +297,12 @@ export class UserManageComponent {
         error: () => undefined,
       });
     }
+
+    // Needed to offer shops when assigning access.
+    this.api.listShops({ limit: 100, status: 'all', sort: 'name' }).subscribe({
+      next: (page) => this.shops.set(page.items),
+      error: () => undefined,
+    });
 
     this.load();
   }
@@ -286,6 +344,34 @@ export class UserManageComponent {
     return user.shops.map((shop) => shop.name).join(', ');
   }
 
+  /** A shop-scoped role with no shop behind it is a half-finished assignment. */
+  needsShopAssignment(user: ManagedUser): boolean {
+    if (user.shops.length > 0) return false;
+    const scoped = new Set(
+      this.roles().filter((role) => role.scope === 'shop').map((role) => role.name),
+    );
+    return user.roles.some((role) => scoped.has(role.name));
+  }
+
+  toggleAccess(user: ManagedUser): void {
+    if (this.accessFor() === user.id) {
+      this.accessFor.set(null);
+      return;
+    }
+    this.accessFor.set(user.id);
+    this.accessUser.set(null);
+    // The list response omits memberships, so fetch the detailed record.
+    this.api.getUser(user.id).subscribe({
+      next: (detailed) => this.accessUser.set(detailed),
+      error: () => this.accessFor.set(null),
+    });
+  }
+
+  onAccessChanged(): void {
+    this.load();
+    if (this.accessFor() === this.auth.user()?.id) this.auth.reload().subscribe();
+  }
+
   startEditRoles(user: ManagedUser): void {
     this.editingRolesFor.set(user.id);
     this.draftRoles.set(user.roles.map((role) => role.id));
@@ -305,6 +391,11 @@ export class UserManageComponent {
         );
         this.editingRolesFor.set(null);
         this.toast.success(`Roles updated for ${user.name}.`);
+        // A shop role is inert without a shop, so open the assignment panel.
+        if (this.needsShopAssignment({ ...user, roles: updated.roles })) {
+          this.toast.info(`${user.name} still needs a shop for that role to take effect.`);
+          this.toggleAccess(user);
+        }
         // If the admin changed their own roles, refresh the cached permissions.
         if (user.id === this.auth.user()?.id) this.auth.reload().subscribe();
       },

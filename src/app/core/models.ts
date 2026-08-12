@@ -56,6 +56,13 @@ export interface CurrentUser {
   roles: string[];
   permissions: string[];
   isSuperAdmin: boolean;
+  /** True when the user administers anything at all (any shop, or globally). */
+  canAccessAdmin: boolean;
+  /**
+   * Shop-scoped roles the user holds that are inert because they have not been
+   * assigned to a shop yet - surfaced so the situation is explained, not silent.
+   */
+  unassignedShopRoles: string[];
   shops: ShopMembership[];
   unreadNotifications?: number;
 }
@@ -104,6 +111,8 @@ export interface Role {
   id: number;
   name: string;
   description: string | null;
+  /** 'shop' roles only take effect for shops the holder is a member of. */
+  scope: 'global' | 'shop';
   status: 'active' | 'inactive';
   isSystem: boolean;
   userCount?: number;

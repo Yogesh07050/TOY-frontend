@@ -61,7 +61,7 @@ import { EmptyStateComponent, PaginationComponent } from '../../shared/ui.compon
       </div>
 
       @if (loading()) {
-        <div class="grid grid-cards">
+        <div class="grid grid-cards stagger">
           @for (item of [1, 2, 3, 4, 5, 6]; track item) {
             <div class="skeleton" style="height: 160px"></div>
           }
@@ -69,7 +69,7 @@ import { EmptyStateComponent, PaginationComponent } from '../../shared/ui.compon
       } @else if (shops().length === 0) {
         <app-empty-state emoji="🏬" title="No shops found" message="Try a different search or category." />
       } @else {
-        <div class="grid grid-cards">
+        <div class="grid grid-cards stagger">
           @for (shop of shops(); track shop.id) {
             <article class="shop-card card">
               <a class="shop-main" [routerLink]="['/shops', shop.slug]">
@@ -147,11 +147,20 @@ import { EmptyStateComponent, PaginationComponent } from '../../shared/ui.compon
         display: flex;
         flex-direction: column;
         overflow: hidden;
-        transition: box-shadow 0.15s ease;
+        transition:
+          transform var(--normal) var(--ease-out),
+          box-shadow var(--normal) var(--ease-out),
+          border-color var(--normal) var(--ease);
       }
 
       .shop-card:hover {
-        box-shadow: var(--shadow);
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-lg);
+        border-color: transparent;
+      }
+
+      .shop-card:hover .logo {
+        transform: scale(1.06) rotate(-2deg);
       }
 
       .shop-main {
@@ -181,20 +190,21 @@ import { EmptyStateComponent, PaginationComponent } from '../../shared/ui.compon
       }
 
       .logo {
-        width: 46px;
-        height: 46px;
-        border-radius: 10px;
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
         object-fit: cover;
         flex-shrink: 0;
+        transition: transform var(--normal) var(--ease-spring);
       }
 
       .logo.placeholder {
         display: grid;
         place-items: center;
-        background: var(--brand-light);
+        background: linear-gradient(135deg, var(--brand-light) 0%, #dcd8fb 100%);
         color: var(--brand);
-        font-size: 1.3rem;
-        font-weight: 700;
+        font-size: 1.35rem;
+        font-weight: 800;
       }
 
       h2 {

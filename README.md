@@ -76,6 +76,16 @@ Reviews and Audit logs.
 **This is presentation only.** The API re-checks every permission on every
 request, and a shop Admin who edits an offer id in the URL still gets a 403.
 
+Admin-area access is decided by `canAccessAdmin`, which the API computes from
+resolved permissions — not by shop membership. That matters because a Super
+Admin belongs to no shop, while an Admin's rights arrive through a shop-scoped
+role. If someone holds a shop role with no shop attached, `unassignedShopRoles`
+is non-empty and the app says so on the offers page and in the guard message
+instead of silently dropping them into the customer view.
+
+Assign shop access from **Users → the Shops column**, which expands into an
+editor for adding, viewing and removing a person's shops.
+
 ### Location
 
 `LocationService` keeps the customer's current or selected location in local
@@ -120,4 +130,10 @@ moderation, Audit logs.
 - Styling is hand-written SCSS with CSS custom properties in `src/styles.scss` —
   no UI framework dependency. Mobile-first, with loading skeletons, empty states
   and error toasts throughout.
-- `prefers-reduced-motion` is respected.
+- Motion uses one shared vocabulary (`--ease`, `--ease-out`, `--ease-spring` and
+  three durations) so unrelated components still feel related: page rise-in,
+  staggered card entrances, card hover lift with a slow image zoom, spring
+  dropdowns and dialogs, a sliding nav underline, and a sidebar accent rail.
+- The header is frosted glass via `backdrop-filter`, with a solid fallback.
+- Motion is always decoration, never the only signal, so `prefers-reduced-motion`
+  switches all of it off without losing meaning.

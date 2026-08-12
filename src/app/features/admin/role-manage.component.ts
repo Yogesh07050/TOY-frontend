@@ -141,6 +141,7 @@ export class RoleManageComponent {
   readonly form = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.minLength(2)]],
     description: [''],
+    scope: ['shop' as 'global' | 'shop'],
     status: ['active' as 'active' | 'inactive'],
   });
 
@@ -176,6 +177,7 @@ export class RoleManageComponent {
     this.form.patchValue({
       name: role.name,
       description: role.description ?? '',
+      scope: role.scope,
       status: role.status,
     });
     this.formError.set(null);
@@ -185,7 +187,7 @@ export class RoleManageComponent {
     this.creating.set(true);
     this.selectedRole.set(null);
     this.selectedPermissions.set([]);
-    this.form.reset({ status: 'active' });
+    this.form.reset({ scope: 'shop', status: 'active' });
     this.formError.set(null);
   }
 
@@ -224,6 +226,7 @@ export class RoleManageComponent {
     const payload = {
       name: value.name,
       description: value.description || null,
+      scope: value.scope,
       status: value.status,
       permissionIds: this.selectedPermissions(),
     };

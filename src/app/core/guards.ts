@@ -59,8 +59,12 @@ export const superAdminGuard: CanActivateFn = (_route, state) => {
   return router.parseUrl(auth.landingRoute());
 };
 
-/** Anyone who administers at least one shop, or a Super Admin. */
-export const shopStaffGuard: CanActivateFn = (_route, state) => {
+/**
+ * Guards the admin area. Gated on the permissions the API resolved rather than
+ * on shop membership - a Super Admin is a member of no shop, and an Admin's
+ * rights arrive through their shop-scoped role.
+ */
+export const adminAreaGuard: CanActivateFn = (_route, state) => {
   const auth = inject(AuthService);
   const router = inject(Router);
   const toast = inject(ToastService);
@@ -68,8 +72,15 @@ export const shopStaffGuard: CanActivateFn = (_route, state) => {
   if (!auth.isAuthenticated()) {
     return router.createUrlTree(['/auth/login'], { queryParams: { returnUrl: state.url } });
   }
-  if (auth.isSuperAdmin || auth.isShopStaff) return true;
+  if (auth.canAccessAdmin()) return true;
 
-  toast.error('That area is for shop administrators.');
+  // Holding a shop role with no shop attached is a setup gap, not a permission
+  // problem, so say which one it is.
+  const pending = auth.unassignedShopRoles();
+  toast.error(
+    pending.length
+      ? `Your ${pending.join(' and ')} role is not linked to a shop yet. Ask a Super Admin to assign you to one.`
+      : 'That area is for shop administrators.',
+  );
   return router.parseUrl('/offers');
 };

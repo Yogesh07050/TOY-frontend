@@ -164,7 +164,7 @@
     </div>
 
     @if (loadingOffers()) {
-      <div class="grid grid-cards">
+      <div class="grid grid-cards stagger">
         @for (item of [1, 2, 3, 4]; track item) {
           <div class="skeleton" style="height: 300px"></div>
         }
@@ -180,7 +180,7 @@
         "
       />
     } @else {
-      <div class="grid grid-cards">
+      <div class="grid grid-cards stagger">
         @for (offer of offers(); track offer.id) {
           <app-offer-card
             [offer]="offer"

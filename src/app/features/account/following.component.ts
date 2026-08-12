@@ -101,7 +101,7 @@ import { EmptyStateComponent } from '../../shared/ui.components';
 
       <h2 class="mt-3">Latest from your follows</h2>
       @if (loadingFeed()) {
-        <div class="grid grid-cards">
+        <div class="grid grid-cards stagger">
           @for (item of [1, 2, 3, 4]; track item) {
             <div class="skeleton" style="height: 300px"></div>
           }
@@ -113,7 +113,7 @@ import { EmptyStateComponent } from '../../shared/ui.components';
           message="Follow a shop or category and their new offers will appear here."
         />
       } @else {
-        <div class="grid grid-cards">
+        <div class="grid grid-cards stagger">
           @for (offer of feed(); track offer.id) {
             <app-offer-card [offer]="offer" (toggleFavorite)="toggleFavorite($event)" />
           }

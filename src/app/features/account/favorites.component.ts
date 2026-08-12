@@ -49,7 +49,7 @@ import { CardSkeletonsComponent, EmptyStateComponent, PaginationComponent } from
           <a routerLink="/offers" class="btn mt-2">Browse offers</a>
         </app-empty-state>
       } @else {
-        <div class="grid grid-cards">
+        <div class="grid grid-cards stagger">
           @for (offer of offers(); track offer.id) {
             <app-offer-card [offer]="offer" (toggleFavorite)="remove($event)" />
           }

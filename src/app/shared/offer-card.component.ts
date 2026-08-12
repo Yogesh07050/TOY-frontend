@@ -101,7 +101,7 @@ import {
             [attr.aria-pressed]="offer.isFavorite"
             [attr.aria-label]="offer.isFavorite ? 'Remove from favourites' : 'Save offer'"
           >
-            {{ offer.isFavorite ? '♥' : '♡' }}
+            <span class="heart" aria-hidden="true">{{ offer.isFavorite ? '♥' : '♡' }}</span>
             <span class="save-label">{{ offer.isFavorite ? 'Saved' : 'Save' }}</span>
           </button>
         </div>
@@ -118,19 +118,22 @@ import {
         border-radius: var(--radius);
         overflow: hidden;
         box-shadow: var(--shadow-sm);
-        transition:
-          transform 0.15s ease,
-          box-shadow 0.15s ease;
         height: 100%;
+        transition:
+          transform var(--normal) var(--ease-out),
+          box-shadow var(--normal) var(--ease-out),
+          border-color var(--normal) var(--ease);
       }
 
       .offer-card:hover {
-        transform: translateY(-2px);
-        box-shadow: var(--shadow);
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-lg);
+        border-color: transparent;
       }
 
       .offer-card.dimmed .media {
         opacity: 0.72;
+        filter: grayscale(0.35);
       }
 
       .media {
@@ -138,12 +141,29 @@ import {
         display: block;
         aspect-ratio: 4 / 3;
         background: var(--surface-alt);
+        overflow: hidden;
       }
 
       .media img {
         width: 100%;
         height: 100%;
         object-fit: cover;
+        transition: transform var(--slow) var(--ease-out);
+      }
+
+      /* Slow zoom on hover; the card lift does the rest of the work. */
+      .offer-card:hover .media img {
+        transform: scale(1.06);
+      }
+
+      /* Gradient scrim keeps the flags legible over busy photography. */
+      .media::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(to bottom, rgba(20, 22, 31, 0.28) 0%, transparent 38%);
+        opacity: 0.9;
+        pointer-events: none;
       }
 
       .placeholder {
@@ -151,34 +171,47 @@ import {
         height: 100%;
         display: grid;
         place-items: center;
-        background: linear-gradient(135deg, var(--brand-light), #e0e7ff);
+        background: linear-gradient(135deg, var(--brand-light) 0%, #dcd8fb 100%);
         color: var(--brand);
-        font-size: 2.5rem;
-        font-weight: 700;
+        font-size: 2.6rem;
+        font-weight: 800;
+        transition: transform var(--slow) var(--ease-out);
+      }
+
+      .offer-card:hover .placeholder {
+        transform: scale(1.05);
       }
 
       .discount-flag {
         position: absolute;
-        top: 0.6rem;
-        left: 0.6rem;
-        background: var(--accent);
+        top: 0.65rem;
+        left: 0.65rem;
+        z-index: 1;
+        background: var(--gradient-accent);
         color: #fff;
-        padding: 0.2rem 0.6rem;
+        padding: 0.22rem 0.65rem;
         border-radius: 999px;
         font-size: 0.78rem;
         font-weight: 700;
-        box-shadow: var(--shadow-sm);
+        box-shadow: 0 4px 12px -2px rgba(249, 115, 22, 0.55);
+        transition: transform var(--normal) var(--ease-spring);
+      }
+
+      .offer-card:hover .discount-flag {
+        transform: scale(1.06);
       }
 
       .status-flag {
         position: absolute;
-        top: 0.6rem;
-        right: 0.6rem;
+        top: 0.65rem;
+        right: 0.65rem;
+        z-index: 1;
         text-transform: capitalize;
+        backdrop-filter: blur(4px);
       }
 
       .body {
-        padding: 0.8rem 0.9rem 0.9rem;
+        padding: 0.85rem 0.95rem 0.95rem;
         display: flex;
         flex-direction: column;
         gap: 0.35rem;
@@ -201,22 +234,29 @@ import {
       }
 
       .shop-name {
-        font-size: 0.78rem;
+        font-size: 0.76rem;
         font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: 0.04em;
+        letter-spacing: 0.055em;
         color: var(--text-muted);
       }
 
+      .shop-name:hover {
+        color: var(--brand);
+        text-decoration: none;
+      }
+
       .title {
-        font-size: 1rem;
-        font-weight: 650;
+        font-size: 1.02rem;
+        font-weight: 660;
         color: var(--text);
         line-height: 1.3;
+        letter-spacing: -0.01em;
+        transition: color var(--fast) var(--ease);
       }
 
       .title:hover {
-        color: var(--brand);
+        color: var(--brand-strong);
         text-decoration: none;
       }
 
@@ -239,7 +279,7 @@ import {
         font-size: 0.8rem;
         color: var(--text-muted);
         margin-top: auto;
-        padding-top: 0.4rem;
+        padding-top: 0.45rem;
       }
 
       .meta-item {
@@ -251,42 +291,73 @@ import {
 
       .meta-item.urgent {
         color: var(--warning);
-        font-weight: 600;
+        font-weight: 620;
       }
 
       .actions {
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        padding-top: 0.6rem;
-        margin-top: 0.4rem;
+        padding-top: 0.65rem;
+        margin-top: 0.45rem;
         border-top: 1px solid var(--border);
       }
 
       .save-btn {
         display: inline-flex;
         align-items: center;
-        gap: 0.3rem;
+        gap: 0.32rem;
         border: 1px solid var(--border-strong);
         background: var(--surface);
         border-radius: 999px;
-        padding: 0.25rem 0.7rem;
+        padding: 0.26rem 0.72rem;
         font: inherit;
         font-size: 0.82rem;
         cursor: pointer;
         color: var(--text-muted);
+        transition:
+          border-color var(--fast) var(--ease),
+          color var(--fast) var(--ease),
+          background var(--fast) var(--ease),
+          transform var(--fast) var(--ease-spring);
       }
 
       .save-btn:hover {
         border-color: var(--danger);
         color: var(--danger);
+        background: var(--danger-bg);
+        transform: translateY(-1px);
+      }
+
+      .save-btn:active {
+        transform: scale(0.94);
       }
 
       .save-btn.saved {
         background: var(--danger-bg);
         border-color: transparent;
         color: var(--danger);
-        font-weight: 600;
+        font-weight: 620;
+      }
+
+      /* The heart gives one small beat when it becomes saved. */
+      .save-btn.saved .heart {
+        animation: heart-beat 420ms var(--ease-spring);
+      }
+
+      @keyframes heart-beat {
+        0% {
+          transform: scale(1);
+        }
+        35% {
+          transform: scale(1.45);
+        }
+        70% {
+          transform: scale(0.92);
+        }
+        100% {
+          transform: scale(1);
+        }
       }
 
       @media (max-width: 420px) {

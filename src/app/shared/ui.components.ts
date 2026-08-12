@@ -13,7 +13,8 @@ import { PageMeta } from '../core/models';
     <div class="toast-stack" role="status" aria-live="polite">
       @for (toast of toasts.toasts(); track toast.id) {
         <div class="toast" [class]="'toast-' + toast.kind">
-          <span>{{ toast.message }}</span>
+          <span class="glyph" aria-hidden="true">{{ glyphFor(toast.kind) }}</span>
+          <span class="message">{{ toast.message }}</span>
           <button type="button" (click)="toasts.dismiss(toast.id)" aria-label="Dismiss">×</button>
         </div>
       }
@@ -28,21 +29,24 @@ import { PageMeta } from '../core/models';
         z-index: 1000;
         display: flex;
         flex-direction: column;
-        gap: 0.5rem;
-        max-width: min(380px, calc(100vw - 2rem));
+        gap: 0.55rem;
+        max-width: min(390px, calc(100vw - 2rem));
+        pointer-events: none;
       }
 
       .toast {
         display: flex;
         align-items: flex-start;
-        gap: 0.75rem;
-        padding: 0.7rem 0.9rem;
-        border-radius: var(--radius-sm);
+        gap: 0.7rem;
+        padding: 0.75rem 0.9rem;
+        border-radius: var(--radius);
         box-shadow: var(--shadow-lg);
         background: var(--surface);
+        border: 1px solid var(--border);
         border-left: 4px solid var(--info);
         font-size: 0.9rem;
-        animation: slide-in 0.2s ease;
+        pointer-events: auto;
+        animation: toast-in 340ms var(--ease-spring);
       }
 
       .toast-success {
@@ -52,20 +56,38 @@ import { PageMeta } from '../core/models';
         border-left-color: var(--danger);
       }
 
+      .toast .glyph {
+        font-size: 1rem;
+        line-height: 1.35;
+        flex-shrink: 0;
+      }
+
+      .toast .message {
+        flex: 1;
+        min-width: 0;
+      }
+
       .toast button {
         background: none;
         border: none;
         font-size: 1.15rem;
         line-height: 1;
         cursor: pointer;
-        color: var(--text-muted);
+        color: var(--text-subtle);
         padding: 0;
+        border-radius: 4px;
+        transition: color var(--fast) var(--ease), transform var(--fast) var(--ease);
       }
 
-      @keyframes slide-in {
+      .toast button:hover {
+        color: var(--text);
+        transform: scale(1.15);
+      }
+
+      @keyframes toast-in {
         from {
           opacity: 0;
-          transform: translateY(8px);
+          transform: translateX(28px) scale(0.94);
         }
       }
     `,
@@ -73,6 +95,10 @@ import { PageMeta } from '../core/models';
 })
 export class ToastsComponent {
   readonly toasts = inject(ToastService);
+
+  glyphFor(kind: 'success' | 'error' | 'info'): string {
+    return { success: '✓', error: '⚠', info: 'ℹ' }[kind];
+  }
 }
 
 /** Empty state with an optional call to action. */
@@ -103,7 +129,7 @@ export class EmptyStateComponent {
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="grid grid-cards" aria-hidden="true">
+    <div class="grid grid-cards stagger" aria-hidden="true">
       @for (item of placeholders; track item) {
         <div class="card">
           <div class="skeleton" style="aspect-ratio: 4/3; border-radius: 0"></div>
@@ -193,8 +219,8 @@ export class CardSkeletonsComponent {
       }
 
       .page {
-        min-width: 34px;
-        height: 34px;
+        min-width: 36px;
+        height: 36px;
         border-radius: var(--radius-sm);
         border: 1px solid var(--border);
         background: var(--surface);
@@ -202,17 +228,29 @@ export class CardSkeletonsComponent {
         font: inherit;
         font-size: 0.85rem;
         color: var(--text);
+        transition:
+          border-color var(--fast) var(--ease),
+          background var(--fast) var(--ease),
+          color var(--fast) var(--ease),
+          transform var(--fast) var(--ease-spring);
       }
 
       .page:hover {
         border-color: var(--brand);
+        color: var(--brand-strong);
+        transform: translateY(-1px);
+      }
+
+      .page:active {
+        transform: scale(0.94);
       }
 
       .page.current {
-        background: var(--brand);
-        border-color: var(--brand);
+        background: var(--gradient-brand);
+        border-color: transparent;
         color: #fff;
-        font-weight: 650;
+        font-weight: 660;
+        box-shadow: var(--shadow-brand);
       }
 
       .ellipsis {
@@ -300,11 +338,20 @@ export class PaginationComponent {
         color: var(--border-strong);
         cursor: default;
         line-height: 1;
+        transition: color var(--fast) var(--ease), transform var(--fast) var(--ease-spring);
       }
 
       .interactive button {
         cursor: pointer;
-        font-size: 1.5rem;
+        font-size: 1.55rem;
+      }
+
+      .interactive button:hover {
+        transform: scale(1.2);
+      }
+
+      .interactive button:active {
+        transform: scale(0.9);
       }
 
       button.filled {
@@ -360,17 +407,33 @@ export class StarsComponent {
       .backdrop {
         position: fixed;
         inset: 0;
-        background: rgba(17, 24, 39, 0.45);
+        background: rgba(20, 22, 31, 0.5);
         display: grid;
         place-items: center;
         z-index: 900;
         padding: 1rem;
+        animation: fade-in var(--fast) var(--ease);
+      }
+
+      @supports (backdrop-filter: blur(4px)) {
+        .backdrop {
+          backdrop-filter: blur(5px);
+          -webkit-backdrop-filter: blur(5px);
+        }
       }
 
       .dialog {
         max-width: 420px;
         width: 100%;
         box-shadow: var(--shadow-lg);
+        animation: dialog-in 300ms var(--ease-spring);
+      }
+
+      @keyframes dialog-in {
+        from {
+          opacity: 0;
+          transform: scale(0.92) translateY(16px);
+        }
       }
     `,
   ],

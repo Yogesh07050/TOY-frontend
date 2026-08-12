@@ -52,7 +52,7 @@
         <a routerLink="/favorites" routerLinkActive="active">Favourites</a>
         <a routerLink="/following" routerLinkActive="active">Following</a>
       }
-      @if (auth.isSuperAdmin || auth.isShopStaff) {
+      @if (auth.canAccessAdmin()) {
         <a routerLink="/admin/dashboard" routerLinkActive="active" class="admin-link">Dashboard</a>
       }
     </nav>
@@ -90,7 +90,7 @@
               <a class="dropdown-item" routerLink="/profile">My profile</a>
               <a class="dropdown-item" routerLink="/favorites">Saved offers</a>
               <a class="dropdown-item" routerLink="/following">Following</a>
-              @if (auth.isSuperAdmin || auth.isShopStaff) {
+              @if (auth.canAccessAdmin()) {
                 <a class="dropdown-item" routerLink="/admin/dashboard">Admin dashboard</a>
               }
               <div class="dropdown-divider"></div>

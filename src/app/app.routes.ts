@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 
-import { authGuard, guestGuard, permissionGuard, shopStaffGuard, superAdminGuard } from './core/guards';
+import { adminAreaGuard, authGuard, guestGuard, permissionGuard, superAdminGuard } from './core/guards';
 import { PERMISSIONS } from './core/permissions';
 
 /**
@@ -114,7 +114,7 @@ export const routes: Routes = [
   // ---- Administration ------------------------------------------------------
   {
     path: 'admin',
-    canActivate: [shopStaffGuard],
+    canActivate: [adminAreaGuard],
     loadComponent: () => import('./features/admin/admin-shell.component').then((m) => m.AdminShellComponent),
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },

@@ -175,13 +175,24 @@ export class AuthService {
     return this.currentUser()?.isSuperAdmin ?? false;
   }
 
+  /**
+   * Whether the admin area is reachable. Decided by the permissions the API
+   * resolved, not by shop membership: a Super Admin belongs to no shop, and an
+   * Admin's rights come from their shop-scoped role.
+   */
+  readonly canAccessAdmin = computed(() => this.currentUser()?.canAccessAdmin ?? false);
+
+  /**
+   * Shop-scoped roles that cannot take effect because the user is not assigned
+   * to a shop yet. Non-empty means "someone gave you Admin but forgot the shop".
+   */
+  readonly unassignedShopRoles = computed(() => this.currentUser()?.unassignedShopRoles ?? []);
+
   /** Where to send a user after signing in (§20 - permission based, not role name). */
   landingRoute(): string {
     const user = this.currentUser();
     if (!user) return '/offers';
-    if (user.isSuperAdmin) return '/admin/dashboard';
-    if (user.shops.length > 0) return '/admin/dashboard';
-    return '/offers';
+    return user.canAccessAdmin ? '/admin/dashboard' : '/offers';
   }
 
   private acceptSession(session: AuthSession): CurrentUser {

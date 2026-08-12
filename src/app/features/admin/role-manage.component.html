@@ -23,6 +23,9 @@
                 @if (role.isSystem) {
                   <span class="badge">built-in</span>
                 }
+                <span class="badge" [class.badge-info]="role.scope === 'shop'">
+                  {{ role.scope === 'shop' ? 'per shop' : 'platform' }}
+                </span>
                 @if (role.status !== 'active') {
                   <span class="badge badge-danger">inactive</span>
                 }
@@ -80,6 +83,22 @@
                   } @else {
                     <span class="hint">Saved in SCREAMING_SNAKE_CASE, e.g. BRANCH_MANAGER.</span>
                   }
+                </div>
+
+                <div class="field">
+                  <label for="scope">Applies</label>
+                  <select id="scope" formControlName="scope" [attr.disabled]="selectedRole()?.isSystem ? true : null">
+                    <option value="shop">Per shop — only where the user is a member</option>
+                    <option value="global">Platform-wide — everywhere</option>
+                  </select>
+                  <span class="hint">
+                    @if (form.controls.scope.value === 'shop') {
+                      Holders must also be assigned to a shop on the Users page before this role
+                      grants anything.
+                    } @else {
+                      Grants these permissions across every shop. Use sparingly.
+                    }
+                  </span>
                 </div>
 
                 <div class="field">

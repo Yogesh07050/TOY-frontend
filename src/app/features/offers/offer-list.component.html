@@ -17,6 +17,17 @@
     </div>
   </div>
 
+  @if (auth.unassignedShopRoles().length) {
+    <div class="pending-role" role="status">
+      <span aria-hidden="true">🔑</span>
+      <span>
+        You have been given the <strong>{{ auth.unassignedShopRoles().join(' and ') }}</strong> role,
+        but it is not linked to a shop yet — so you still see the customer view. A Super Admin needs
+        to assign you to a shop from <em>Users → Shops</em>.
+      </span>
+    </div>
+  }
+
   <!-- Global search bar (§7) -->
   <div class="search-bar card">
     <div class="search-field">
@@ -207,7 +218,7 @@
       <button type="button" class="btn mt-2" (click)="clearFilters()">Clear filters</button>
     </app-empty-state>
   } @else {
-    <div class="grid grid-cards">
+    <div class="grid grid-cards stagger">
       @for (offer of offers(); track offer.id) {
         <app-offer-card
           [offer]="offer"
