@@ -9,6 +9,7 @@ import {
   AnalyticsOverview,
   AuditLog,
   CategoryStat,
+  Funnel,
   LocationStat,
   ShopStat,
 } from '../../core/models';
@@ -32,6 +33,7 @@ export class DashboardComponent {
   readonly locations = signal<LocationStat[]>([]);
   readonly topShops = signal<ShopStat[]>([]);
   readonly recentActivity = signal<AuditLog[]>([]);
+  readonly funnel = signal<Funnel | null>(null);
   readonly loading = signal(true);
 
   readonly canSeeAnalytics = this.auth.has(PERMISSIONS.VIEW_ANALYTICS);
@@ -48,6 +50,12 @@ export class DashboardComponent {
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
+    });
+
+    // §24: the funnel is the headline number merchants care about.
+    this.api.analyticsFunnel({ days: 30 }).subscribe({
+      next: (funnel) => this.funnel.set(funnel),
+      error: () => this.funnel.set(null),
     });
 
     this.api.analyticsOffers({ days: 30, limit: 5 }).subscribe({
@@ -109,6 +117,13 @@ export class DashboardComponent {
     const hours = Math.floor(minutes / 60);
     if (hours < 24) return `${hours}h ago`;
     return `${Math.floor(hours / 24)}d ago`;
+  }
+
+  /** Funnel bar width, relative to the widest stage. */
+  funnelWidth(value: number): number {
+    const stages = this.funnel()?.stages ?? [];
+    const max = Math.max(1, ...stages.map((stage) => stage.value));
+    return value === 0 ? 0 : Math.max(2, Math.round((value / max) * 100));
   }
 
   /** Bar height as a percentage of the busiest day in the window. */

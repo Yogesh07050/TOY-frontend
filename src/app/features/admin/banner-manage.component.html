@@ -1,0 +1,155 @@
+<div class="container page">
+  <div class="page-header">
+    <div>
+      <h1>Featured banners</h1>
+      <p class="subtitle">
+        @if (meta()) {
+          {{ meta()!.total }} banner{{ meta()!.total === 1 ? '' : 's' }} · published banners appear on
+          the offers page immediately
+        } @else {
+          Large promotional banners that lead straight to a specific offer.
+        }
+      </p>
+    </div>
+    @if (canCreate) {
+      <a routerLink="/admin/banners/new" class="btn">➕ New banner</a>
+    }
+  </div>
+
+  @if (!canPublish && canCreate) {
+    <div class="permission-note">
+      You can create and edit banners, but publishing them needs the
+      <code>PUBLISH_BANNER</code> permission. Save your work as a draft and ask a Super Admin to
+      publish it.
+    </div>
+  }
+
+  <div class="tabs">
+    @for (tab of tabs; track tab.value) {
+      <button type="button" class="chip" [class.active]="status === tab.value" (click)="setStatus(tab.value)">
+        {{ tab.label }}
+      </button>
+    }
+  </div>
+
+  <div class="card mb-2">
+    <div class="card-body row">
+      <input
+        type="search"
+        class="grow"
+        placeholder="Search by banner or offer title"
+        [(ngModel)]="search"
+        (keyup.enter)="reload()"
+        aria-label="Search banners"
+      />
+      <button type="button" class="btn btn-secondary" (click)="reload()">Search</button>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="skeleton" style="height: 300px"></div>
+  } @else if (banners().length === 0) {
+    <app-empty-state
+      emoji="🖼️"
+      title="No banners here"
+      message="Featured banners are the large promotional slots at the top of the offers page."
+    >
+      @if (canCreate) {
+        <a routerLink="/admin/banners/new" class="btn mt-2">Create your first banner</a>
+      }
+    </app-empty-state>
+  } @else {
+    <div class="card">
+      <div class="table-wrap">
+        <table class="data">
+          <thead>
+            <tr>
+              <th>Banner</th>
+              <th>Promotes</th>
+              <th>Status</th>
+              <th>Window</th>
+              <th>Order</th>
+              <th>Impressions</th>
+              <th>Clicks</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (banner of banners(); track banner.id) {
+              <tr>
+                <td>
+                  <div class="banner-cell">
+                    @if (banner.imageUrl || banner.desktopImageUrl) {
+                      <img class="thumb" [src]="banner.desktopImageUrl || banner.imageUrl" [alt]="banner.title" />
+                    } @else {
+                      <span class="thumb placeholder">🖼️</span>
+                    }
+                    <span class="body">
+                      <strong class="truncate">{{ banner.title }}</strong>
+                      @if (banner.subtitle) {
+                        <span class="small muted truncate">{{ banner.subtitle }}</span>
+                      }
+                    </span>
+                  </div>
+                </td>
+                <td class="small">
+                  <a [routerLink]="['/offers', banner.offerId]">{{ banner.offerTitle }}</a>
+                  <br />
+                  <span class="muted">{{ banner.shop.name }}</span>
+                </td>
+                <td>
+                  <span [class]="statusClass(banner.status)">{{ banner.status }}</span>
+                  @if (banner.isLive) {
+                    <br /><span class="badge badge-success live-pill">● Live now</span>
+                  } @else if (notLiveReason(banner); as reason) {
+                    <br /><span class="small muted">{{ reason }}</span>
+                  }
+                </td>
+                <td class="small nowrap">
+                  {{ formatDate(banner.startDate) }} –<br />{{ formatDate(banner.endDate) }}
+                </td>
+                <td>{{ banner.displayOrder }}</td>
+                <td>{{ banner.impressionCount }}</td>
+                <td>{{ banner.clickCount }}</td>
+                <td>
+                  <div class="actions-cell">
+                    @if (canEdit) {
+                      <a class="btn btn-secondary btn-sm" [routerLink]="['/admin/banners', banner.id, 'edit']">
+                        Edit
+                      </a>
+                    }
+                    @for (option of nextStatuses(banner); track option.value) {
+                      <button type="button" class="btn btn-ghost btn-sm" (click)="changeStatus(banner, option.value)">
+                        {{ option.label }}
+                      </button>
+                    }
+                    @if (canDelete) {
+                      <button type="button" class="btn btn-ghost btn-sm" (click)="pendingDelete.set(banner)">
+                        Delete
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <app-pagination [meta]="meta()" (pageChange)="goToPage($event)" />
+  }
+
+  <app-confirm
+    [open]="pendingDelete() !== null"
+    title="Delete this banner?"
+    [message]="
+      'This removes &quot;' +
+      (pendingDelete()?.title || '') +
+      '&quot; permanently. The offer it promotes is not affected.'
+    "
+    confirmLabel="Delete banner"
+    (confirm)="confirmDelete()"
+    (cancel)="pendingDelete.set(null)"
+  />
+</div>

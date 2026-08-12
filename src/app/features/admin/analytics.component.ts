@@ -8,12 +8,16 @@ import { AuthService } from '../../core/auth.service';
 import {
   AnalyticsOffers,
   AnalyticsOverview,
+  BannerStat,
   CategoryStat,
+  Funnel,
+  GrowthPoint,
   LocationStat,
   Shop,
   ShopAnalytics,
   ShopStat,
 } from '../../core/models';
+import { PERMISSIONS } from '../../core/permissions';
 
 /** Analytics dashboards (§27). Scope is enforced by the API, not by this page. */
 @Component({
@@ -36,6 +40,23 @@ export class AnalyticsComponent {
   readonly shops = signal<Shop[]>([]);
   readonly loading = signal(true);
 
+  // ---- V2 ------------------------------------------------------------------
+  readonly funnel = signal<Funnel | null>(null);
+  readonly bannerStats = signal<BannerStat[]>([]);
+  readonly growth = signal<GrowthPoint[]>([]);
+  readonly canSeeBanners = this.auth.has(PERMISSIONS.VIEW_BANNERS);
+
+  /** Time filters from §22. 'custom' reveals the two date inputs. */
+  readonly ranges = [
+    { value: 1, label: 'Today' },
+    { value: 7, label: '7 days' },
+    { value: 30, label: '30 days' },
+    { value: 90, label: '90 days' },
+  ];
+  useCustom = false;
+  from = '';
+  to = '';
+
   days = 30;
   shopId: number | null = null;
 
@@ -54,9 +75,26 @@ export class AnalyticsComponent {
     this.load();
   }
 
+  /** The active window, as the API expects it. */
+  private rangeQuery(): Record<string, unknown> {
+    return this.useCustom && this.from && this.to
+      ? { from: this.from, to: this.to }
+      : { days: this.days };
+  }
+
+  setRange(days: number): void {
+    this.useCustom = false;
+    this.days = days;
+    this.load();
+  }
+
+  applyCustomRange(): void {
+    if (this.from && this.to) this.load();
+  }
+
   load(): void {
     this.loading.set(true);
-    const query = { days: this.days, shopId: this.shopId ?? undefined, limit: 10 };
+    const query = { ...this.rangeQuery(), shopId: this.shopId ?? undefined, limit: 10 };
 
     this.api.analyticsOverview(query).subscribe({
       next: (overview) => {
@@ -83,7 +121,41 @@ export class AnalyticsComponent {
       error: () => undefined,
     });
 
+    // §24 funnel and §12 banner performance.
+    this.api.analyticsFunnel(query).subscribe({
+      next: (funnel) => this.funnel.set(funnel),
+      error: () => this.funnel.set(null),
+    });
+
+    if (this.canSeeBanners) {
+      this.api.bannerAnalytics(query).subscribe({
+        next: (stats) => this.bannerStats.set(stats),
+        error: () => this.bannerStats.set([]),
+      });
+    }
+
+    // Platform growth is Super Admin only (§23).
+    if (this.auth.isSuperAdmin) {
+      this.api.analyticsGrowth(query).subscribe({
+        next: (result) => this.growth.set(result.timeline),
+        error: () => this.growth.set([]),
+      });
+    }
+
     this.loadShopDetail();
+  }
+
+  /** Funnel bar width, relative to the widest stage. */
+  funnelWidth(value: number): number {
+    const stages = this.funnel()?.stages ?? [];
+    const max = Math.max(1, ...stages.map((stage) => stage.value));
+    // Floor at 2% so a non-zero stage is still visible next to a huge one.
+    return value === 0 ? 0 : Math.max(2, Math.round((value / max) * 100));
+  }
+
+  growthHeight(value: number): number {
+    const max = Math.max(1, ...this.growth().flatMap((d) => [d.customers, d.offers, d.claims]));
+    return Math.round((value / max) * 100);
   }
 
   loadShopDetail(): void {

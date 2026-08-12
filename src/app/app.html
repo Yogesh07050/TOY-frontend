@@ -58,6 +58,17 @@
     </nav>
 
     <div class="header-actions">
+      <!-- Theme toggle (§25). Cycles light -> dark -> system. -->
+      <button
+        type="button"
+        class="icon-btn theme-toggle"
+        (click)="theme.cycle()"
+        [title]="'Theme: ' + theme.label() + ' (click to change)'"
+        [attr.aria-label]="'Theme: ' + theme.label() + '. Click to change.'"
+      >
+        {{ theme.icon() }}
+      </button>
+
       @if (auth.isAuthenticated()) {
         <a routerLink="/notifications" class="icon-btn notif" aria-label="Notifications">
           🔔
@@ -93,6 +104,22 @@
               @if (auth.canAccessAdmin()) {
                 <a class="dropdown-item" routerLink="/admin/dashboard">Admin dashboard</a>
               }
+              <div class="dropdown-divider"></div>
+              <p class="dropdown-label">Appearance</p>
+              <div class="theme-choices">
+                @for (option of themeOptions; track option) {
+                  <button
+                    type="button"
+                    class="theme-choice"
+                    [class.active]="theme.preference() === option"
+                    (click)="theme.set(option)"
+                  >
+                    <span aria-hidden="true">{{ theme.icon(option) }}</span>
+                    {{ theme.label(option) }}
+                  </button>
+                }
+              </div>
+
               <div class="dropdown-divider"></div>
               <button type="button" class="dropdown-item danger" (click)="logout()">Sign out</button>
             </div>

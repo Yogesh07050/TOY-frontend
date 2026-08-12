@@ -101,7 +101,45 @@
         <span class="stat-value">{{ o.engagement.favorites }}</span>
         <span class="small muted">across all offers</span>
       </div>
+      <div class="stat card">
+        <span class="stat-label">Claims</span>
+        <span class="stat-value">{{ o.engagement.claims }}</span>
+        <span class="small muted">{{ o.engagement.redemptions }} redeemed</span>
+      </div>
     </div>
+
+    <!-- Offer funnel (§24) -->
+    @if (funnel(); as f) {
+      @if (f.totals.impressions || f.totals.views) {
+        <section class="card mb-2">
+          <div class="card-header">
+            <h2>Offer funnel — last 30 days</h2>
+            <a routerLink="/admin/analytics" class="small">Full analytics →</a>
+          </div>
+          <div class="card-body">
+            <div class="funnel">
+              @for (stage of f.stages; track stage.key) {
+                <div class="funnel-row">
+                  <span class="funnel-label">{{ stage.label }}</span>
+                  <div class="funnel-track">
+                    <div class="funnel-bar" [style.width.%]="funnelWidth(stage.value)">
+                      <span class="funnel-value">{{ stage.value }}</span>
+                    </div>
+                  </div>
+                  <span class="funnel-conv small muted">
+                    @if (stage.conversion !== null) {
+                      {{ stage.conversion }}%
+                    } @else {
+                      —
+                    }
+                  </span>
+                </div>
+              }
+            </div>
+          </div>
+        </section>
+      }
+    }
 
     <div class="dash-grid">
       <div class="stack">

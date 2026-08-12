@@ -1,0 +1,106 @@
+.alert {
+  background: var(--danger-bg);
+  color: var(--danger);
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.form-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 330px);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.no-offers {
+  padding: 0.7rem 0.85rem;
+  border-radius: var(--radius-sm);
+  background: var(--warning-bg);
+  color: var(--warning);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.offer-preview {
+  display: flex;
+  flex-direction: column;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--brand);
+  border-radius: var(--radius-sm);
+  background: var(--brand-tint);
+}
+
+/* ---- Live preview -------------------------------------------------------- */
+
+.banner-preview {
+  position: relative;
+  min-height: 150px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--gradient-brand);
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: flex-end;
+}
+
+.banner-preview::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, rgba(20, 15, 5, 0.8) 0%, rgba(20, 15, 5, 0.2) 100%);
+}
+
+.preview-content {
+  position: relative;
+  z-index: 1;
+  padding: 0.9rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  color: #fff;
+}
+
+.preview-shop {
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #fcd34d;
+}
+
+.preview-content strong {
+  font-size: 1.05rem;
+  line-height: 1.2;
+}
+
+.preview-sub {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.preview-cta {
+  align-self: flex-start;
+  margin-top: 0.45rem;
+  padding: 0.32rem 0.8rem;
+  border-radius: 999px;
+  background: var(--gradient-brand);
+  color: var(--brand-ink);
+  font-size: 0.8rem;
+  font-weight: 650;
+}
+
+code {
+  background: var(--surface-alt);
+  padding: 0.05rem 0.3rem;
+  border-radius: 4px;
+  font-size: 0.85em;
+}
+
+@media (max-width: 960px) {
+  .form-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

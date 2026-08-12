@@ -5,6 +5,15 @@ import { Observable, map } from 'rxjs';
 import { environment } from '../../environments/environment';
 import {
   AnalyticsOffers,
+  Banner,
+  BannerPayload,
+  BannerStat,
+  Claim,
+  EndingSoonOffer,
+  Funnel,
+  GrowthPoint,
+  RecommendedOffer,
+  SelectableOffer,
   AnalyticsOverview,
   ApiEnvelope,
   AppNotification,
@@ -432,9 +441,134 @@ export class ApiService {
     );
   }
 
+  // ---- V2: customer discovery ---------------------------------------------
+
+  /** Eligible featured banners only - the API applies the offer's validity. */
+  featuredBanners(limit = 8): Observable<Banner[]> {
+    return this.data(
+      this.http.get<ApiEnvelope<Banner[]>>(`${this.base}/discovery/featured`, {
+        params: toParams({ limit }),
+      }),
+    );
+  }
+
+  trackBanner(id: number, event: 'impression' | 'click'): Observable<void> {
+    return this.http.post<void>(`${this.base}/discovery/featured/${id}/track`, { event });
+  }
+
+  endingSoon(query: Record<string, unknown> = {}): Observable<EndingSoonOffer[]> {
+    return this.data(
+      this.http.get<ApiEnvelope<EndingSoonOffer[]>>(`${this.base}/discovery/ending-soon`, {
+        params: toParams(query),
+      }),
+    );
+  }
+
+  nearbyOffers(query: Record<string, unknown>): Observable<Offer[]> {
+    return this.data(
+      this.http.get<ApiEnvelope<Offer[]>>(`${this.base}/discovery/nearby`, {
+        params: toParams(query),
+      }),
+    );
+  }
+
+  recommendedOffers(query: Record<string, unknown> = {}): Observable<RecommendedOffer[]> {
+    return this.data(
+      this.http.get<ApiEnvelope<RecommendedOffer[]>>(`${this.base}/discovery/recommended`, {
+        params: toParams(query),
+      }),
+    );
+  }
+
+  // ---- V2: banner management ----------------------------------------------
+
+  listBanners(query: Record<string, unknown> = {}): Observable<Page<Banner>> {
+    return this.page<Banner>(`${this.base}/banners`, query);
+  }
+
+  getBanner(id: number): Observable<Banner> {
+    return this.data(this.http.get<ApiEnvelope<Banner>>(`${this.base}/banners/${id}`));
+  }
+
+  createBanner(payload: BannerPayload): Observable<Banner> {
+    return this.data(this.http.post<ApiEnvelope<Banner>>(`${this.base}/banners`, payload));
+  }
+
+  updateBanner(id: number, payload: Partial<BannerPayload>): Observable<Banner> {
+    return this.data(this.http.put<ApiEnvelope<Banner>>(`${this.base}/banners/${id}`, payload));
+  }
+
+  setBannerStatus(id: number, status: string): Observable<Banner> {
+    return this.data(
+      this.http.patch<ApiEnvelope<Banner>>(`${this.base}/banners/${id}/status`, { status }),
+    );
+  }
+
+  deleteBanner(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/banners/${id}`);
+  }
+
+  /** Offers the caller may attach a banner to. */
+  bannerSelectableOffers(search?: string): Observable<SelectableOffer[]> {
+    return this.data(
+      this.http.get<ApiEnvelope<SelectableOffer[]>>(`${this.base}/banners/selectable-offers`, {
+        params: toParams({ search }),
+      }),
+    );
+  }
+
+  bannerAnalytics(query: Record<string, unknown> = {}): Observable<BannerStat[]> {
+    return this.data(
+      this.http.get<ApiEnvelope<BannerStat[]>>(`${this.base}/banners/analytics`, {
+        params: toParams(query),
+      }),
+    );
+  }
+
+  // ---- V2: claims ----------------------------------------------------------
+
+  listClaims(query: Record<string, unknown> = {}): Observable<Page<Claim>> {
+    return this.page<Claim>(`${this.base}/claims`, query);
+  }
+
+  claimOffer(offerId: number): Observable<Claim> {
+    return this.data(this.http.post<ApiEnvelope<Claim>>(`${this.base}/claims/${offerId}`, {}));
+  }
+
+  lookupClaim(code: string): Observable<Claim> {
+    return this.data(this.http.get<ApiEnvelope<Claim>>(`${this.base}/claims/lookup/${code}`));
+  }
+
+  redeemClaim(code: string): Observable<Claim> {
+    return this.data(
+      this.http.post<ApiEnvelope<Claim>>(`${this.base}/claims/lookup/${code}/redeem`, {}),
+    );
+  }
+
+  // ---- V2: funnel & growth -------------------------------------------------
+
+  analyticsFunnel(query: Record<string, unknown> = {}): Observable<Funnel> {
+    return this.data(
+      this.http.get<ApiEnvelope<Funnel>>(`${this.base}/analytics/funnel`, {
+        params: toParams(query),
+      }),
+    );
+  }
+
+  analyticsGrowth(query: Record<string, unknown> = {}): Observable<{ timeline: GrowthPoint[] }> {
+    return this.data(
+      this.http.get<ApiEnvelope<{ timeline: GrowthPoint[] }>>(`${this.base}/analytics/growth`, {
+        params: toParams(query),
+      }),
+    );
+  }
+
   // ---- Uploads ------------------------------------------------------------
 
-  uploadImage(type: 'offers' | 'shops' | 'categories' | 'avatars', file: File): Observable<UploadResult> {
+  uploadImage(
+    type: 'offers' | 'shops' | 'categories' | 'avatars' | 'banners',
+    file: File,
+  ): Observable<UploadResult> {
     const form = new FormData();
     form.append('image', file);
     return this.data(this.http.post<ApiEnvelope<UploadResult>>(`${this.base}/uploads/${type}`, form));

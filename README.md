@@ -93,6 +93,33 @@ the API answers `delivered: false`, and "Resend the link", "Forgot password" and
 the profile banner say plainly that no email was sent and where to find the link
 — instead of showing a success message for mail that never left the building.
 
+### V2: discovery sections
+
+The offers page opens with Featured banners → Ending Soon → Near You →
+Recommended → All offers (§2). Each section hides itself when it has nothing to
+show, and the whole block steps aside as soon as the visitor searches or
+filters — at that point they want results, not merchandising.
+
+Banners are a scroll-snap carousel. Clicking one goes straight to the promoted
+offer's details page (§4), never to a banner page. Impressions are counted with
+an `IntersectionObserver` at 50% visibility, once per banner per mount, so a
+banner scrolled past off-screen is not counted.
+
+`Near you` only appears once a location is known, which keeps §8.6 intact:
+declining location narrows the page rather than breaking it.
+
+### V2: dark mode
+
+`ThemeService` supports light, dark and system, persists the choice, and keeps
+tracking the OS setting live while on 'system'. It writes `data-theme` to
+`<html>`; every colour is a token redefined under `[data-theme='dark']`, so
+there are no per-component dark variants to keep in sync.
+
+Amber inverts its roles on dark: the mid-tones that were too light for white
+text become the readable ones, so `--brand` moves *up* the scale (10.6:1 on the
+dark surface) while the gold gradient keeps its dark ink for buttons. Every
+dark pairing meets WCAG AA.
+
 ### Location
 
 `LocationService` keeps the customer's current or selected location in local

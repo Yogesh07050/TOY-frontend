@@ -9,8 +9,20 @@ import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { LocationService, SUGGESTED_CITIES } from '../../core/location.service';
 import { ToastService } from '../../core/toast.service';
-import { Category, Offer, OfferQuery, OfferSort, PageMeta, Shop } from '../../core/models';
+import {
+  Banner,
+  Category,
+  EndingSoonOffer,
+  Offer,
+  OfferQuery,
+  OfferSort,
+  PageMeta,
+  RecommendedOffer,
+  Shop,
+} from '../../core/models';
 import { OfferCardComponent } from '../../shared/offer-card.component';
+import { BannerCarouselComponent } from '../../shared/banner-carousel.component';
+import { OfferRailComponent } from '../../shared/offer-rail.component';
 import { CardSkeletonsComponent, EmptyStateComponent, PaginationComponent } from '../../shared/ui.components';
 
 interface SortOption {
@@ -49,6 +61,8 @@ const OFFER_TYPES = [
     CommonModule,
     FormsModule,
     OfferCardComponent,
+    BannerCarouselComponent,
+    OfferRailComponent,
     PaginationComponent,
     EmptyStateComponent,
     CardSkeletonsComponent,
@@ -75,6 +89,35 @@ export class OfferListComponent {
   readonly categories = signal<Category[]>([]);
   readonly shops = signal<Shop[]>([]);
   readonly filtersOpen = signal(false);
+
+  // ---- V2 discovery sections (§2) -----------------------------------------
+  readonly banners = signal<Banner[]>([]);
+  readonly endingSoon = signal<EndingSoonOffer[]>([]);
+  readonly nearby = signal<Offer[]>([]);
+  readonly recommended = signal<RecommendedOffer[]>([]);
+  readonly loadingSections = signal(true);
+
+  /**
+   * The sections are only meaningful on the unfiltered landing view. Once
+   * someone is searching or filtering they want results, not merchandising.
+   */
+  readonly showSections = computed(() => {
+    this.filterTick();
+    return !this.search && this.activeFilterCount() === 0 && this.page === 1;
+  });
+
+  readonly endingNote = (offer: Offer): string | null =>
+    (offer as EndingSoonOffer).endingBucket?.label ?? null;
+
+  readonly recommendedNote = (offer: Offer): string | null =>
+    (offer as RecommendedOffer).reason ?? null;
+
+  readonly distanceNote = (offer: Offer): string | null =>
+    offer.distanceKm === null
+      ? null
+      : offer.distanceKm < 1
+        ? `${Math.round(offer.distanceKm * 1000)} m away`
+        : `${offer.distanceKm.toFixed(1)} km away`;
 
   /** "Nearby" mode is the same page with the radius filter switched on (§8.4). */
   readonly nearbyMode = signal(false);
@@ -131,6 +174,53 @@ export class OfferListComponent {
     this.api
       .listShops({ limit: 100, sort: 'name' })
       .subscribe((page) => this.shops.set(page.items));
+
+    this.loadSections();
+  }
+
+  /**
+   * Loads the V2 discovery sections. Each one fails independently: a section
+   * that errors simply stays empty and is hidden rather than breaking the page.
+   */
+  private loadSections(): void {
+    this.loadingSections.set(true);
+    const position = this.locations.position;
+    const coords = position
+      ? { latitude: position.latitude!, longitude: position.longitude! }
+      : {};
+
+    this.api.featuredBanners(8).subscribe({
+      next: (banners) => this.banners.set(banners),
+      error: () => this.banners.set([]),
+    });
+
+    this.api.endingSoon({ ...coords, limit: 8 }).subscribe({
+      next: (offers) => {
+        this.endingSoon.set(offers);
+        this.loadingSections.set(false);
+      },
+      error: () => {
+        this.endingSoon.set([]);
+        this.loadingSections.set(false);
+      },
+    });
+
+    // Near Me needs coordinates; without them the section simply does not show.
+    if (position) {
+      this.api
+        .nearbyOffers({ ...coords, radius: this.radius ?? environment.defaultRadiusKm, limit: 8 })
+        .subscribe({
+          next: (offers) => this.nearby.set(offers),
+          error: () => this.nearby.set([]),
+        });
+    } else {
+      this.nearby.set([]);
+    }
+
+    this.api.recommendedOffers({ ...coords, limit: 8 }).subscribe({
+      next: (offers) => this.recommended.set(offers),
+      error: () => this.recommended.set([]),
+    });
   }
 
   // ---- Data ---------------------------------------------------------------
@@ -239,12 +329,16 @@ export class OfferListComponent {
   useMyLocation(): void {
     this.locations.requestCurrentPosition();
     // The service updates asynchronously; reload once it settles.
-    setTimeout(() => this.load(), 900);
+    setTimeout(() => {
+      this.load();
+      this.loadSections();
+    }, 900);
   }
 
   pickCity(city: (typeof SUGGESTED_CITIES)[number]): void {
     this.locations.selectCity(city);
     this.load();
+    this.loadSections();
   }
 
   // ---- Favourites ---------------------------------------------------------
@@ -270,9 +364,15 @@ export class OfferListComponent {
   }
 
   private patchOffer(id: number, changes: Partial<Offer>): void {
-    this.offers.update((list) =>
-      list.map((offer) => (offer.id === id ? { ...offer, ...changes } : offer)),
-    );
+    const apply = <T extends Offer>(list: T[]) =>
+      list.map((offer) => (offer.id === id ? { ...offer, ...changes } : offer));
+
+    // The same offer can appear in several sections at once, so they all move
+    // together when it is saved or unsaved.
+    this.offers.update(apply);
+    this.endingSoon.update(apply);
+    this.nearby.update(apply);
+    this.recommended.update(apply);
   }
 
   // ---- URL sync -----------------------------------------------------------

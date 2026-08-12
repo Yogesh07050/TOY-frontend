@@ -5,6 +5,7 @@ import { filter } from 'rxjs';
 
 import { AuthService } from './core/auth.service';
 import { LocationService, SUGGESTED_CITIES } from './core/location.service';
+import { ThemeService, ThemePreference } from './core/theme.service';
 import { ToastsComponent } from './shared/ui.components';
 
 @Component({
@@ -17,9 +18,11 @@ import { ToastsComponent } from './shared/ui.components';
 export class App {
   readonly auth = inject(AuthService);
   readonly locations = inject(LocationService);
+  readonly theme = inject(ThemeService);
   private readonly router = inject(Router);
 
   readonly cities = SUGGESTED_CITIES;
+  readonly themeOptions: ThemePreference[] = ['light', 'dark', 'system'];
   readonly menuOpen = signal(false);
   readonly locationOpen = signal(false);
   readonly accountOpen = signal(false);

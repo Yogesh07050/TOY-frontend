@@ -223,6 +223,12 @@ export class AdminShellComponent {
       icon: '🏬',
       permissions: [PERMISSIONS.VIEW_SHOP_MEMBERS, PERMISSIONS.EDIT_SHOP, PERMISSIONS.MANAGE_LOCATIONS],
     },
+    {
+      label: 'Featured banners',
+      route: '/admin/banners',
+      icon: '🖼️',
+      permissions: [PERMISSIONS.VIEW_BANNERS],
+    },
     { label: 'Analytics', route: '/admin/analytics', icon: '📈', permissions: [PERMISSIONS.VIEW_ANALYTICS] },
     { label: 'Categories', route: '/admin/categories', icon: '📚', permissions: [PERMISSIONS.MANAGE_CATEGORIES] },
     { label: 'Reviews', route: '/admin/reviews', icon: '⭐', permissions: [PERMISSIONS.MODERATE_REVIEWS] },

@@ -1,0 +1,190 @@
+<div class="container page">
+  <div class="page-header">
+    <div>
+      <h1>{{ isEdit() ? 'Edit banner' : 'New featured banner' }}</h1>
+      <p class="subtitle">
+        A banner is a large promotional slot on the offers page that leads straight to one offer.
+      </p>
+    </div>
+    <a routerLink="/admin/banners" class="btn btn-ghost">← Back to banners</a>
+  </div>
+
+  @if (loading()) {
+    <div class="skeleton" style="height: 380px"></div>
+  } @else {
+    <form [formGroup]="form" novalidate>
+      @if (formError()) {
+        <div class="alert" role="alert">{{ formError() }}</div>
+      }
+
+      <div class="form-layout">
+        <div>
+          <fieldset>
+            <legend>Banner content</legend>
+
+            <div class="field">
+              <label for="title">Banner title *</label>
+              <input id="title" type="text" formControlName="title" placeholder="e.g. 🔥 Weekend Sale" [class.invalid]="error('title', 'Title')" />
+              @if (error('title', 'Title'); as message) {
+                <span class="error-text">{{ message }}</span>
+              }
+            </div>
+
+            <div class="field">
+              <label for="subtitle">Subtitle</label>
+              <input id="subtitle" type="text" formControlName="subtitle" placeholder="e.g. Up to 60% off across the store" />
+            </div>
+
+            <div class="form-grid">
+              <div class="field">
+                <label for="buttonText">Button text</label>
+                <input id="buttonText" type="text" formControlName="buttonText" />
+              </div>
+
+              <div class="field">
+                <label for="displayOrder">Display order</label>
+                <input id="displayOrder" type="number" min="0" formControlName="displayOrder" />
+                <span class="hint">Lower numbers appear first in the carousel.</span>
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Associated offer *</legend>
+            <p class="hint mb-2">
+              Clicking the banner takes the customer straight to this offer. Only offers you can
+              manage are listed, and the banner disappears automatically if the offer expires or is
+              deactivated.
+            </p>
+
+            @if (offers().length === 0) {
+              <div class="no-offers">
+                You have no live offers to promote yet. Create an active or scheduled offer first.
+              </div>
+            } @else {
+              <div class="field">
+                <label for="offerId">Offer</label>
+                <select id="offerId" formControlName="offerId" [class.invalid]="error('offerId', 'Offer')">
+                  <option [ngValue]="null">Choose the offer this banner promotes</option>
+                  @for (offer of offers(); track offer.id) {
+                    <option [ngValue]="offer.id">{{ offer.shopName }} — {{ offer.title }}</option>
+                  }
+                </select>
+                @if (error('offerId', 'Offer'); as message) {
+                  <span class="error-text">{{ message }}</span>
+                }
+              </div>
+
+              @if (selectedOffer(); as offer) {
+                <div class="offer-preview">
+                  <strong>{{ offer.title }}</strong>
+                  <span class="small muted">
+                    {{ offer.shopName }} · {{ offer.status }} · ends {{ offer.endDate | date: 'd MMM y' }}
+                  </span>
+                </div>
+              }
+            }
+          </fieldset>
+
+          <fieldset>
+            <legend>Schedule</legend>
+            <div class="form-grid">
+              <div class="field">
+                <label for="startDate">Starts *</label>
+                <input id="startDate" type="datetime-local" formControlName="startDate" [class.invalid]="error('startDate', 'Start date')" />
+                @if (error('startDate', 'Start date'); as message) {
+                  <span class="error-text">{{ message }}</span>
+                }
+              </div>
+              <div class="field">
+                <label for="endDate">Ends *</label>
+                <input id="endDate" type="datetime-local" formControlName="endDate" [class.invalid]="error('endDate', 'End date')" />
+                @if (error('endDate', 'End date'); as message) {
+                  <span class="error-text">{{ message }}</span>
+                }
+              </div>
+            </div>
+            <p class="hint">
+              The offer's own end date still wins: if it finishes first, the banner stops showing then.
+            </p>
+          </fieldset>
+
+          <fieldset>
+            <legend>Artwork</legend>
+            <div class="form-grid">
+              <div class="field">
+                <label for="desktop-image">Desktop image</label>
+                <label class="btn btn-secondary btn-sm" for="desktop-image">
+                  {{ uploading() === 'desktop' ? 'Uploading…' : desktopImageUrl() ? 'Replace image' : 'Upload image' }}
+                </label>
+                <input id="desktop-image" type="file" accept="image/*" class="sr-only" (change)="upload($event, 'desktop')" />
+                @if (desktopImageUrl()) {
+                  <button type="button" class="btn btn-ghost btn-sm mt-1" (click)="desktopImageUrl.set(null)">Remove</button>
+                }
+              </div>
+
+              <div class="field">
+                <label for="mobile-image">Mobile image</label>
+                <label class="btn btn-secondary btn-sm" for="mobile-image">
+                  {{ uploading() === 'mobile' ? 'Uploading…' : mobileImageUrl() ? 'Replace image' : 'Upload image' }}
+                </label>
+                <input id="mobile-image" type="file" accept="image/*" class="sr-only" (change)="upload($event, 'mobile')" />
+                @if (mobileImageUrl()) {
+                  <button type="button" class="btn btn-ghost btn-sm mt-1" (click)="mobileImageUrl.set(null)">Remove</button>
+                }
+                <span class="hint">Optional — the desktop image is used when this is empty.</span>
+              </div>
+            </div>
+          </fieldset>
+        </div>
+
+        <aside class="stack">
+          <section class="card">
+            <div class="card-header"><h3>Preview</h3></div>
+            <div class="card-body">
+              <div class="banner-preview" [style.background-image]="desktopImageUrl() ? 'url(' + desktopImageUrl() + ')' : null">
+                <div class="preview-content">
+                  <span class="preview-shop">{{ selectedOffer()?.shopName || 'YOUR SHOP' }}</span>
+                  <strong>{{ form.controls.title.value || 'Banner title' }}</strong>
+                  @if (form.controls.subtitle.value) {
+                    <span class="preview-sub">{{ form.controls.subtitle.value }}</span>
+                  }
+                  <span class="preview-cta">{{ form.controls.buttonText.value || 'View Offer' }} →</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card-header"><h3>Save</h3></div>
+            <div class="card-body stack" style="gap: 0.5rem">
+              @if (canPublish) {
+                <button type="button" class="btn btn-block" [disabled]="saving()" (click)="save('published')">
+                  @if (saving()) {
+                    <span class="spinner"></span> Saving…
+                  } @else {
+                    Publish banner
+                  }
+                </button>
+              } @else {
+                <p class="small muted mb-0">
+                  Publishing needs the <code>PUBLISH_BANNER</code> permission, so this saves as a draft.
+                </p>
+              }
+              <button type="button" class="btn btn-secondary btn-block" [disabled]="saving()" (click)="save('draft')">
+                Save as draft
+              </button>
+
+              @if (existing(); as banner) {
+                <p class="small muted mb-0 mt-1">
+                  Current status: <strong>{{ banner.status }}</strong>
+                  @if (banner.isLive) { · <span class="badge badge-success">live now</span> }
+                </p>
+              }
+            </div>
+          </section>
+        </aside>
+      </div>
+    </form>
+  }
+</div>

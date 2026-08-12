@@ -19,14 +19,33 @@
           }
         </select>
       }
-      <select [(ngModel)]="days" (change)="load()" aria-label="Time range">
-        <option [ngValue]="7">Last 7 days</option>
-        <option [ngValue]="30">Last 30 days</option>
-        <option [ngValue]="90">Last 90 days</option>
-        <option [ngValue]="365">Last year</option>
-      </select>
+      @for (range of ranges; track range.value) {
+        <button
+          type="button"
+          class="chip"
+          [class.active]="!useCustom && days === range.value"
+          (click)="setRange(range.value)"
+        >
+          {{ range.label }}
+        </button>
+      }
+      <button type="button" class="chip" [class.active]="useCustom" (click)="useCustom = !useCustom">
+        Custom
+      </button>
     </div>
   </div>
+
+  @if (useCustom) {
+    <div class="card mb-2 custom-range">
+      <div class="card-body row">
+        <label class="small muted">From <input type="date" [(ngModel)]="from" /></label>
+        <label class="small muted">To <input type="date" [(ngModel)]="to" /></label>
+        <button type="button" class="btn btn-sm" [disabled]="!from || !to" (click)="applyCustomRange()">
+          Apply
+        </button>
+      </div>
+    </div>
+  }
 
   @if (loading()) {
     <div class="grid grid-stats">
@@ -65,6 +84,14 @@
         <span class="stat-label">Saves</span>
         <span class="stat-value">{{ o.engagement.favorites }}</span>
       </div>
+      <div class="stat card">
+        <span class="stat-label">Claims</span>
+        <span class="stat-value">{{ o.engagement.claims }}</span>
+      </div>
+      <div class="stat card">
+        <span class="stat-label">Redemptions</span>
+        <span class="stat-value success">{{ o.engagement.redemptions }}</span>
+      </div>
       <div class="stat card" [class.alert]="o.offers.expiringSoon > 0">
         <span class="stat-label">Expiring in 7 days</span>
         <span class="stat-value warning">{{ o.offers.expiringSoon }}</span>
@@ -72,9 +99,13 @@
 
       @if (o.platform; as p) {
         <div class="stat card">
-          <span class="stat-label">Users</span>
-          <span class="stat-value">{{ p.totalUsers }}</span>
-          <span class="small muted">{{ p.activeUsers }} active</span>
+          <span class="stat-label">Customers</span>
+          <span class="stat-value">{{ p.totalCustomers }}</span>
+          <span class="small muted">{{ p.activeUsers }} active users</span>
+        </div>
+        <div class="stat card">
+          <span class="stat-label">Admins</span>
+          <span class="stat-value">{{ p.totalAdmins }}</span>
         </div>
         <div class="stat card">
           <span class="stat-label">Shops</span>
@@ -87,6 +118,114 @@
         </div>
       }
     </div>
+
+    <!-- Offer funnel (§24) -->
+    @if (funnel(); as f) {
+      <section class="card mb-2">
+        <div class="card-header">
+          <h2>Offer funnel</h2>
+          <span class="small muted">How customers move from seeing an offer to using it</span>
+        </div>
+        <div class="card-body">
+          @if (f.totals.impressions === 0 && f.totals.views === 0) {
+            <p class="muted small mb-0">No activity recorded in this window yet.</p>
+          } @else {
+            <div class="funnel">
+              @for (stage of f.stages; track stage.key) {
+                <div class="funnel-row">
+                  <span class="funnel-label">{{ stage.label }}</span>
+                  <div class="funnel-track">
+                    <div class="funnel-bar" [style.width.%]="funnelWidth(stage.value)">
+                      <span class="funnel-value">{{ stage.value }}</span>
+                    </div>
+                  </div>
+                  <span class="funnel-conv small muted">
+                    @if (stage.conversion !== null) {
+                      {{ stage.conversion }}%
+                    } @else {
+                      —
+                    }
+                  </span>
+                </div>
+              }
+            </div>
+            <p class="small muted mb-0 mt-2">
+              Each percentage is the share of the stage above it.
+            </p>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- Banner performance (§12) -->
+    @if (canSeeBanners && bannerStats().length) {
+      <section class="card mb-2">
+        <div class="card-header">
+          <h2>Banner performance</h2>
+          <a routerLink="/admin/banners" class="small">Manage banners →</a>
+        </div>
+        <div class="card-body">
+          <div class="table-wrap">
+            <table class="data">
+              <thead>
+                <tr>
+                  <th>Banner</th>
+                  <th>Promotes</th>
+                  <th>Status</th>
+                  <th>Impressions</th>
+                  <th>Clicks</th>
+                  <th>CTR</th>
+                  <th>Offer views</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (banner of bannerStats(); track banner.id) {
+                  <tr>
+                    <td>{{ banner.title }}</td>
+                    <td class="small">
+                      <a [routerLink]="['/offers', banner.offerId]">{{ banner.offerTitle }}</a>
+                      <br /><span class="muted">{{ banner.shopName }}</span>
+                    </td>
+                    <td><span class="badge">{{ banner.status }}</span></td>
+                    <td>{{ banner.impressions }}</td>
+                    <td>{{ banner.clicks }}</td>
+                    <td>{{ banner.ctr }}%</td>
+                    <td>{{ banner.offerViews }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    }
+
+    <!-- Platform growth (§23) -->
+    @if (growth().length) {
+      <section class="card mb-2">
+        <div class="card-header"><h2>Platform growth</h2></div>
+        <div class="card-body">
+          <div class="chart" role="img" aria-label="New customers, offers and claims per day">
+            @for (day of growth(); track day.day) {
+              <div
+                class="bar-group"
+                [title]="day.customers + ' customers, ' + day.offers + ' offers, ' + day.claims + ' claims'"
+              >
+                <div class="bar views" [style.height.%]="growthHeight(day.customers)"></div>
+                <div class="bar created" [style.height.%]="growthHeight(day.offers)"></div>
+                <div class="bar claims" [style.height.%]="growthHeight(day.claims)"></div>
+                <span class="bar-label">{{ day.day | date: 'd MMM' }}</span>
+              </div>
+            }
+          </div>
+          <div class="legend small muted">
+            <span><i class="swatch views"></i> New customers</span>
+            <span><i class="swatch created"></i> New offers</span>
+            <span><i class="swatch claims"></i> Claims</span>
+          </div>
+        </div>
+      </section>
+    }
 
     <!-- Activity over time -->
     @if (offerStats(); as stats) {

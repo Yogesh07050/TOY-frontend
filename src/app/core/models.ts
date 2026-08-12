@@ -343,6 +343,133 @@ export interface OfferPayload {
   images: { url: string; thumbnailUrl?: string | null }[];
 }
 
+// ---------------------------------------------------------------------------
+// V2
+// ---------------------------------------------------------------------------
+
+export type BannerStatus = 'draft' | 'scheduled' | 'published' | 'expired' | 'deactivated';
+
+export interface Banner {
+  id: number;
+  title: string;
+  subtitle: string | null;
+  description: string | null;
+  imageUrl: string | null;
+  mobileImageUrl: string | null;
+  desktopImageUrl: string | null;
+  buttonText: string;
+  offerId: number;
+  offerTitle: string;
+  offerText: string | null;
+  offerStatus: OfferStatus;
+  offerEndDate: string;
+  offerImageUrl: string | null;
+  shop: { id: number; name: string; slug: string; logoUrl: string | null };
+  startDate: string;
+  endDate: string;
+  status: BannerStatus;
+  displayOrder: number;
+  /** True when the customer feed would show this right now. */
+  isLive: boolean;
+  impressionCount: number;
+  clickCount: number;
+  createdByName?: string | null;
+  createdAt: string;
+}
+
+export interface BannerPayload {
+  title: string;
+  subtitle?: string | null;
+  description?: string | null;
+  imageUrl?: string | null;
+  mobileImageUrl?: string | null;
+  desktopImageUrl?: string | null;
+  offerId: number;
+  buttonText: string;
+  startDate: string;
+  endDate: string;
+  status: 'draft' | 'scheduled' | 'published' | 'deactivated';
+  displayOrder: number;
+}
+
+export interface SelectableOffer {
+  id: number;
+  title: string;
+  offerText: string | null;
+  status: string;
+  endDate: string;
+  shopName: string;
+}
+
+export interface BannerStat {
+  id: number;
+  title: string;
+  status: BannerStatus;
+  offerId: number;
+  offerTitle: string;
+  shopName: string;
+  impressions: number;
+  clicks: number;
+  ctr: number;
+  offerViews: number;
+}
+
+/** Urgency bucket computed server-side so every client words it the same. */
+export interface EndingBucket {
+  key: 'urgent' | 'today' | 'tomorrow' | 'three-days' | 'soon';
+  label: string;
+}
+
+export interface EndingSoonOffer extends Offer {
+  endingBucket: EndingBucket;
+}
+
+export interface RecommendedOffer extends Offer {
+  score: number;
+  /** Human explanation, e.g. "Because you follow this shop". */
+  reason: string;
+}
+
+export interface Claim {
+  id: number;
+  code: string;
+  status: 'claimed' | 'redeemed' | 'expired' | 'cancelled';
+  claimedAt: string;
+  redeemedAt: string | null;
+  offer: { id: number; title: string; offerText: string | null; endDate: string; imageUrl: string | null };
+  shop: { id: number; name: string };
+  branch: { id: number; name: string } | null;
+  customer?: { id: number; name: string };
+}
+
+export interface FunnelStage {
+  key: string;
+  label: string;
+  value: number;
+  /** Percentage of the previous stage; null for the first. */
+  conversion: number | null;
+}
+
+export interface Funnel {
+  range: { from: string; to: string };
+  stages: FunnelStage[];
+  totals: {
+    impressions: number;
+    views: number;
+    saves: number;
+    claims: number;
+    redemptions: number;
+  };
+}
+
+export interface GrowthPoint {
+  day: string;
+  customers: number;
+  shops: number;
+  offers: number;
+  claims: number;
+}
+
 export interface Review {
   id: number;
   offerId: number | null;
@@ -393,10 +520,18 @@ export interface AnalyticsOverview {
     deactivated: number;
     expiringSoon: number;
   };
-  engagement: { views: number; clicks: number; favorites: number };
+  engagement: {
+    views: number;
+    clicks: number;
+    favorites: number;
+    claims: number;
+    redemptions: number;
+  };
   platform?: {
     totalUsers: number;
     activeUsers: number;
+    totalAdmins: number;
+    totalCustomers: number;
     totalShops: number;
     activeShops: number;
     totalBranches: number;

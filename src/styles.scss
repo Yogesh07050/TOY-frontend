@@ -97,6 +97,8 @@ body {
 body {
   background: var(--page);
   color: var(--text);
+  /* Softens the flip between themes without animating every child. */
+  transition: background-color var(--normal) var(--ease), color var(--normal) var(--ease);
   font-family:
     system-ui,
     -apple-system,
@@ -181,6 +183,81 @@ img {
 
 *::-webkit-scrollbar-track {
   background: transparent;
+}
+
+
+/* ==========================================================================
+   Dark theme (§25)
+   Every colour above is a token, so dark mode is a redefinition rather than a
+   parallel set of component rules. `data-theme` is set by ThemeService.
+
+   Amber behaves differently on dark: the mid-tones that were too light for
+   white text are now the readable ones, so --brand moves UP the scale
+   (#fbbf24 on #16130e = 10.4:1) while the gold gradient and its dark ink are
+   kept for buttons, where they still read at 6.7:1+.
+   ========================================================================== */
+
+:root[data-theme='dark'] {
+  --brand: #fbbf24;
+  --brand-strong: #fcd34d;
+  --brand-dark: #f59e0b;
+  --brand-light: #3a2c10;
+  --brand-tint: #241c0d;
+  --brand-ink: #2a1c00;
+
+  --accent: #fb923c;
+  --accent-soft: #3a2214;
+
+  --gradient-brand: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  --gradient-brand-deep: linear-gradient(135deg, #fcd34d 0%, #f59e0b 100%);
+  --gradient-accent: linear-gradient(135deg, #fb923c 0%, #ea580c 100%);
+  --gradient-sheen: linear-gradient(115deg, transparent 20%, rgba(255, 255, 255, 0.28) 50%, transparent 80%);
+
+  --text: #f5f1e8;
+  --text-muted: #a9a293;
+  --text-subtle: #7b7466;
+
+  --surface: #1c1813;
+  --surface-alt: #241f19;
+  --page: #14110d;
+  --border: #322b22;
+  --border-strong: #453c30;
+
+  --success: #34d399;
+  --success-bg: #10291f;
+  --warning: #fbbf24;
+  --warning-bg: #302512;
+  --danger: #f87171;
+  --danger-bg: #331717;
+  --info: #60a5fa;
+  --info-bg: #14243a;
+
+  /* Shadows do little on a dark background, so depth comes mostly from the
+     surface steps; these stay for the lift on hover. */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow: 0 2px 6px rgba(0, 0, 0, 0.45), 0 8px 20px -6px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.5), 0 24px 48px -12px rgba(0, 0, 0, 0.65);
+  --shadow-brand: 0 6px 18px -6px rgba(245, 158, 11, 0.45);
+  --ring: 0 0 0 3px rgba(251, 191, 36, 0.28);
+}
+
+/* Surfaces that were hardcoded translucent-white for the glass effect. */
+:root[data-theme='dark'] .site-header {
+  background: rgba(28, 24, 19, 0.82);
+}
+
+:root[data-theme='dark'] .skeleton {
+  background: linear-gradient(90deg, #241f19 25%, #2e281f 37%, #241f19 63%);
+}
+
+/* The scrim over card imagery needs to be heavier on dark. */
+:root[data-theme='dark'] .offer-card .media::after {
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.45) 0%, transparent 40%);
+}
+
+:root[data-theme='dark'] ::selection {
+  background: #5a4410;
+  color: var(--text);
 }
 
 /* ==========================================================================

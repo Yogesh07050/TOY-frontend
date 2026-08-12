@@ -450,3 +450,48 @@ main {
     max-width: 120px;
   }
 }
+
+/* ---- Theme toggle (§25) -------------------------------------------------- */
+
+.theme-toggle {
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.theme-choices {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.15rem 0.4rem 0.35rem;
+}
+
+.theme-choice {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.45rem 0.3rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  font: inherit;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition:
+    border-color var(--fast) var(--ease),
+    background var(--fast) var(--ease),
+    color var(--fast) var(--ease);
+}
+
+.theme-choice:hover {
+  border-color: var(--brand);
+  color: var(--text);
+}
+
+.theme-choice.active {
+  border-color: var(--brand);
+  background: var(--brand-light);
+  color: var(--brand-strong);
+  font-weight: 620;
+}

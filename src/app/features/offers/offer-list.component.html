@@ -96,6 +96,49 @@
     }
   </div>
 
+  <!--
+    V2 discovery sections (§2), in the recommended order:
+    Featured -> Ending Soon -> Near Me -> Recommended.
+    Each hides itself when it has nothing to show, and the whole block steps
+    aside once the visitor starts searching or filtering.
+  -->
+  @if (showSections()) {
+    <app-banner-carousel [banners]="banners()" />
+
+    <app-offer-rail
+      icon="⏰"
+      title="Ending soon"
+      subtitle="Grab these before they go"
+      [offers]="endingSoon()"
+      [loading]="loadingSections()"
+      [note]="endingNote"
+      seeAllLink="/offers"
+      [seeAllParams]="{ sort: 'endingSoon' }"
+      (toggleFavorite)="toggleFavorite($event)"
+      (requireLogin)="promptLogin()"
+    />
+
+    <app-offer-rail
+      icon="📍"
+      title="Near you"
+      [subtitle]="'Within ' + (radius || 10) + ' km of ' + locations.location().label"
+      [offers]="nearby()"
+      [note]="distanceNote"
+      seeAllLink="/nearby"
+      (toggleFavorite)="toggleFavorite($event)"
+      (requireLogin)="promptLogin()"
+    />
+
+    <app-offer-rail
+      icon="✨"
+      title="Recommended for you"
+      [offers]="recommended()"
+      [note]="recommendedNote"
+      (toggleFavorite)="toggleFavorite($event)"
+      (requireLogin)="promptLogin()"
+    />
+  }
+
   <!-- Sorting (§10) -->
   <div class="toolbar">
     <div class="sorts">
@@ -218,6 +261,9 @@
       <button type="button" class="btn mt-2" (click)="clearFilters()">Clear filters</button>
     </app-empty-state>
   } @else {
+    @if (showSections()) {
+      <h2 class="all-offers-head">All offers</h2>
+    }
     <div class="grid grid-cards stagger">
       @for (offer of offers(); track offer.id) {
         <app-offer-card

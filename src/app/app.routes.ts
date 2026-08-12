@@ -175,6 +175,29 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/admin/member-manage.component').then((m) => m.MemberManageComponent),
       },
+      // Banner management is admin-only (§5); each route demands the specific
+      // banner permission, which the API re-checks independently.
+      {
+        path: 'banners',
+        title: 'Featured banners · Offers App',
+        canActivate: [permissionGuard(PERMISSIONS.VIEW_BANNERS)],
+        loadComponent: () =>
+          import('./features/admin/banner-manage.component').then((m) => m.BannerManageComponent),
+      },
+      {
+        path: 'banners/new',
+        title: 'New banner · Offers App',
+        canActivate: [permissionGuard(PERMISSIONS.CREATE_BANNER)],
+        loadComponent: () =>
+          import('./features/admin/banner-form.component').then((m) => m.BannerFormComponent),
+      },
+      {
+        path: 'banners/:id/edit',
+        title: 'Edit banner · Offers App',
+        canActivate: [permissionGuard(PERMISSIONS.EDIT_BANNER)],
+        loadComponent: () =>
+          import('./features/admin/banner-form.component').then((m) => m.BannerFormComponent),
+      },
       {
         path: 'analytics',
         title: 'Analytics · Offers App',
