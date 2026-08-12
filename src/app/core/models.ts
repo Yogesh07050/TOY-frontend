@@ -609,3 +609,556 @@ export interface UploadResult {
   height: number;
   bytes: number;
 }
+
+// ---------------------------------------------------------------------------
+// V3 — subscriptions
+// ---------------------------------------------------------------------------
+
+export type PlanKey = 'FREE' | 'BUSINESS' | 'PREMIUM';
+
+/** Feature flag names, mirroring `config/plans.js` on the backend. */
+export type FeatureName =
+  | 'OFFER_SCHEDULING'
+  | 'RECURRING_OFFERS'
+  | 'FEATURED_BANNERS'
+  | 'BANNER_SCHEDULING'
+  | 'ENDING_SOON'
+  | 'CAMPAIGNS'
+  | 'ANALYTICS_STANDARD'
+  | 'ANALYTICS_ADVANCED'
+  | 'CUSTOMER_ANALYTICS_BASIC'
+  | 'CUSTOMER_ANALYTICS_ADVANCED'
+  | 'LOCATION_ANALYTICS_BASIC'
+  | 'LOCATION_ANALYTICS_ADVANCED'
+  | 'BRANCH_ANALYTICS'
+  | 'CATEGORY_INSIGHTS'
+  | 'CUSTOMER_TRENDS'
+  | 'OFFER_COMPARISON'
+  | 'FUNNEL_BASIC'
+  | 'FUNNEL_ADVANCED'
+  | 'CLAIMS_ANALYTICS'
+  | 'CAMPAIGN_ANALYTICS'
+  | 'OFFER_INTELLIGENCE'
+  | 'ROI_DASHBOARD'
+  | 'ANALYTICS_EXPORT'
+  | 'NOTIFICATIONS_ADVANCED'
+  | 'PRIORITY_SUPPORT'
+  | 'PRIORITY_DISCOVERY';
+
+/** `null` for a limit means unlimited. */
+export interface PlanLimits {
+  offersPerMonth: number | null;
+  branches: number | null;
+  categories: number | null;
+  banners: number | null;
+  exportsPerMonth: number | null;
+}
+
+export interface Plan {
+  key: PlanKey;
+  name: string;
+  tagline: string;
+  description: string;
+  price: number;
+  currency: string;
+  rank: number;
+  limits: PlanLimits;
+  features: FeatureName[];
+  profile: string;
+  visibility: { nearMe: string; search: string; discoveryBoost: number };
+}
+
+/** A row of the §3 comparison matrix. `false` renders as a cross. */
+export interface ComparisonRow {
+  label: string;
+  values: (string | boolean)[];
+}
+
+export interface PlanCatalogue {
+  plans: Plan[];
+  featureLabels: Record<string, string>;
+  comparison: ComparisonRow[];
+}
+
+export interface SubscriptionUsage {
+  period: string;
+  offersThisMonth: number;
+  branches: number;
+  categories: number;
+  banners: number;
+  exportsThisMonth: number;
+}
+
+export interface Entitlements {
+  shopId: number;
+  plan: PlanKey;
+  planName: string;
+  tagline: string;
+  price: number;
+  currency: string;
+  status: 'active' | 'past_due' | 'cancelled' | 'expired';
+  billingCycle: 'monthly' | 'yearly';
+  paymentStatus: 'not_required' | 'pending' | 'paid' | 'failed';
+  startedAt: string;
+  renewsAt: string | null;
+  cancelledAt: string | null;
+  limits: PlanLimits;
+  features: FeatureName[];
+  profile: string;
+  visibility: { nearMe: string; search: string; discoveryBoost: number };
+  usage: SubscriptionUsage;
+  /** `null` where the plan is unlimited. */
+  remaining: {
+    offersThisMonth: number | null;
+    branches: number | null;
+    categories: number | null;
+    banners: number | null;
+  };
+}
+
+export interface SubscriptionEvent {
+  id: number;
+  fromPlan: PlanKey | null;
+  toPlan: PlanKey;
+  action: 'created' | 'upgraded' | 'downgraded' | 'renewed' | 'cancelled' | 'reactivated';
+  amount: number;
+  note: string | null;
+  actorName: string | null;
+  createdAt: string;
+}
+
+export interface Invoice {
+  id: number;
+  reference: string;
+  plan: PlanKey;
+  description: string;
+  amount: number;
+  currency: string;
+  status: string;
+  issuedAt: string;
+}
+
+/** The `details` payload of a PLAN_UPGRADE_REQUIRED error (§31). */
+export interface UpgradeRequirement {
+  requiredPlan: PlanKey;
+  requiredPlanName: string;
+  requiredPlanPrice: number;
+  feature?: FeatureName;
+  currentPlan?: PlanKey | null;
+  limit?: number;
+  used?: number;
+  limitKey?: string;
+}
+
+export interface Campaign {
+  id: number;
+  shopId: number;
+  shopName: string | null;
+  name: string;
+  description: string | null;
+  startDate: string;
+  endDate: string;
+  cost: number | null;
+  averageOrderValue: number | null;
+  averageMarginPercent: number | null;
+  status: 'draft' | 'running' | 'completed' | 'archived';
+  offerCount: number;
+  bannerCount: number;
+  createdAt: string;
+  offers?: { id: number; title: string; status: string; endDate: string }[];
+}
+
+// ---------------------------------------------------------------------------
+// V3 — premium analytics
+// ---------------------------------------------------------------------------
+
+export type DatePreset =
+  | 'today'
+  | 'yesterday'
+  | 'last7'
+  | 'last30'
+  | 'last90'
+  | 'thisMonth'
+  | 'lastMonth'
+  | 'custom';
+
+/** The shared filter contract from §27. */
+export interface AnalyticsFilters {
+  preset: DatePreset;
+  from?: string;
+  to?: string;
+  shopId?: number | null;
+  branchId?: number | null;
+  categoryId?: number | null;
+  offerId?: number | null;
+  campaignId?: number | null;
+  city?: string | null;
+  offerType?: string | null;
+  discountType?: string | null;
+  status?: string | null;
+  sort?: string;
+  limit?: number;
+}
+
+export type Trend = 'up' | 'down' | 'flat';
+
+export interface Kpi {
+  key: string;
+  label: string;
+  value: number;
+  previous: number;
+  /** Percentage change on the previous period; null when there is no baseline. */
+  change: number | null;
+  trend: Trend;
+  format: string;
+  hint: string | null;
+}
+
+export interface OverviewAlert {
+  key: string;
+  icon: string;
+  tone: 'info' | 'success' | 'warning';
+  message: string;
+  entityId?: number;
+}
+
+export interface OverviewPoint {
+  day: string;
+  views: number;
+  impressions: number;
+  claims: number;
+  redemptions: number;
+  newCustomers: number;
+}
+
+export interface PremiumOverview {
+  range: { from: string; to: string; previousFrom: string; previousTo: string };
+  kpis: Kpi[];
+  totals: Record<string, number>;
+  previousTotals: Record<string, number>;
+  timeline: OverviewPoint[];
+  alerts: OverviewAlert[];
+}
+
+export interface OfferRates {
+  impressionToView: number | null;
+  viewToSave: number | null;
+  viewToClaim: number | null;
+  claimToRedemption: number | null;
+  viewToRedemption: number | null;
+  engagement: number | null;
+}
+
+export interface OfferPerformanceRow {
+  id: number;
+  title: string;
+  status: OfferStatus;
+  offerType: string;
+  discountType: string;
+  discountValue: number | null;
+  category: string | null;
+  shopName: string;
+  startDate: string;
+  endDate: string;
+  impressions: number;
+  views: number;
+  clicks: number;
+  shares: number;
+  saves: number;
+  claims: number;
+  redemptions: number;
+  rates: OfferRates;
+}
+
+export interface OfferPerformance {
+  range: { from: string; to: string };
+  offers: OfferPerformanceRow[];
+  totals: Record<string, number>;
+  rates: OfferRates;
+}
+
+export interface PremiumFunnelStage {
+  key: string;
+  label: string;
+  value: number;
+  /** The stage this one converts from — not always the one drawn above it. */
+  from: string | null;
+  conversion: number | null;
+  dropOff: number | null;
+  shareOfTop: number | null;
+}
+
+export interface PremiumFunnel {
+  range: { from: string; to: string };
+  stages: PremiumFunnelStage[];
+  totals: Record<string, number>;
+  rates: Omit<OfferRates, 'engagement'>;
+  biggestDropOff: { stage: string; label: string; conversion: number } | null;
+}
+
+export interface LocationRow {
+  city: string;
+  views: number;
+  claims: number;
+  redemptions: number;
+  customers: number;
+  conversion: number | null;
+}
+
+export interface LocationInsights {
+  range: { from: string; to: string };
+  locations: LocationRow[];
+  heatmap: { latitude: number; longitude: number; weight: number }[];
+  branches: { id: number; branchName: string; city: string | null; latitude: number | null; longitude: number | null }[];
+  radius: { withinKm: number; views: number; customers: number }[] | null;
+  highlights: { mostActive: LocationRow | null; highestConverting: LocationRow | null };
+}
+
+export interface BranchRow {
+  id: number;
+  branchName: string;
+  city: string | null;
+  isPrimary: boolean;
+  activeOffers: number;
+  views: number;
+  customers: number;
+  claims: number;
+  redemptions: number;
+  conversion: number | null;
+  topOffer: { id: number; title: string; views: number } | null;
+}
+
+export interface BranchPerformance {
+  range: { from: string; to: string };
+  branches: BranchRow[];
+  winners: {
+    bestPerforming: BranchRow | null;
+    highestConversion: BranchRow | null;
+    mostViewed: BranchRow | null;
+    mostRedemptions: BranchRow | null;
+  };
+}
+
+export interface CustomerInsights {
+  range: { from: string; to: string };
+  totals: {
+    reach: number;
+    newCustomers: number;
+    returningCustomers: number;
+    savingCustomers: number;
+    claimingCustomers: number;
+    redeemingCustomers: number;
+  };
+  split: { newPercent: number | null; returningPercent: number | null };
+  interests: { category: string; interactions: number; percent: number | null }[];
+  visitFrequency: { bucket: string; customers: number; percent: number | null }[];
+  segments: { key: string; label: string; customers: number }[];
+}
+
+export interface Acquisition {
+  range: { from: string; to: string; previousFrom: string; previousTo: string };
+  newCustomers: number;
+  previousNewCustomers: number;
+  growth: number | null;
+  trend: Trend;
+  timeline: { day: string; customers: number }[];
+  funnel: FunnelStage[];
+}
+
+export interface Retention {
+  range: { from: string; to: string };
+  customers: number;
+  returningRate: number | null;
+  repeatClaimRate: number | null;
+  repeatRedemptionRate: number | null;
+  averageVisitsPerCustomer: number;
+  timeline: { month: string; active: number; returning: number; returningRate: number | null }[];
+}
+
+export interface CampaignBannerRow {
+  id: number;
+  title: string;
+  status: string;
+  campaignId: number | null;
+  campaignName: string | null;
+  offerId: number;
+  offerTitle: string;
+  shopName: string;
+  impressions: number;
+  clicks: number;
+  ctr: number | null;
+  reach: number;
+  offerViews: number;
+  offerClaims: number;
+  offerRedemptions: number;
+}
+
+export interface CampaignRow {
+  id: number;
+  name: string;
+  status: string;
+  startDate: string;
+  endDate: string;
+  cost: number | null;
+  impressions: number;
+  clicks: number;
+  ctr: number | null;
+  reach: number;
+  offerViews: number;
+  offerClaims: number;
+  offerRedemptions: number;
+  banners: number;
+}
+
+export interface CampaignPerformance {
+  range: { from: string; to: string };
+  banners: CampaignBannerRow[];
+  campaigns: CampaignRow[];
+  winners: Record<string, (CampaignRow & CampaignBannerRow) | null>;
+}
+
+export interface ComparisonOffer {
+  id: number;
+  title: string;
+  offerType: string;
+  discountType: string;
+  discountValue: number | null;
+  status: string;
+  impressions: number;
+  views: number;
+  saves: number;
+  shares: number;
+  claims: number;
+  redemptions: number;
+  conversion: number | null;
+  redemptionRate: number | null;
+}
+
+export interface OfferComparison {
+  range: { from: string; to: string };
+  offers: ComparisonOffer[];
+  /** Which offer wins each metric, so the UI can highlight the strongest cell. */
+  metrics: { key: string; bestOfferId: number | null }[];
+  best: ComparisonOffer | null;
+}
+
+export interface DiscountBand {
+  band: string;
+  offers: number;
+  views: number;
+  claims: number;
+  redemptions: number;
+  conversion: number | null;
+  sampleSize: number;
+}
+
+export interface DiscountEffectiveness {
+  range: { from: string; to: string };
+  bands: DiscountBand[];
+  offerTypes: (DiscountBand & { offerType: string; label: string })[];
+  hasEnoughData: boolean;
+  observation: string | null;
+}
+
+export interface BestTime {
+  lookbackDays: number;
+  hasEnoughData: boolean;
+  message: string | null;
+  days: { day: string; views: number; averageViews: number; rating: number }[];
+  hours: { hour: number; views: number; claims: number; conversion: number | null }[];
+  bestDay: { day: string; views: number; averageViews: number; rating: number } | null;
+  bestWindow: { fromHour: number; toHour: number; views: number } | null;
+  averages: { views: number; claims: number; conversion: number | null } | null;
+}
+
+export interface EndingSoonOpportunity {
+  id: number;
+  title: string;
+  offerText: string | null;
+  shopName: string;
+  endDate: string;
+  hoursLeft: number;
+  views: number;
+  recentViews: number;
+  saves: number;
+  claims: number;
+  classification: 'high-priority' | 'needs-attention';
+  recommendation: string;
+  actions: string[];
+}
+
+export interface OfferHealthRow {
+  id: number;
+  title: string;
+  status: string;
+  endDate: string;
+  score: number;
+  level: string;
+  views: number;
+  saves: number;
+  claims: number;
+  redemptions: number;
+  /** Why the score is what it is — §20 requires the score to be explained. */
+  reasons: { label: string; good: boolean; detail: string }[];
+}
+
+export interface MerchantRecommendation {
+  key: string;
+  kind: string;
+  icon: string;
+  title: string;
+  body: string;
+  action: string;
+  entityId?: number;
+  evidence: { metric: string; value: number; comparedTo?: number };
+}
+
+export interface CategoryInsights {
+  range: { from: string; to: string };
+  categories: { id: number; name: string; customerInterest: number; previousInterest: number; change: number | null; trend: Trend }[];
+  yourCategories: { id: number; name: string; offers: number; views: number }[];
+  popularOfferTypes: { offerType: string; offers: number; views: number }[];
+  hasEnoughData: boolean;
+  note: string;
+}
+
+export interface RoiCampaign {
+  id: number;
+  name: string;
+  startDate: string;
+  endDate: string;
+  claims: number;
+  redemptions: number;
+  cost: number | null;
+  averageOrderValue: number | null;
+  averageMarginPercent: number | null;
+  estimatedOrders: number;
+  estimatedRevenue: number;
+  estimatedGrossProfit: number | null;
+  estimatedRoi: number;
+  estimated: true;
+}
+
+export interface Roi {
+  range: { from: string; to: string };
+  campaigns: RoiCampaign[];
+  /** Campaigns the merchant has not given cost/order-value figures for yet. */
+  needsInput: (Omit<RoiCampaign, 'estimatedOrders' | 'estimatedRevenue' | 'estimatedGrossProfit' | 'estimatedRoi' | 'estimated'> & { missing: string[] })[];
+  hasEnoughData: boolean;
+  disclaimer: string;
+}
+
+/** Everything the Offer Intelligence page needs, in one round trip. */
+export interface OfferIntelligence {
+  discountEffectiveness: DiscountEffectiveness;
+  bestTime: BestTime;
+  endingSoon: { withinHours: number; offers: EndingSoonOpportunity[] };
+  health: { range: { from: string; to: string }; offers: OfferHealthRow[]; hasEnoughData: boolean };
+  recommendations: { items: MerchantRecommendation[]; hasEnoughData: boolean };
+}
+
+export interface ReportType {
+  key: string;
+  label: string;
+  description: string;
+}

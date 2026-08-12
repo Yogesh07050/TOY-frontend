@@ -198,12 +198,132 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/admin/banner-form.component').then((m) => m.BannerFormComponent),
       },
+      // V3 §7/§32: Analytics is a section rather than a page. Sub-routes render
+      // inside the shell, which keeps the shared filter bar and the tab bar
+      // mounted while the merchant moves between dashboards.
       {
         path: 'analytics',
-        title: 'Analytics · Offers App',
         canActivate: [permissionGuard(PERMISSIONS.VIEW_ANALYTICS)],
         loadComponent: () =>
-          import('./features/admin/analytics.component').then((m) => m.AnalyticsComponent),
+          import('./features/admin/analytics/analytics-shell.component').then(
+            (m) => m.AnalyticsShellComponent,
+          ),
+        children: [
+          { path: '', pathMatch: 'full', redirectTo: 'overview' },
+          {
+            path: 'overview',
+            title: 'Analytics overview · Offers App',
+            loadComponent: () =>
+              import('./features/admin/analytics/premium-overview.component').then(
+                (m) => m.PremiumOverviewComponent,
+              ),
+          },
+          {
+            path: 'offer-performance',
+            title: 'Offer performance · Offers App',
+            loadComponent: () =>
+              import('./features/admin/analytics/offer-performance.component').then(
+                (m) => m.OfferPerformanceComponent,
+              ),
+          },
+          {
+            path: 'funnel',
+            title: 'Customer funnel · Offers App',
+            loadComponent: () =>
+              import('./features/admin/analytics/customer-funnel.component').then(
+                (m) => m.CustomerFunnelComponent,
+              ),
+          },
+          {
+            path: 'locations',
+            title: 'Location insights · Offers App',
+            loadComponent: () =>
+              import('./features/admin/analytics/location-insights.component').then(
+                (m) => m.LocationInsightsComponent,
+              ),
+          },
+          {
+            path: 'branches',
+            title: 'Branch performance · Offers App',
+            loadComponent: () =>
+              import('./features/admin/analytics/branch-performance.component').then(
+                (m) => m.BranchPerformanceComponent,
+              ),
+          },
+          {
+            path: 'customers',
+            title: 'Customer insights · Offers App',
+            loadComponent: () =>
+              import('./features/admin/analytics/customer-insights.component').then(
+                (m) => m.CustomerInsightsComponent,
+              ),
+          },
+          {
+            path: 'campaigns',
+            title: 'Campaign performance · Offers App',
+            loadComponent: () =>
+              import('./features/admin/analytics/campaign-performance.component').then(
+                (m) => m.CampaignPerformanceComponent,
+              ),
+          },
+          {
+            path: 'intelligence',
+            title: 'Offer intelligence · Offers App',
+            loadComponent: () =>
+              import('./features/admin/analytics/offer-intelligence.component').then(
+                (m) => m.OfferIntelligenceComponent,
+              ),
+          },
+          {
+            path: 'reports',
+            title: 'Reports · Offers App',
+            loadComponent: () =>
+              import('./features/admin/analytics/reports.component').then(
+                (m) => m.AnalyticsReportsComponent,
+              ),
+          },
+          // The V1/V2 analytics page, kept as the platform-wide view: it is the
+          // only place a Super Admin sees cross-shop totals.
+          {
+            path: 'platform',
+            title: 'Platform analytics · Offers App',
+            loadComponent: () =>
+              import('./features/admin/analytics.component').then((m) => m.AnalyticsComponent),
+          },
+        ],
+      },
+
+      // V3 §32 Subscription
+      {
+        path: 'subscription',
+        canActivate: [permissionGuard(PERMISSIONS.VIEW_SUBSCRIPTION, PERMISSIONS.MANAGE_SUBSCRIPTION)],
+        children: [
+          {
+            path: '',
+            pathMatch: 'full',
+            title: 'Subscription · Offers App',
+            loadComponent: () =>
+              import('./features/admin/subscription/subscription-plan.component').then(
+                (m) => m.SubscriptionPlanComponent,
+              ),
+          },
+          {
+            path: 'billing',
+            title: 'Billing · Offers App',
+            loadComponent: () =>
+              import('./features/admin/subscription/billing.component').then(
+                (m) => m.SubscriptionBillingComponent,
+              ),
+          },
+          {
+            path: 'upgrade',
+            title: 'Upgrade · Offers App',
+            loadComponent: () =>
+              import('./features/admin/subscription/upgrade.component').then(
+                (m) => m.SubscriptionUpgradeComponent,
+              ),
+          },
+        ],
       },
       {
         path: 'categories',

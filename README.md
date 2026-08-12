@@ -50,7 +50,9 @@ src/app/
     categories/ category browse
     account/    favourites, following, notifications, profile
     admin/      shell, dashboard, offers, shops, branches, members,
-                analytics, categories, users, roles, reviews, audit logs
+                categories, users, roles, reviews, audit logs
+      analytics/    V3 premium dashboards + the shared filter bar and its state
+      subscription/ V3 current plan, billing, upgrade
 ```
 
 Standalone components throughout, signals for state, and lazy-loaded routes —
@@ -108,6 +110,48 @@ banner scrolled past off-screen is not counted.
 `Near you` only appears once a location is known, which keeps §8.6 intact:
 declining location narrows the page rather than breaking it.
 
+### V3: subscription plans and premium analytics
+
+`core/subscription.service.ts` holds the merchant's entitlements in signals,
+loaded once for every shop they manage. That lets any component ask
+`subscriptions.has('BRANCH_ANALYTICS')` synchronously — no component fetches its
+own copy, and a lock icon can render on first paint.
+
+The plan catalogue, its feature labels and the §3 comparison matrix all come
+from the API, which serves the same file the backend enforces. The pricing page
+therefore cannot advertise something the server will refuse.
+
+**None of this is the access check.** Every dashboard also handles a
+`PLAN_UPGRADE_REQUIRED` response from the API and swaps itself for the upgrade
+prompt — driven by the server's answer rather than the cached plan, so a plan
+changed in another tab still produces the right screen. The error interceptor
+deliberately ignores that code: a plan gate is an expected answer, and the page
+already says so in context.
+
+Locked tabs are shown with a padlock rather than hidden. A merchant cannot
+decide to upgrade for something they never knew existed (§31).
+
+The nine dashboards share one filter contract (§27) held in
+`AnalyticsFiltersService`, so moving between Overview, Offer Performance and
+Reports keeps the merchant's date range and branch selection. `PremiumDashboard`
+is the small base class behind each page: reload on filter change, skeleton
+while in flight, upgrade prompt on refusal.
+
+Related analytics are grouped rather than split one-per-page as §7 asks:
+Customer Insights carries §13/§14/§23/§24, and Offer Intelligence carries
+§16–§22.
+
+Charts are hand-drawn SVG and CSS, with no charting dependency. Inline SVG
+inherits the theme's custom properties, which is what makes light and dark mode
+work without a second palette to maintain. Where there is not enough data, an
+empty state is shown instead of a zeroed chart — §34 is explicit that a broken
+or misleading chart is worse than none, and a chart of zeroes reads as a real
+measurement.
+
+Exports are fetched as a Blob rather than followed as a link, because the
+request needs the `Authorization` header; a plain anchor would arrive
+unauthenticated.
+
 ### V2: dark mode
 
 `ThemeService` supports light, dark and system, persists the choice, and keeps
@@ -147,7 +191,18 @@ Profile (details, preferred location, notification preferences, password).
 
 **Admin** — Dashboard, Offers table with lifecycle actions, the Post an Offer
 form (all offer types, validity, branch applicability, terms, images, live card
-preview), Branches, Members, Analytics with branch performance.
+preview), Branches, Members.
+
+**Analytics (V3)** — Overview (KPI cards with period-on-period change, trend
+charts, alerts), Offer Performance, Customer Funnel, Location Insights, Branch
+Performance, Customer Insights, Campaign Performance, Offer Intelligence
+(recommendations, offer health, ending soon, best time to post, discount
+effectiveness, offer comparison, category demand), Reports, and the
+platform-wide view for Super Admins.
+
+**Subscription (V3)** — Current plan with live usage against each allowance,
+Billing (invoices and plan history), and Upgrade with the full plan comparison
+matrix.
 
 On the offer form the shop is taken from the user's role: with a single shop it
 is filled in and shown as a fact rather than a one-option dropdown, several

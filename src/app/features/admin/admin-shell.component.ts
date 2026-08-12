@@ -230,6 +230,12 @@ export class AdminShellComponent {
       permissions: [PERMISSIONS.VIEW_BANNERS],
     },
     { label: 'Analytics', route: '/admin/analytics', icon: '📈', permissions: [PERMISSIONS.VIEW_ANALYTICS] },
+    {
+      label: 'Subscription',
+      route: '/admin/subscription',
+      icon: '💳',
+      permissions: [PERMISSIONS.VIEW_SUBSCRIPTION, PERMISSIONS.MANAGE_SUBSCRIPTION],
+    },
     { label: 'Categories', route: '/admin/categories', icon: '📚', permissions: [PERMISSIONS.MANAGE_CATEGORIES] },
     { label: 'Reviews', route: '/admin/reviews', icon: '⭐', permissions: [PERMISSIONS.MODERATE_REVIEWS] },
     { label: 'Users', route: '/admin/users', icon: '👥', permissions: [PERMISSIONS.VIEW_USERS] },

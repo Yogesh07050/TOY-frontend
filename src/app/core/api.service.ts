@@ -37,6 +37,29 @@ import {
   ShopMember,
   ShopStat,
   UploadResult,
+  Acquisition,
+  AnalyticsFilters,
+  BestTime,
+  BranchPerformance,
+  Campaign,
+  CampaignPerformance,
+  CategoryInsights,
+  CustomerInsights,
+  DiscountEffectiveness,
+  Entitlements,
+  Invoice,
+  LocationInsights,
+  OfferComparison,
+  OfferIntelligence,
+  OfferPerformance,
+  PlanCatalogue,
+  PlanKey,
+  PremiumFunnel,
+  PremiumOverview,
+  ReportType,
+  Retention,
+  Roi,
+  SubscriptionEvent,
 } from './models';
 
 /** Drops undefined/null/empty values so the query string stays clean. */
@@ -561,6 +584,189 @@ export class ApiService {
         params: toParams(query),
       }),
     );
+  }
+
+  // ---- V3: subscriptions --------------------------------------------------
+
+  /** Plan catalogue, pricing and the §3 comparison matrix. Public. */
+  planCatalogue(): Observable<PlanCatalogue> {
+    return this.data(this.http.get<ApiEnvelope<PlanCatalogue>>(`${this.base}/subscriptions/plans`));
+  }
+
+  /** Entitlements for every shop the caller manages. */
+  myEntitlements(): Observable<Entitlements[]> {
+    return this.data(this.http.get<ApiEnvelope<Entitlements[]>>(`${this.base}/subscriptions/me`));
+  }
+
+  shopEntitlements(shopId: number): Observable<Entitlements> {
+    return this.data(
+      this.http.get<ApiEnvelope<Entitlements>>(`${this.base}/subscriptions/shops/${shopId}`),
+    );
+  }
+
+  changePlan(shopId: number, plan: PlanKey, billingCycle: 'monthly' | 'yearly' = 'monthly') {
+    return this.data(
+      this.http.put<ApiEnvelope<Entitlements>>(`${this.base}/subscriptions/shops/${shopId}`, {
+        plan,
+        billingCycle,
+      }),
+    );
+  }
+
+  confirmSubscriptionPayment(shopId: number): Observable<Entitlements> {
+    return this.data(
+      this.http.post<ApiEnvelope<Entitlements>>(
+        `${this.base}/subscriptions/shops/${shopId}/confirm-payment`,
+        {},
+      ),
+    );
+  }
+
+  cancelSubscription(shopId: number, note?: string): Observable<Entitlements> {
+    return this.data(
+      this.http.post<ApiEnvelope<Entitlements>>(
+        `${this.base}/subscriptions/shops/${shopId}/cancel`,
+        { note },
+      ),
+    );
+  }
+
+  subscriptionInvoices(shopId: number): Observable<Invoice[]> {
+    return this.data(
+      this.http.get<ApiEnvelope<Invoice[]>>(`${this.base}/subscriptions/shops/${shopId}/invoices`),
+    );
+  }
+
+  subscriptionHistory(shopId: number): Observable<SubscriptionEvent[]> {
+    return this.data(
+      this.http.get<ApiEnvelope<SubscriptionEvent[]>>(
+        `${this.base}/subscriptions/shops/${shopId}/history`,
+      ),
+    );
+  }
+
+  // ---- V3: campaigns ------------------------------------------------------
+
+  listCampaigns(query: Record<string, unknown> = {}): Observable<Campaign[]> {
+    return this.data(
+      this.http.get<ApiEnvelope<Campaign[]>>(`${this.base}/campaigns`, { params: toParams(query) }),
+    );
+  }
+
+  getCampaign(id: number): Observable<Campaign> {
+    return this.data(this.http.get<ApiEnvelope<Campaign>>(`${this.base}/campaigns/${id}`));
+  }
+
+  createCampaign(payload: Record<string, unknown>): Observable<Campaign> {
+    return this.data(this.http.post<ApiEnvelope<Campaign>>(`${this.base}/campaigns`, payload));
+  }
+
+  updateCampaign(id: number, payload: Record<string, unknown>): Observable<Campaign> {
+    return this.data(this.http.put<ApiEnvelope<Campaign>>(`${this.base}/campaigns/${id}`, payload));
+  }
+
+  deleteCampaign(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/campaigns/${id}`);
+  }
+
+  // ---- V3: premium analytics ----------------------------------------------
+
+  /**
+   * Every premium dashboard shares one filter contract (§27), so they all go
+   * through this one helper rather than each rebuilding the query string.
+   */
+  private premium<T>(path: string, filters: AnalyticsFilters, extra: Record<string, unknown> = {}) {
+    return this.data(
+      this.http.get<ApiEnvelope<T>>(`${this.base}/analytics/premium/${path}`, {
+        params: toParams({ ...filters, ...extra }),
+      }),
+    );
+  }
+
+  premiumOverview(filters: AnalyticsFilters): Observable<PremiumOverview> {
+    return this.premium<PremiumOverview>('overview', filters);
+  }
+
+  premiumOfferPerformance(filters: AnalyticsFilters): Observable<OfferPerformance> {
+    return this.premium<OfferPerformance>('offer-performance', filters);
+  }
+
+  premiumFunnel(filters: AnalyticsFilters): Observable<PremiumFunnel> {
+    return this.premium<PremiumFunnel>('funnel', filters);
+  }
+
+  premiumLocations(filters: AnalyticsFilters): Observable<LocationInsights> {
+    return this.premium<LocationInsights>('locations', filters);
+  }
+
+  premiumBranches(filters: AnalyticsFilters): Observable<BranchPerformance> {
+    return this.premium<BranchPerformance>('branches', filters);
+  }
+
+  premiumCustomers(filters: AnalyticsFilters): Observable<CustomerInsights> {
+    return this.premium<CustomerInsights>('customers', filters);
+  }
+
+  premiumAcquisition(filters: AnalyticsFilters): Observable<Acquisition> {
+    return this.premium<Acquisition>('acquisition', filters);
+  }
+
+  premiumRetention(filters: AnalyticsFilters): Observable<Retention> {
+    return this.premium<Retention>('retention', filters);
+  }
+
+  premiumCampaigns(filters: AnalyticsFilters): Observable<CampaignPerformance> {
+    return this.premium<CampaignPerformance>('campaigns', filters);
+  }
+
+  premiumOfferComparison(filters: AnalyticsFilters, offerIds: number[]): Observable<OfferComparison> {
+    return this.premium<OfferComparison>('offer-comparison', filters, {
+      offerIds: offerIds.join(','),
+    });
+  }
+
+  premiumCategoryInsights(filters: AnalyticsFilters): Observable<CategoryInsights> {
+    return this.premium<CategoryInsights>('category-insights', filters);
+  }
+
+  premiumRoi(filters: AnalyticsFilters): Observable<Roi> {
+    return this.premium<Roi>('roi', filters);
+  }
+
+  premiumOfferIntelligence(filters: AnalyticsFilters): Observable<OfferIntelligence> {
+    return this.premium<OfferIntelligence>('offer-intelligence', filters);
+  }
+
+  premiumDiscountEffectiveness(filters: AnalyticsFilters): Observable<DiscountEffectiveness> {
+    return this.premium<DiscountEffectiveness>('discount-effectiveness', filters);
+  }
+
+  premiumBestTime(filters: AnalyticsFilters): Observable<BestTime> {
+    return this.premium<BestTime>('best-time', filters);
+  }
+
+  reportTypes(): Observable<{ types: ReportType[]; formats: string[] }> {
+    return this.data(
+      this.http.get<ApiEnvelope<{ types: ReportType[]; formats: string[] }>>(
+        `${this.base}/analytics/premium/reports`,
+      ),
+    );
+  }
+
+  /**
+   * Downloads a report. Returned as a Blob rather than JSON so the caller can
+   * hand it straight to a download link without a second round trip.
+   */
+  exportReport(type: string, format: 'csv' | 'xlsx', filters: AnalyticsFilters): Observable<Blob> {
+    return this.http.get(`${this.base}/analytics/premium/reports/export`, {
+      params: toParams({ ...filters, type, format }),
+      responseType: 'blob',
+    });
+  }
+
+  /** Fire-and-forget client analytics events (§28). */
+  trackAnalyticsEvent(event: string, payload: Record<string, unknown> = {}): Observable<void> {
+    return this.http.post<void>(`${this.base}/analytics/events`, { event, ...payload });
   }
 
   // ---- Uploads ------------------------------------------------------------

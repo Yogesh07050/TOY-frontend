@@ -37,6 +37,13 @@ export const PERMISSIONS = {
 
   VIEW_ANALYTICS: 'VIEW_ANALYTICS',
   VIEW_AUDIT_LOGS: 'VIEW_AUDIT_LOGS',
+
+  // V3. Exporting takes data off the platform, and changing a plan commits the
+  // merchant to a charge, so both are granted separately from merely viewing.
+  EXPORT_ANALYTICS: 'EXPORT_ANALYTICS',
+  VIEW_SUBSCRIPTION: 'VIEW_SUBSCRIPTION',
+  MANAGE_SUBSCRIPTION: 'MANAGE_SUBSCRIPTION',
+  MANAGE_CAMPAIGNS: 'MANAGE_CAMPAIGNS',
 } as const;
 
 export type PermissionName = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];

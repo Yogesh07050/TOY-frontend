@@ -90,6 +90,11 @@ export const refreshInterceptor: HttpInterceptorFn = (request, next) => {
 /**
  * Surfaces server errors as toasts. Validation errors (422) are left to the
  * form that raised them, which shows them field by field.
+ *
+ * Plan gates (403 PLAN_UPGRADE_REQUIRED) are also left alone: they are an
+ * expected answer rather than a failure, and the page that asked already
+ * renders the contextual upgrade prompt from §31. Toasting them as well just
+ * repeats the same sentence over the top of it.
  */
 export const errorInterceptor: HttpInterceptorFn = (request, next) => {
   const toast = inject(ToastService);
@@ -98,6 +103,12 @@ export const errorInterceptor: HttpInterceptorFn = (request, next) => {
     catchError((error: unknown) => {
       if (error instanceof HttpErrorResponse && isApiRequest(request)) {
         const message = error.error?.error?.message;
+        const code = error.error?.error?.code;
+
+        if (code === 'PLAN_UPGRADE_REQUIRED') {
+          return throwError(() => error);
+        }
+
         if (error.status === 0) {
           toast.error('Cannot reach the server. Check your connection and try again.');
         } else if (error.status === 403) {
