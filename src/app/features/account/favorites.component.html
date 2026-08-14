@@ -1,0 +1,72 @@
+<div class="container page">
+  <div class="page-header">
+    <div>
+      <h1>Saved</h1>
+      <p class="subtitle">
+        @if (activeTab() === 'offers') {
+          @if (offersMeta()) {
+            {{ offersMeta()!.total }} saved offer{{ offersMeta()!.total === 1 ? '' : 's' }} · we will remind you
+            before they expire
+          } @else {
+            Offers you saved for later.
+          }
+        } @else {
+          @if (servicesMeta()) {
+            {{ servicesMeta()!.total }} saved service{{ servicesMeta()!.total === 1 ? '' : 's' }}
+          } @else {
+            Services you saved for later.
+          }
+        }
+      </p>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button type="button" class="chip" [class.active]="activeTab() === 'offers'" (click)="setTab('offers')">
+      Offers
+    </button>
+    <button type="button" class="chip" [class.active]="activeTab() === 'services'" (click)="setTab('services')">
+      Services
+    </button>
+  </div>
+
+  @if (activeTab() === 'offers') {
+    @if (offersLoading()) {
+      <app-card-skeletons [count]="6" />
+    } @else if (offers().length === 0) {
+      <app-empty-state
+        emoji="♡"
+        title="Nothing saved yet"
+        message="Tap the heart on any offer to keep it here and get a reminder before it ends."
+      >
+        <a routerLink="/offers" class="btn mt-2">Browse offers</a>
+      </app-empty-state>
+    } @else {
+      <div class="grid grid-cards stagger">
+        @for (offer of offers(); track offer.id) {
+          <app-offer-card [offer]="offer" (toggleFavorite)="removeOffer($event)" />
+        }
+      </div>
+      <app-pagination [meta]="offersMeta()" (pageChange)="goToOffersPage($event)" />
+    }
+  } @else {
+    @if (servicesLoading()) {
+      <app-card-skeletons [count]="6" />
+    } @else if (services().length === 0) {
+      <app-empty-state
+        emoji="🧰"
+        title="No saved services yet"
+        message="Tap the heart on any service to keep it here and get a reminder before its offer ends."
+      >
+        <a routerLink="/services" class="btn mt-2">Browse services</a>
+      </app-empty-state>
+    } @else {
+      <div class="grid grid-cards stagger">
+        @for (service of services(); track service.id) {
+          <app-service-card [service]="service" (toggleSave)="removeService($event)" />
+        }
+      </div>
+      <app-pagination [meta]="servicesMeta()" (pageChange)="goToServicesPage($event)" />
+    }
+  }
+</div>

@@ -142,6 +142,7 @@ export interface Category {
   parentId: number | null;
   status: 'active' | 'inactive';
   offerCount?: number;
+  serviceCount?: number;
   shopCount?: number;
   isFollowing?: boolean;
   /** Only returned by the "categories I follow" endpoint. */
@@ -504,6 +505,7 @@ export interface NotificationPreferences {
   followedCategoryOffers: boolean;
   nearbyOffers: boolean;
   favoriteExpiring: boolean;
+  savedServiceOfferExpiring: boolean;
   offerUpdates: boolean;
   adminAnnouncements: boolean;
 }
@@ -643,7 +645,10 @@ export type FeatureName =
   | 'ANALYTICS_EXPORT'
   | 'NOTIFICATIONS_ADVANCED'
   | 'PRIORITY_SUPPORT'
-  | 'PRIORITY_DISCOVERY';
+  | 'PRIORITY_DISCOVERY'
+  | 'SERVICE_SCHEDULING'
+  | 'SERVICE_ANALYTICS_BASIC'
+  | 'SERVICE_ANALYTICS_ADVANCED';
 
 /** `null` for a limit means unlimited. */
 export interface PlanLimits {
@@ -1161,4 +1166,293 @@ export interface ReportType {
   key: string;
   label: string;
   description: string;
+}
+
+// ---------------------------------------------------------------------------
+// V4 — Services
+// ---------------------------------------------------------------------------
+
+export type PricingType = 'fixed' | 'starting_from' | 'price_on_enquiry';
+export type BookingType = 'walk_in' | 'appointment' | 'both' | 'enquiry_only';
+export type ServiceStatus = 'draft' | 'scheduled' | 'active' | 'paused' | 'expired' | 'deactivated';
+export type AvailableDay = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
+export type ServiceOfferType = 'percentage' | 'flat' | 'price_drop' | 'other';
+export type ServiceOfferStatus = 'draft' | 'scheduled' | 'active' | 'expired' | 'deactivated';
+export type ServiceSort = 'newest' | 'mostViewed' | 'mostPopular' | 'nearest';
+
+export interface ServiceActiveOffer {
+  id: number;
+  offerText: string | null;
+  discountType: DiscountType;
+  discountValue: number | null;
+  offerPrice: number | null;
+  endDate: string;
+}
+
+export interface Service {
+  id: number;
+  name: string;
+  description: string | null;
+  pricingType: PricingType;
+  price: number | null;
+  durationMinutes: number | null;
+  durationLabel: string | null;
+  availableDays: AvailableDay[];
+  availableTimeStart: string | null;
+  availableTimeEnd: string | null;
+  homeService: boolean;
+  walkInAvailable: boolean;
+  appointmentRequired: boolean;
+  bookingType: BookingType;
+  serviceArea: string | null;
+  termsConditions: string | null;
+  applicabilityType: ApplicabilityType;
+  status: ServiceStatus;
+  startDate: string | null;
+  endDate: string | null;
+  imageUrl: string | null;
+  thumbnailUrl: string | null;
+  viewCount: number;
+  clickCount: number;
+  saveCount: number;
+  distanceKm: number | null;
+  locationLabel: string | null;
+  isSaved: boolean;
+  activeOffer?: ServiceActiveOffer | null;
+  createdAt: string;
+  updatedAt: string;
+  shop: {
+    id: number;
+    name: string;
+    slug: string;
+    logoUrl: string | null;
+    description?: string | null;
+    contactNumber?: string | null;
+  };
+  category: { id: number; name: string; slug: string } | null;
+  subcategory?: { id: number; name: string } | null;
+  createdBy?: { id: number; name: string } | null;
+  updatedBy?: { id: number; name: string } | null;
+  images?: OfferImage[];
+  branches?: Branch[];
+  branchIds?: number[];
+}
+
+export interface ServiceQuery {
+  page?: number;
+  limit?: number;
+  search?: string;
+  category?: string;
+  categoryId?: number;
+  shop?: string;
+  shopId?: number;
+  branchId?: number;
+  city?: string;
+  pincode?: string;
+  latitude?: number;
+  longitude?: number;
+  radius?: number;
+  pricingType?: PricingType;
+  bookingType?: BookingType;
+  homeService?: boolean;
+  hasOffer?: boolean;
+  status?: ServiceStatus | 'all';
+  startDate?: string;
+  endDate?: string;
+  saved?: boolean;
+  manage?: boolean;
+  sort?: ServiceSort;
+}
+
+export interface ServicePayload {
+  shopId: number;
+  categoryId?: number | null;
+  subcategoryId?: number | null;
+  name: string;
+  description?: string | null;
+  pricingType: PricingType;
+  price?: number | null;
+  durationMinutes?: number | null;
+  durationLabel?: string | null;
+  availableDays: AvailableDay[];
+  availableTimeStart?: string | null;
+  availableTimeEnd?: string | null;
+  homeService: boolean;
+  walkInAvailable: boolean;
+  appointmentRequired: boolean;
+  bookingType: BookingType;
+  serviceArea?: string | null;
+  termsConditions?: string | null;
+  applicabilityType: ApplicabilityType;
+  status: 'draft' | 'scheduled' | 'active';
+  startDate?: string | null;
+  endDate?: string | null;
+  branchIds: number[];
+  images: { url: string; thumbnailUrl?: string | null }[];
+}
+
+export interface ServiceOffer {
+  id: number;
+  serviceId: number;
+  offerText: string | null;
+  offerType: ServiceOfferType;
+  discountType: DiscountType;
+  discountValue: number | null;
+  originalPrice: number | null;
+  offerPrice: number | null;
+  termsConditions: string | null;
+  isRecurring: boolean;
+  recurrenceType: string | null;
+  startDate: string;
+  endDate: string;
+  status: ServiceOfferStatus;
+  viewCount: number;
+  claimCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ServiceOfferPayload {
+  offerText?: string | null;
+  offerType: ServiceOfferType;
+  discountType: DiscountType;
+  discountValue?: number | null;
+  originalPrice?: number | null;
+  offerPrice?: number | null;
+  termsConditions?: string | null;
+  isRecurring: boolean;
+  recurrenceType?: string | null;
+  startDate: string;
+  endDate: string;
+  status: 'draft' | 'scheduled' | 'active';
+}
+
+export interface ServiceOfferClaim {
+  id: number;
+  code: string;
+  status: 'claimed' | 'redeemed' | 'expired' | 'cancelled';
+  claimedAt: string;
+  redeemedAt: string | null;
+  serviceOffer: { id: number; offerText: string | null; endDate: string };
+  service: { id: number; name: string };
+  shop: { id: number; name: string };
+  branch: { id: number; name: string } | null;
+  customer?: { id: number; name: string };
+}
+
+export interface ServiceBooking {
+  id: number;
+  serviceId: number;
+  userId: number;
+  branchId: number | null;
+  serviceOfferId: number | null;
+  requestedAt: string | null;
+  status: 'requested' | 'confirmed' | 'completed' | 'cancelled';
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** A row from `GET /discovery/offers` — the "View Offers" union of product and
+ * service offers. Deliberately a different, lighter shape than `Offer`/`Service`. */
+export interface UnifiedListing {
+  id: number;
+  sourceType: 'product' | 'service';
+  serviceId: number | null;
+  title: string;
+  offerText: string | null;
+  discountType: DiscountType;
+  discountValue: number | null;
+  originalPrice: number | null;
+  finalPrice: number | null;
+  startDate: string;
+  endDate: string;
+  status: string;
+  imageUrl: string | null;
+  distanceKm: number | null;
+  isSaved: boolean;
+  shop: { id: number; name: string; slug: string; logoUrl: string | null };
+  category: { id: number; name: string; slug: string } | null;
+}
+
+// ---- Service analytics ------------------------------------------------------
+
+export interface ServiceAnalyticsOverview {
+  range: { from: string; to: string; preset: DatePreset };
+  kpis: Kpi[];
+  totalServices: number;
+  activeServices: number;
+}
+
+export interface ServiceTopPerformer {
+  id: number;
+  name: string;
+  views: number;
+  saves: number;
+  bookings: number;
+  claims: number;
+  conversion: number | null;
+}
+
+export interface ServicePerformance {
+  bestService: ServiceTopPerformer | null;
+  mostViewedService: ServiceTopPerformer | null;
+  mostSavedService: ServiceTopPerformer | null;
+  mostBookedService: ServiceTopPerformer | null;
+  mostClaimedService: ServiceTopPerformer | null;
+  bestConvertingService: ServiceTopPerformer | null;
+}
+
+export interface ServiceFunnelStage {
+  key: string;
+  label: string;
+  value: number;
+  conversionFromPrevious: number | null;
+}
+
+export interface ServiceOfferPerformanceSplit {
+  promotional: { views: number };
+  normal: { views: number };
+}
+
+export interface ServiceBranchRow {
+  id: number;
+  branchName: string;
+  city: string | null;
+  views: number;
+  bookings: number;
+  claims: number;
+}
+
+export interface ServiceLocationRow {
+  city: string;
+  views: number;
+  bookings: number;
+}
+
+export interface ServiceCustomerInsights {
+  newCustomers: number;
+  customerGrowth: number | null;
+  repeatBookings: number;
+  repeatClaims: number;
+}
+
+export interface ServiceCategoryInsightRow {
+  id: number;
+  name: string;
+  serviceCount: number;
+  views: number;
+  saves: number;
+}
+
+export interface ServiceComparisonRow {
+  id: number;
+  name: string;
+  views: number;
+  saves: number;
+  enquiries: number;
+  bookings: number;
+  claims: number;
+  redemptions: number;
+  conversion: number | null;
 }

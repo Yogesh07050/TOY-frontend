@@ -37,6 +37,7 @@ import { ConfirmComponent, EmptyStateComponent } from '../../shared/ui.component
                       <th>Category</th>
                       <th>Parent</th>
                       <th>Offers</th>
+                      <th>Services</th>
                       <th>Shops</th>
                       <th>Status</th>
                       <th></th>
@@ -53,6 +54,7 @@ import { ConfirmComponent, EmptyStateComponent } from '../../shared/ui.component
                         </td>
                         <td class="small muted">{{ parentName(category.parentId) }}</td>
                         <td>{{ category.offerCount ?? 0 }}</td>
+                        <td>{{ category.serviceCount ?? 0 }}</td>
                         <td>{{ category.shopCount ?? 0 }}</td>
                         <td>
                           <span

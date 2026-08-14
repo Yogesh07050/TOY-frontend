@@ -1,0 +1,158 @@
+<div class="container page">
+  <div class="page-header">
+    <div>
+      <h1>Services</h1>
+      <p class="subtitle">
+        @if (meta()) {
+          {{ meta()!.total }} service{{ meta()!.total === 1 ? '' : 's' }} you can manage
+        } @else {
+          Create, publish and retire your shop's services.
+        }
+      </p>
+    </div>
+    @if (canCreate) {
+      <a routerLink="/admin/services/new" class="btn">➕ Add a service</a>
+    }
+  </div>
+
+  <div class="tabs">
+    @for (tab of tabs; track tab.value) {
+      <button type="button" class="chip" [class.active]="status === tab.value" (click)="setStatus(tab.value)">
+        {{ tab.label }}
+      </button>
+    }
+  </div>
+
+  <div class="filters card">
+    <div class="card-body row">
+      <input
+        type="search"
+        class="grow"
+        placeholder="Search by name or description"
+        [value]="search"
+        (input)="searchInput$.next($any($event.target).value)"
+        aria-label="Search services"
+      />
+
+      @if (shops().length > 1) {
+        <select [(ngModel)]="shopId" (change)="reload()" aria-label="Filter by shop">
+          <option [ngValue]="null">All my shops</option>
+          @for (shop of shops(); track shop.id) {
+            <option [ngValue]="shop.id">{{ shop.name }}</option>
+          }
+        </select>
+      }
+
+      <select [(ngModel)]="sort" (change)="reload()" aria-label="Sort services">
+        <option value="newest">Newest first</option>
+        <option value="mostViewed">Most viewed</option>
+        <option value="mostPopular">Most popular</option>
+      </select>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="skeleton" style="height: 320px"></div>
+  } @else if (services().length === 0) {
+    <app-empty-state
+      emoji="🧰"
+      title="No services here"
+      message="Nothing matches this filter yet."
+    >
+      @if (canCreate) {
+        <a routerLink="/admin/services/new" class="btn mt-2">Add your first service</a>
+      }
+    </app-empty-state>
+  } @else {
+    <div class="card">
+      <div class="table-wrap">
+        <table class="data">
+          <thead>
+            <tr>
+              <th>Service</th>
+              <th>Shop</th>
+              <th>Status</th>
+              <th>Price</th>
+              <th>Views</th>
+              <th>Saves</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (service of services(); track service.id) {
+              <tr>
+                <td>
+                  <div class="service-cell">
+                    @if (service.thumbnailUrl || service.imageUrl) {
+                      <img class="thumb" [src]="service.thumbnailUrl || service.imageUrl" [alt]="service.name" />
+                    } @else {
+                      <span class="thumb placeholder">{{ service.shop.name.charAt(0) }}</span>
+                    }
+                    <span class="body">
+                      <a [routerLink]="['/services', service.id]" class="truncate">{{ service.name }}</a>
+                      <span class="small muted truncate">
+                        {{ service.category?.name }}
+                        @if (offerChip(service); as chip) { · 🔥 {{ chip }} }
+                      </span>
+                    </span>
+                  </div>
+                </td>
+                <td class="muted small">{{ service.shop.name }}</td>
+                <td><span [class]="service.status | serviceStatusClass">{{ service.status }}</span></td>
+                <td class="small">{{ service | servicePriceLabel }}</td>
+                <td>{{ service.viewCount }}</td>
+                <td>{{ service.saveCount }}</td>
+                <td>
+                  <div class="actions-cell">
+                    @if (canEdit(service)) {
+                      <a class="btn btn-secondary btn-sm" [routerLink]="['/admin/services', service.id, 'edit']">
+                        Edit
+                      </a>
+                      @for (option of nextStatuses(service); track option.value) {
+                        <button
+                          type="button"
+                          class="btn btn-ghost btn-sm"
+                          (click)="changeStatus(service, option.value)"
+                        >
+                          {{ option.label }}
+                        </button>
+                      }
+                      <button type="button" class="btn btn-ghost btn-sm" (click)="duplicate(service)">
+                        Duplicate
+                      </button>
+                    }
+                    @if (canManageOffers(service)) {
+                      <a class="btn btn-ghost btn-sm" [routerLink]="['/admin/services', service.id, 'offers']">
+                        Offers
+                      </a>
+                    }
+                    @if (canDelete(service)) {
+                      <button type="button" class="btn btn-ghost btn-sm" (click)="pendingDelete.set(service)">
+                        Delete
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <app-pagination [meta]="meta()" (pageChange)="goToPage($event)" />
+  }
+
+  <app-confirm
+    [open]="pendingDelete() !== null"
+    title="Delete this service?"
+    [message]="
+      'This permanently removes &quot;' +
+      (pendingDelete()?.name || '') +
+      '&quot; along with its images, offers, views and saves. Consider deactivating it instead.'
+    "
+    confirmLabel="Delete service"
+    (confirm)="confirmDelete()"
+    (cancel)="pendingDelete.set(null)"
+  />
+</div>

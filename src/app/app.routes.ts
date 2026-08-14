@@ -83,6 +83,18 @@ export const routes: Routes = [
     title: 'Shop · Offers App',
     loadComponent: () => import('./features/shops/shop-detail.component').then((m) => m.ShopDetailComponent),
   },
+  {
+    path: 'services',
+    title: 'Services · Offers App',
+    loadComponent: () =>
+      import('./features/services/service-list.component').then((m) => m.ServiceListComponent),
+  },
+  {
+    path: 'services/:id',
+    title: 'Service details · Offers App',
+    loadComponent: () =>
+      import('./features/services/service-detail.component').then((m) => m.ServiceDetailComponent),
+  },
 
   // ---- Signed-in customer areas -------------------------------------------
   {
@@ -142,6 +154,43 @@ export const routes: Routes = [
         title: 'Edit offer · Offers App',
         canActivate: [permissionGuard(PERMISSIONS.EDIT_OFFER)],
         loadComponent: () => import('./features/admin/offer-form.component').then((m) => m.OfferFormComponent),
+      },
+      {
+        path: 'services',
+        title: 'Manage services · Offers App',
+        canActivate: [permissionGuard(PERMISSIONS.VIEW_SERVICE)],
+        loadComponent: () =>
+          import('./features/admin/service-manage.component').then((m) => m.ServiceManageComponent),
+      },
+      {
+        path: 'services/new',
+        title: 'Add a service · Offers App',
+        canActivate: [permissionGuard(PERMISSIONS.CREATE_SERVICE)],
+        loadComponent: () =>
+          import('./features/admin/service-form.component').then((m) => m.ServiceFormComponent),
+      },
+      {
+        path: 'services/:id/edit',
+        title: 'Edit service · Offers App',
+        canActivate: [permissionGuard(PERMISSIONS.EDIT_SERVICE)],
+        loadComponent: () =>
+          import('./features/admin/service-form.component').then((m) => m.ServiceFormComponent),
+      },
+      {
+        path: 'services/:id/offers',
+        title: 'Service offers · Offers App',
+        canActivate: [permissionGuard(PERMISSIONS.MANAGE_SERVICE_OFFER)],
+        loadComponent: () =>
+          import('./features/admin/service-offer-manage.component').then(
+            (m) => m.ServiceOfferManageComponent,
+          ),
+      },
+      {
+        path: 'service-analytics',
+        title: 'Service analytics · Offers App',
+        canActivate: [permissionGuard(PERMISSIONS.VIEW_SERVICE_ANALYTICS)],
+        loadComponent: () =>
+          import('./features/admin/service-analytics.component').then((m) => m.ServiceAnalyticsComponent),
       },
       {
         path: 'shops',

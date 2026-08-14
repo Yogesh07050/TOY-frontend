@@ -1,0 +1,241 @@
+<div class="container page">
+  <div class="page-header">
+    <div>
+      <h1>Service analytics</h1>
+      <p class="subtitle">How your services are performing, from views to redemptions.</p>
+    </div>
+  </div>
+
+  <app-analytics-filter-bar [showBranch]="true" [showCategory]="true" [showLocation]="true" />
+
+  @if (overview.loading()) {
+    <app-analytics-skeleton [count]="8" />
+  } @else if (overview.upgrade(); as req) {
+    <app-upgrade-prompt
+      [feature]="'SERVICE_ANALYTICS_BASIC'"
+      heading="Service analytics"
+      [note]="'Requires the ' + req.requiredPlanName + ' plan.'"
+    />
+  } @else if (overview.data(); as data) {
+    <div class="grid grid-stats mb-2">
+      @for (kpi of data.kpis; track kpi.key) {
+        <app-kpi-card [kpi]="kpi" />
+      }
+    </div>
+    <p class="small subtle mb-2">
+      {{ count(data.totalServices) }} total services · {{ count(data.activeServices) }} active
+    </p>
+
+    <!-- Service performance -->
+    <app-analytics-section heading="Service performance" subtitle="Your best performers this period">
+      @if (performance.loading()) {
+        <app-analytics-skeleton [count]="6" [chartHeight]="0" />
+      } @else if (performance.upgrade()) {
+        <app-upgrade-prompt [feature]="'SERVICE_ANALYTICS_ADVANCED'" heading="Service performance" />
+      } @else if (performance.data(); as p) {
+        <div class="performers">
+          <div class="performer">
+            <span class="label">Most viewed</span>
+            <strong>{{ p.mostViewedService?.name ?? '—' }}</strong>
+            @if (p.mostViewedService) { <div class="small muted">{{ count(p.mostViewedService.views) }} views</div> }
+          </div>
+          <div class="performer">
+            <span class="label">Most saved</span>
+            <strong>{{ p.mostSavedService?.name ?? '—' }}</strong>
+            @if (p.mostSavedService) { <div class="small muted">{{ count(p.mostSavedService.saves) }} saves</div> }
+          </div>
+          <div class="performer">
+            <span class="label">Most booked</span>
+            <strong>{{ p.mostBookedService?.name ?? '—' }}</strong>
+            @if (p.mostBookedService) { <div class="small muted">{{ count(p.mostBookedService.bookings) }} bookings</div> }
+          </div>
+          <div class="performer">
+            <span class="label">Most claimed</span>
+            <strong>{{ p.mostClaimedService?.name ?? '—' }}</strong>
+            @if (p.mostClaimedService) { <div class="small muted">{{ count(p.mostClaimedService.claims) }} claims</div> }
+          </div>
+          <div class="performer">
+            <span class="label">Best converting</span>
+            <strong>{{ p.bestConvertingService?.name ?? '—' }}</strong>
+            @if (p.bestConvertingService) { <div class="small muted">{{ percent(p.bestConvertingService.conversion) }} conversion</div> }
+          </div>
+        </div>
+      }
+    </app-analytics-section>
+
+    <!-- Funnel -->
+    <app-analytics-section heading="Service funnel" subtitle="View → Save → Enquiry/Booking → Claim → Redemption">
+      @if (funnel.loading()) {
+        <app-analytics-skeleton [count]="0" />
+      } @else if (funnel.upgrade()) {
+        <app-upgrade-prompt [feature]="'SERVICE_ANALYTICS_ADVANCED'" heading="Service funnel" />
+      } @else if (funnel.data(); as stages) {
+        @if (stages.length) {
+          <app-bar-chart [points]="funnelPoints(stages)" />
+        } @else {
+          <app-analytics-empty title="Not enough data yet." message="Views and bookings will build this funnel over time." />
+        }
+      }
+    </app-analytics-section>
+
+    <!-- Offer performance -->
+    <app-analytics-section heading="Offer performance" subtitle="Promotional vs normal service views">
+      @if (offerSplit.loading()) {
+        <app-analytics-skeleton [count]="0" />
+      } @else if (offerSplit.upgrade()) {
+        <app-upgrade-prompt [feature]="'SERVICE_ANALYTICS_ADVANCED'" heading="Offer performance" />
+      } @else if (offerSplit.data(); as split) {
+        <app-share-bars
+          [rows]="[
+            { label: 'Promotional', value: split.promotional.views },
+            { label: 'Normal', value: split.normal.views },
+          ]"
+          suffix=""
+        />
+      }
+    </app-analytics-section>
+
+    <!-- Branches -->
+    <app-analytics-section heading="Branch performance">
+      @if (branches.loading()) {
+        <app-analytics-skeleton [count]="0" />
+      } @else if (branches.upgrade()) {
+        <app-upgrade-prompt [feature]="'SERVICE_ANALYTICS_ADVANCED'" heading="Branch performance" />
+      } @else if (branches.data(); as rows) {
+        @if (rows.length === 0) {
+          <app-analytics-empty title="No branch activity yet." />
+        } @else {
+          <div class="table-wrap">
+            <table class="data">
+              <thead>
+                <tr><th>Branch</th><th>City</th><th>Views</th><th>Bookings</th><th>Claims</th></tr>
+              </thead>
+              <tbody>
+                @for (row of rows; track row.id) {
+                  <tr>
+                    <td>{{ row.branchName }}</td>
+                    <td class="muted small">{{ row.city }}</td>
+                    <td>{{ count(row.views) }}</td>
+                    <td>{{ count(row.bookings) }}</td>
+                    <td>{{ count(row.claims) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      }
+    </app-analytics-section>
+
+    <!-- Locations -->
+    <app-analytics-section heading="Location insights" subtitle="Top areas by service views">
+      @if (locations.loading()) {
+        <app-analytics-skeleton [count]="0" />
+      } @else if (locations.upgrade()) {
+        <app-upgrade-prompt [feature]="'SERVICE_ANALYTICS_ADVANCED'" heading="Location insights" />
+      } @else if (locations.data(); as rows) {
+        @if (rows.length === 0) {
+          <app-analytics-empty title="Not enough location data yet." />
+        } @else {
+          <app-share-bars [rows]="locationRows(rows)" suffix="" />
+        }
+      }
+    </app-analytics-section>
+
+    <!-- Customers -->
+    <app-analytics-section heading="Customer trends">
+      @if (customers.loading()) {
+        <app-analytics-skeleton [count]="4" [chartHeight]="0" />
+      } @else if (customers.upgrade()) {
+        <app-upgrade-prompt [feature]="'SERVICE_ANALYTICS_ADVANCED'" heading="Customer trends" />
+      } @else if (customers.data(); as c) {
+        <div class="customer-stats">
+          <div class="performer"><span class="label">New customers</span><strong>{{ count(c.newCustomers) }}</strong></div>
+          <div class="performer"><span class="label">Growth</span><strong>{{ percent(c.customerGrowth) }}</strong></div>
+          <div class="performer"><span class="label">Repeat bookings</span><strong>{{ count(c.repeatBookings) }}</strong></div>
+          <div class="performer"><span class="label">Repeat claims</span><strong>{{ count(c.repeatClaims) }}</strong></div>
+        </div>
+      }
+    </app-analytics-section>
+
+    <!-- Category insights -->
+    <app-analytics-section heading="Category insights">
+      @if (categoryInsights.loading()) {
+        <app-analytics-skeleton [count]="0" />
+      } @else if (categoryInsights.upgrade()) {
+        <app-upgrade-prompt [feature]="'SERVICE_ANALYTICS_ADVANCED'" heading="Category insights" />
+      } @else if (categoryInsights.data(); as rows) {
+        @if (rows.length === 0) {
+          <app-analytics-empty title="Not enough category data yet." />
+        } @else {
+          <div class="table-wrap">
+            <table class="data">
+              <thead>
+                <tr><th>Category</th><th>Services</th><th>Views</th><th>Saves</th></tr>
+              </thead>
+              <tbody>
+                @for (row of rows; track row.id) {
+                  <tr>
+                    <td>{{ row.name }}</td>
+                    <td>{{ row.serviceCount }}</td>
+                    <td>{{ count(row.views) }}</td>
+                    <td>{{ count(row.saves) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      }
+    </app-analytics-section>
+
+    <!-- Comparison -->
+    <app-analytics-section heading="Service comparison" subtitle="Pick up to 6 services to compare side by side">
+      <div class="comparison-picker">
+        @for (service of comparableServices(); track service.id) {
+          <button
+            type="button"
+            class="chip"
+            [class.active]="selectedServiceIds().includes(service.id)"
+            (click)="toggleComparisonService(service.id)"
+          >
+            {{ service.name }}
+          </button>
+        }
+      </div>
+      <button type="button" class="btn btn-secondary btn-sm mb-2" [disabled]="!selectedServiceIds().length" (click)="runComparison()">
+        Compare
+      </button>
+
+      @if (comparison.loading()) {
+        <app-analytics-skeleton [count]="0" />
+      } @else if (comparison.upgrade()) {
+        <app-upgrade-prompt [feature]="'SERVICE_ANALYTICS_ADVANCED'" heading="Service comparison" />
+      } @else if (comparison.data(); as rows) {
+        @if (rows.length) {
+          <div class="table-wrap">
+            <table class="data">
+              <thead>
+                <tr><th>Service</th><th>Views</th><th>Saves</th><th>Enquiries</th><th>Bookings</th><th>Claims</th><th>Redemptions</th><th>Conversion</th></tr>
+              </thead>
+              <tbody>
+                @for (row of rows; track row.id) {
+                  <tr>
+                    <td>{{ row.name }}</td>
+                    <td>{{ count(row.views) }}</td>
+                    <td>{{ count(row.saves) }}</td>
+                    <td>{{ count(row.enquiries) }}</td>
+                    <td>{{ count(row.bookings) }}</td>
+                    <td>{{ count(row.claims) }}</td>
+                    <td>{{ count(row.redemptions) }}</td>
+                    <td>{{ percent(row.conversion) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      }
+    </app-analytics-section>
+  }
+</div>

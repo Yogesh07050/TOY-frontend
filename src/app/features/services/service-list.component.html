@@ -1,0 +1,228 @@
+<div class="container page">
+  <div class="page-header">
+    <div>
+      <h1>Discover services</h1>
+      <p class="subtitle">
+        @if (meta()) {
+          {{ meta()!.total }} service{{ meta()!.total === 1 ? '' : 's' }}
+          @if (locations.hasPosition() && radius) {
+            within {{ radius }} km of {{ locations.location().label }}
+          } @else if (locations.hasPosition()) {
+            · distances from {{ locations.location().label }}
+          }
+        } @else {
+          Search by service, shop, category or location.
+        }
+      </p>
+    </div>
+  </div>
+
+  <!-- Global search bar -->
+  <div class="search-bar card">
+    <div class="search-field">
+      <span aria-hidden="true">🔎</span>
+      <input
+        type="search"
+        placeholder="Search services, shops or categories"
+        [value]="search"
+        (input)="onSearchInput($any($event.target).value)"
+        aria-label="Search services"
+      />
+    </div>
+    <button type="button" class="btn btn-secondary filter-toggle" (click)="filtersOpen.set(!filtersOpen())">
+      Filters
+      @if (activeFilterCount() > 0) {
+        <span class="count">{{ activeFilterCount() }}</span>
+      }
+    </button>
+  </div>
+
+  <!-- Location strip -->
+  <div class="location-strip">
+    @if (locations.hasPosition()) {
+      <span class="badge badge-brand">📍 {{ locations.location().label }}</span>
+      <span class="label">Within</span>
+      @for (km of radiusOptions; track km) {
+        <button type="button" class="chip" [class.active]="radius === km" (click)="setRadius(km)">
+          {{ km }} km
+        </button>
+      }
+      @if (radius) {
+        <button type="button" class="chip" (click)="setRadius(null)">Any distance</button>
+      }
+    } @else {
+      <span class="label">See services near you:</span>
+      <button type="button" class="chip" (click)="useMyLocation()" [disabled]="locations.requesting()">
+        @if (locations.requesting()) {
+          <span class="spinner dark"></span> Locating…
+        } @else {
+          🎯 Use my location
+        }
+      </button>
+      @for (city of cities.slice(0, 4); track city.city) {
+        <button type="button" class="chip" (click)="pickCity(city)">{{ city.city }}</button>
+      }
+    }
+  </div>
+
+  <!-- Category quick filter -->
+  <div class="category-strip">
+    <button type="button" class="chip" [class.active]="categoryId === null" (click)="setCategory(null)">
+      All categories
+    </button>
+    @for (category of categories(); track category.id) {
+      <button
+        type="button"
+        class="chip"
+        [class.active]="categoryId === category.id"
+        (click)="setCategory(category.id)"
+      >
+        {{ category.name }}
+        @if (category.serviceCount) {
+          <span class="chip-count">{{ category.serviceCount }}</span>
+        }
+      </button>
+    }
+  </div>
+
+  <!-- Sorting -->
+  <div class="toolbar">
+    <div class="sorts">
+      <span class="label">Sort by</span>
+      @for (option of sorts; track option.value) {
+        <button
+          type="button"
+          class="chip"
+          [class.active]="sort === option.value"
+          [disabled]="option.needsLocation && !locations.hasPosition()"
+          [title]="option.needsLocation && !locations.hasPosition() ? 'Share a location to use this' : ''"
+          (click)="setSort(option.value)"
+        >
+          {{ option.label }}
+        </button>
+      }
+    </div>
+    @if (activeFilterCount() > 0 || search) {
+      <button type="button" class="btn btn-ghost btn-sm" (click)="clearFilters()">Clear all</button>
+    }
+  </div>
+
+  <!-- Detailed filters -->
+  @if (filtersOpen()) {
+    <div class="card filter-panel">
+      <div class="card-body">
+        <div class="form-grid">
+          <div class="field">
+            <label for="f-shop">Shop</label>
+            <select id="f-shop" [(ngModel)]="shopId">
+              <option [ngValue]="null">Any shop</option>
+              @for (shop of shops(); track shop.id) {
+                <option [ngValue]="shop.id">{{ shop.name }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="f-category">Category</label>
+            <select id="f-category" [(ngModel)]="categoryId">
+              <option [ngValue]="null">Any category</option>
+              @for (category of categories(); track category.id) {
+                <option [ngValue]="category.id">{{ category.name }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="f-city">City</label>
+            <input id="f-city" type="text" list="city-list" [(ngModel)]="city" placeholder="e.g. Coimbatore" />
+            <datalist id="city-list">
+              @for (option of cities; track option.city) {
+                <option [value]="option.city"></option>
+              }
+            </datalist>
+          </div>
+
+          <div class="field">
+            <label for="f-pincode">Pincode</label>
+            <input id="f-pincode" type="text" [(ngModel)]="pincode" placeholder="e.g. 641004" />
+          </div>
+
+          <div class="field">
+            <label for="f-pricing">Pricing</label>
+            <select id="f-pricing" [(ngModel)]="pricingType">
+              <option value="">Any pricing</option>
+              @for (type of pricingTypes; track type.value) {
+                <option [value]="type.value">{{ type.label }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="f-booking">Booking</label>
+            <select id="f-booking" [(ngModel)]="bookingType">
+              <option value="">Any booking type</option>
+              @for (type of bookingTypes; track type.value) {
+                <option [value]="type.value">{{ type.label }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="field checkbox-field">
+            <label>
+              <input type="checkbox" [(ngModel)]="homeService" /> Home service available
+            </label>
+          </div>
+
+          <div class="field checkbox-field">
+            <label>
+              <input type="checkbox" [(ngModel)]="hasOffer" /> Has an active offer
+            </label>
+          </div>
+
+          <div class="field">
+            <label for="f-radius">Distance</label>
+            <select id="f-radius" [(ngModel)]="radius" [disabled]="!locations.hasPosition()">
+              <option [ngValue]="null">Any distance</option>
+              @for (km of radiusOptions; track km) {
+                <option [ngValue]="km">Within {{ km }} km</option>
+              }
+            </select>
+            @if (!locations.hasPosition()) {
+              <span class="hint">Share or choose a location to filter by distance.</span>
+            }
+          </div>
+        </div>
+
+        <div class="row" style="justify-content: flex-end">
+          <button type="button" class="btn btn-secondary" (click)="clearFilters()">Reset</button>
+          <button type="button" class="btn" (click)="applyFilters()">Apply filters</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Results -->
+  @if (loading()) {
+    <app-card-skeletons [count]="8" />
+  } @else if (services().length === 0) {
+    <app-empty-state
+      emoji="🧰"
+      title="No services match your search"
+      message="Try removing a filter, widening the distance, or searching for something else."
+    >
+      <button type="button" class="btn mt-2" (click)="clearFilters()">Clear filters</button>
+    </app-empty-state>
+  } @else {
+    <div class="grid grid-cards stagger">
+      @for (service of services(); track service.id) {
+        <app-service-card
+          [service]="service"
+          (toggleSave)="toggleSave($event)"
+          (requireLogin)="promptLogin()"
+        />
+      }
+    </div>
+
+    <app-pagination [meta]="meta()" (pageChange)="goToPage($event)" />
+  }
+</div>

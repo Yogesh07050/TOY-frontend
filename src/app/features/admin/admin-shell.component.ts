@@ -217,6 +217,8 @@ export class AdminShellComponent {
     { label: 'Dashboard', route: '/admin/dashboard', icon: '📊' },
     { label: 'Offers', route: '/admin/offers', icon: '🏷️', permissions: [PERMISSIONS.VIEW_OFFERS] },
     { label: 'Post an offer', route: '/admin/offers/new', icon: '➕', permissions: [PERMISSIONS.CREATE_OFFER] },
+    { label: 'Services', route: '/admin/services', icon: '🧰', permissions: [PERMISSIONS.VIEW_SERVICE] },
+    { label: 'Add a service', route: '/admin/services/new', icon: '➕', permissions: [PERMISSIONS.CREATE_SERVICE] },
     {
       label: 'Shops',
       route: '/admin/shops',
@@ -230,6 +232,12 @@ export class AdminShellComponent {
       permissions: [PERMISSIONS.VIEW_BANNERS],
     },
     { label: 'Analytics', route: '/admin/analytics', icon: '📈', permissions: [PERMISSIONS.VIEW_ANALYTICS] },
+    {
+      label: 'Service analytics',
+      route: '/admin/service-analytics',
+      icon: '📊',
+      permissions: [PERMISSIONS.VIEW_SERVICE_ANALYTICS],
+    },
     {
       label: 'Subscription',
       route: '/admin/subscription',

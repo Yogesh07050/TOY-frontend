@@ -1,0 +1,342 @@
+@if (loading()) {
+  <div class="container page">
+    <div class="skeleton" style="height: 320px; margin-bottom: 1rem"></div>
+    <div class="skeleton" style="height: 24px; width: 50%; margin-bottom: 0.5rem"></div>
+    <div class="skeleton" style="height: 16px; width: 30%"></div>
+  </div>
+} @else if (notFound()) {
+  <div class="container page">
+    <app-empty-state
+      emoji="🧰"
+      title="Service not available"
+      message="This service may have been paused, withdrawn, or never existed."
+    >
+      <a routerLink="/services" class="btn mt-2">Browse other services</a>
+    </app-empty-state>
+  </div>
+} @else if (service(); as s) {
+  <div class="container page">
+    <nav class="crumbs small muted" aria-label="Breadcrumb">
+      <a routerLink="/services">Services</a>
+      @if (s.category) {
+        <span aria-hidden="true">›</span>
+        <a routerLink="/services" [queryParams]="{ categoryId: s.category.id }">{{ s.category.name }}</a>
+      }
+      <span aria-hidden="true">›</span>
+      <span class="truncate">{{ s.name }}</span>
+    </nav>
+
+    <div class="detail-grid">
+      <!-- Gallery -->
+      <section class="gallery">
+        <div class="main-image">
+          @if (s.images?.length) {
+            <img [src]="s.images![activeImage()].url" [alt]="s.name" />
+          } @else if (s.imageUrl) {
+            <img [src]="s.imageUrl" [alt]="s.name" />
+          } @else {
+            <div class="placeholder"><span>{{ s.shop.name.charAt(0) }}</span></div>
+          }
+
+          @if (s | serviceOfferChip; as chip) {
+            <span class="discount-flag">🔥 {{ chip }}</span>
+          }
+        </div>
+
+        @if ((s.images?.length ?? 0) > 1) {
+          <div class="thumbs">
+            @for (image of s.images!; track image.id; let i = $index) {
+              <button type="button" [class.active]="activeImage() === i" (click)="activeImage.set(i)">
+                <img [src]="image.thumbnailUrl || image.url" [alt]="'Image ' + (i + 1)" />
+              </button>
+            }
+          </div>
+        }
+      </section>
+
+      <!-- Summary -->
+      <section class="summary">
+        <div class="shop-line">
+          <a class="shop" [routerLink]="['/shops', s.shop.slug]">
+            @if (s.shop.logoUrl) {
+              <img [src]="s.shop.logoUrl" [alt]="s.shop.name" />
+            }
+            <span>{{ s.shop.name }}</span>
+          </a>
+          <span [class]="s.status | serviceStatusClass">{{ s.status }}</span>
+        </div>
+
+        <h1>{{ s.name }}</h1>
+
+        <div class="tags">
+          @if (s.category) {
+            <a class="badge badge-brand" routerLink="/services" [queryParams]="{ categoryId: s.category.id }">
+              {{ s.category.name }}
+            </a>
+          }
+          @if (s.subcategory) {
+            <span class="badge">{{ s.subcategory.name }}</span>
+          }
+          @if (s.homeService) {
+            <span class="badge">🏠 Home service</span>
+          }
+          @if (s.walkInAvailable) {
+            <span class="badge">🚶 Walk-in</span>
+          }
+        </div>
+
+        <div class="pricing">
+          @if (s.activeOffer?.offerPrice) {
+            <span class="now">₹{{ s.activeOffer!.offerPrice | number: '1.0-2' }}</span>
+            <span class="was">{{ s | servicePriceLabel }}</span>
+          } @else {
+            <span class="now">{{ s | servicePriceLabel }}</span>
+          }
+          @if (s.durationLabel) {
+            <span class="badge">⏱ {{ s.durationLabel }}</span>
+          }
+        </div>
+
+        <!-- Active offer countdown -->
+        @if (countdown(); as c) {
+          <div class="countdown" [class.expired]="c.expired">
+            @if (c.expired) {
+              <strong>This offer has ended</strong>
+            } @else {
+              <span class="label">{{ s | serviceOfferValidity }}</span>
+              <span class="units">
+                <span class="unit"><b>{{ c.days }}</b>d</span>
+                <span class="unit"><b>{{ c.hours }}</b>h</span>
+                <span class="unit"><b>{{ c.minutes }}</b>m</span>
+                <span class="unit"><b>{{ c.seconds }}</b>s</span>
+              </span>
+            }
+          </div>
+        }
+
+        @if (s.availableDays.length || s.availableTimeStart) {
+          <p class="validity small muted">
+            @if (s.availableDays.length) {
+              Available {{ formatDays(s.availableDays) }}
+            }
+            @if (s.availableTimeStart && s.availableTimeEnd) {
+              · {{ formatTime(s.availableTimeStart) }}–{{ formatTime(s.availableTimeEnd) }}
+            }
+          </p>
+        }
+
+        @if (s.distanceKm !== null) {
+          <p class="small"><strong>📍 {{ s.distanceKm | distance }}</strong> from {{ locations.location().label }}</p>
+        }
+
+        <div class="actions">
+          <button type="button" class="btn" [class.btn-secondary]="s.isSaved" (click)="toggleSave()">
+            {{ s.isSaved ? '♥ Saved' : '♡ Save' }}
+          </button>
+
+          @if (isWalkInOnly) {
+            <span class="badge badge-success walk-in-note">🚶 Walk-in welcome — no booking needed</span>
+          }
+
+          @if (showBookButton) {
+            <button type="button" class="btn btn-secondary" (click)="openBooking('book')">📅 Book</button>
+          }
+          @if (showEnquireButton) {
+            <button type="button" class="btn btn-secondary" (click)="openBooking('enquire')">💬 Enquire</button>
+          }
+
+          @if (s.shop.contactNumber) {
+            <a class="btn btn-secondary" [href]="'tel:' + s.shop.contactNumber">☎ Call</a>
+          }
+
+          <div class="share-wrap">
+            <button type="button" class="btn btn-secondary" (click)="shareOpen.set(!shareOpen())">
+              ↗ Share
+            </button>
+            @if (shareOpen()) {
+              <div class="share-menu card">
+                @if (canUseNativeShare) {
+                  <button type="button" (click)="share('native')">📲 Share…</button>
+                }
+                <button type="button" (click)="share('whatsapp')">💬 WhatsApp</button>
+                <button type="button" (click)="share('email')">✉️ Email</button>
+                <button type="button" (click)="share('copy')">🔗 Copy link</button>
+              </div>
+            }
+          </div>
+
+          @if (canEdit()) {
+            <a class="btn btn-ghost" [routerLink]="['/admin/services', s.id, 'edit']">Edit service</a>
+          }
+        </div>
+
+        @if (bookingMode()) {
+          <div class="card booking-panel mt-2">
+            <div class="card-body">
+              <h3 class="mb-1">{{ bookingMode() === 'book' ? 'Book this service' : 'Send an enquiry' }}</h3>
+
+              @if ((s.branches?.length ?? 0) > 1) {
+                <div class="field">
+                  <label for="booking-branch">Branch</label>
+                  <select id="booking-branch" [ngModel]="bookingBranchId()" (ngModelChange)="bookingBranchId.set($event)">
+                    @for (branch of s.branches!; track branch.id) {
+                      <option [ngValue]="branch.id">{{ branch.branchName }}</option>
+                    }
+                  </select>
+                </div>
+              }
+
+              @if (bookingMode() === 'book') {
+                <div class="field">
+                  <label for="booking-time">Preferred date and time</label>
+                  <input id="booking-time" type="datetime-local" [(ngModel)]="bookingRequestedAt" />
+                </div>
+              }
+
+              <div class="field">
+                <label for="booking-notes">Notes (optional)</label>
+                <textarea id="booking-notes" [(ngModel)]="bookingNotes" rows="2" maxlength="500"></textarea>
+              </div>
+
+              <div class="row" style="justify-content: flex-end">
+                <button type="button" class="btn btn-ghost btn-sm" (click)="bookingMode.set(null)">Cancel</button>
+                <button type="button" class="btn btn-sm" [disabled]="bookingSubmitting()" (click)="submitBooking()">
+                  @if (bookingSubmitting()) {
+                    <span class="spinner"></span> Sending…
+                  } @else {
+                    {{ bookingMode() === 'book' ? 'Request booking' : 'Send enquiry' }}
+                  }
+                </button>
+              </div>
+            </div>
+          </div>
+        }
+
+        <p class="small subtle mt-2">
+          {{ s.viewCount }} view{{ s.viewCount === 1 ? '' : 's' }} · {{ s.saveCount }} saved
+        </p>
+      </section>
+    </div>
+
+    <!-- Details -->
+    <div class="content-grid">
+      <div class="stack">
+        @if (s.description) {
+          <section class="card">
+            <div class="card-header"><h2>About this service</h2></div>
+            <div class="card-body"><p class="mb-0">{{ s.description }}</p></div>
+          </section>
+        }
+
+        @if (s.termsConditions) {
+          <section class="card">
+            <div class="card-header"><h2>Terms and conditions</h2></div>
+            <div class="card-body"><p class="mb-0">{{ s.termsConditions }}</p></div>
+          </section>
+        }
+
+        <!-- Where the service is available -->
+        <section class="card">
+          <div class="card-header">
+            <h2>Where it's available</h2>
+            <span class="badge">
+              @switch (s.applicabilityType) {
+                @case ('shop_wide') { All shop locations }
+                @case ('selected_branches') { Selected branches }
+                @case ('online') { Online only }
+              }
+            </span>
+          </div>
+          <div class="card-body">
+            @if (s.applicabilityType === 'online') {
+              <p class="mb-0 muted">This is an online service — no store visit needed.</p>
+            } @else if (s.serviceArea) {
+              <p class="small mb-2"><strong>Service area:</strong> {{ s.serviceArea }}</p>
+            }
+            @if (!s.branches?.length && s.applicabilityType !== 'online') {
+              <p class="mb-0 muted">No active branch is listed for this service yet.</p>
+            } @else if (s.applicabilityType !== 'online') {
+              <div class="branches">
+                @for (branch of s.branches!; track branch.id) {
+                  <div class="branch">
+                    <div class="branch-info">
+                      <strong>{{ branch.branchName }}</strong>
+                      @if (branch.isPrimary) {
+                        <span class="badge badge-brand">Main</span>
+                      }
+                      <p class="small muted mb-0">
+                        {{ branch.address }}@if (branch.address && branch.city) {, }{{ branch.city }}
+                        @if (branch.pincode) { – {{ branch.pincode }} }
+                      </p>
+                      @if (branch.contactNumber) {
+                        <p class="small mb-0">☎ <a [href]="'tel:' + branch.contactNumber">{{ branch.contactNumber }}</a></p>
+                      }
+                      @if (branch.distanceKm !== null) {
+                        <p class="small strong mb-0">📍 {{ branch.distanceKm | distance }}</p>
+                      }
+                      <a
+                        class="btn btn-secondary btn-sm mt-1"
+                        [href]="directionsUrl(branch)"
+                        target="_blank"
+                        rel="noopener"
+                        (click)="trackClick(branch)"
+                      >
+                        Get directions ↗
+                      </a>
+                    </div>
+
+                    @if (mapUrl(branch); as src) {
+                      <iframe
+                        class="map"
+                        [src]="src"
+                        [title]="'Map showing ' + branch.branchName"
+                        loading="lazy"
+                        referrerpolicy="no-referrer-when-downgrade"
+                      ></iframe>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </section>
+      </div>
+
+      <!-- Sidebar -->
+      <aside class="stack">
+        <section class="card">
+          <div class="card-header"><h3>About {{ s.shop.name }}</h3></div>
+          <div class="card-body">
+            @if (s.shop.description) {
+              <p class="small">{{ s.shop.description }}</p>
+            }
+            @if (s.shop.contactNumber) {
+              <p class="small mb-1">☎ <a [href]="'tel:' + s.shop.contactNumber">{{ s.shop.contactNumber }}</a></p>
+            }
+            <a class="btn btn-secondary btn-block btn-sm" [routerLink]="['/shops', s.shop.slug]">
+              View shop and all offers
+            </a>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-header"><h3>Service details</h3></div>
+          <div class="card-body">
+            <dl class="facts small">
+              <dt>Booking</dt>
+              <dd>{{ s.bookingType.replace('_', ' ') }}</dd>
+              @if (s.durationLabel) {
+                <dt>Duration</dt>
+                <dd>{{ s.durationLabel }}</dd>
+              }
+              @if (s.appointmentRequired) {
+                <dt>Appointment</dt>
+                <dd>Required</dd>
+              }
+            </dl>
+          </div>
+        </section>
+      </aside>
+    </div>
+  </div>
+}

@@ -165,6 +165,7 @@ export class NotificationsComponent {
     NEW_OFFER_FOLLOWED_CATEGORY: '🏷️',
     NEW_OFFER_NEARBY: '📍',
     FAVORITE_EXPIRING: '⏳',
+    SAVED_SERVICE_OFFER_EXPIRING: '⏳',
     OFFER_UPDATED: '✏️',
     OFFER_DEACTIVATED: '🚫',
     OFFER_PUBLISHED: '📣',
@@ -210,6 +211,10 @@ export class NotificationsComponent {
     if (!notification.isRead) this.markRead(notification);
     if (notification.entityType === 'offer' && notification.entityId) {
       void this.router.navigate(['/offers', notification.entityId]);
+    } else if (notification.entityType === 'service_offer' && notification.entityId) {
+      // entityId is the service's own id (not the service_offer's) - a service
+      // offer has no standalone detail page, only its parent service does.
+      void this.router.navigate(['/services', notification.entityId]);
     }
   }
 

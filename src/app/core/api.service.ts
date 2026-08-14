@@ -60,6 +60,23 @@ import {
   Retention,
   Roi,
   SubscriptionEvent,
+  Service,
+  ServiceAnalyticsOverview,
+  ServiceBooking,
+  ServiceBranchRow,
+  ServiceCategoryInsightRow,
+  ServiceComparisonRow,
+  ServiceCustomerInsights,
+  ServiceFunnelStage,
+  ServiceLocationRow,
+  ServiceOffer,
+  ServiceOfferClaim,
+  ServiceOfferPayload,
+  ServiceOfferPerformanceSplit,
+  ServicePayload,
+  ServicePerformance,
+  ServiceQuery,
+  UnifiedListing,
 } from './models';
 
 /** Drops undefined/null/empty values so the query string stays clean. */
@@ -772,11 +789,202 @@ export class ApiService {
   // ---- Uploads ------------------------------------------------------------
 
   uploadImage(
-    type: 'offers' | 'shops' | 'categories' | 'avatars' | 'banners',
+    type: 'offers' | 'shops' | 'categories' | 'avatars' | 'banners' | 'services',
     file: File,
   ): Observable<UploadResult> {
     const form = new FormData();
     form.append('image', file);
     return this.data(this.http.post<ApiEnvelope<UploadResult>>(`${this.base}/uploads/${type}`, form));
+  }
+
+  // ---- V4: Services ---------------------------------------------------------
+
+  listServices(query: ServiceQuery): Observable<Page<Service>> {
+    return this.page<Service>(`${this.base}/services`, query as Record<string, unknown>);
+  }
+
+  getService(id: number, position?: PreferredLocation | null): Observable<Service> {
+    return this.data(
+      this.http.get<ApiEnvelope<Service>>(`${this.base}/services/${id}`, {
+        params: toParams({ latitude: position?.latitude, longitude: position?.longitude }),
+      }),
+    );
+  }
+
+  createService(payload: ServicePayload): Observable<Service> {
+    return this.data(this.http.post<ApiEnvelope<Service>>(`${this.base}/services`, payload));
+  }
+
+  updateService(id: number, payload: ServicePayload): Observable<Service> {
+    return this.data(this.http.put<ApiEnvelope<Service>>(`${this.base}/services/${id}`, payload));
+  }
+
+  setServiceStatus(id: number, status: string): Observable<Service> {
+    return this.data(
+      this.http.patch<ApiEnvelope<Service>>(`${this.base}/services/${id}/status`, { status }),
+    );
+  }
+
+  duplicateService(id: number): Observable<Service> {
+    return this.data(this.http.post<ApiEnvelope<Service>>(`${this.base}/services/${id}/duplicate`, {}));
+  }
+
+  deleteService(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/services/${id}`);
+  }
+
+  trackService(id: number, event: 'view' | 'click' | 'share' | 'enquire', branchId?: number): Observable<void> {
+    return this.http.post<void>(`${this.base}/services/${id}/track`, { event, branchId });
+  }
+
+  bookService(
+    id: number,
+    payload: { branchId?: number | null; serviceOfferId?: number | null; requestedAt?: string | null; notes?: string | null },
+  ): Observable<ServiceBooking> {
+    return this.data(this.http.post<ApiEnvelope<ServiceBooking>>(`${this.base}/services/${id}/book`, payload));
+  }
+
+  updateBookingStatus(id: number, bookingId: number, status: string): Observable<ServiceBooking> {
+    return this.data(
+      this.http.patch<ApiEnvelope<ServiceBooking>>(`${this.base}/services/${id}/bookings/${bookingId}`, {
+        status,
+      }),
+    );
+  }
+
+  // ---- V4: Service offers -----------------------------------------------------
+
+  listServiceOffers(serviceId: number, query: Record<string, unknown> = {}): Observable<Page<ServiceOffer>> {
+    return this.page<ServiceOffer>(`${this.base}/services/${serviceId}/offers`, query);
+  }
+
+  getServiceOffer(serviceId: number, offerId: number): Observable<ServiceOffer> {
+    return this.data(
+      this.http.get<ApiEnvelope<ServiceOffer>>(`${this.base}/services/${serviceId}/offers/${offerId}`),
+    );
+  }
+
+  createServiceOffer(serviceId: number, payload: ServiceOfferPayload): Observable<ServiceOffer> {
+    return this.data(
+      this.http.post<ApiEnvelope<ServiceOffer>>(`${this.base}/services/${serviceId}/offers`, payload),
+    );
+  }
+
+  updateServiceOffer(serviceId: number, offerId: number, payload: ServiceOfferPayload): Observable<ServiceOffer> {
+    return this.data(
+      this.http.put<ApiEnvelope<ServiceOffer>>(`${this.base}/services/${serviceId}/offers/${offerId}`, payload),
+    );
+  }
+
+  setServiceOfferStatus(serviceId: number, offerId: number, status: string): Observable<ServiceOffer> {
+    return this.data(
+      this.http.patch<ApiEnvelope<ServiceOffer>>(
+        `${this.base}/services/${serviceId}/offers/${offerId}/status`,
+        { status },
+      ),
+    );
+  }
+
+  deleteServiceOffer(serviceId: number, offerId: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/services/${serviceId}/offers/${offerId}`);
+  }
+
+  // ---- V4: Service offer claims (API only — no UI this phase) -----------------
+
+  listServiceOfferClaims(query: Record<string, unknown> = {}): Observable<Page<ServiceOfferClaim>> {
+    return this.page<ServiceOfferClaim>(`${this.base}/service-offer-claims`, query);
+  }
+
+  claimServiceOffer(serviceOfferId: number): Observable<ServiceOfferClaim> {
+    return this.data(
+      this.http.post<ApiEnvelope<ServiceOfferClaim>>(`${this.base}/service-offer-claims/${serviceOfferId}`, {}),
+    );
+  }
+
+  lookupServiceOfferClaim(code: string): Observable<ServiceOfferClaim> {
+    return this.data(
+      this.http.get<ApiEnvelope<ServiceOfferClaim>>(`${this.base}/service-offer-claims/lookup/${code}`),
+    );
+  }
+
+  redeemServiceOfferClaim(code: string): Observable<ServiceOfferClaim> {
+    return this.data(
+      this.http.post<ApiEnvelope<ServiceOfferClaim>>(
+        `${this.base}/service-offer-claims/lookup/${code}/redeem`,
+        {},
+      ),
+    );
+  }
+
+  // ---- V4: Saved services -----------------------------------------------------
+
+  listSavedServices(query: ServiceQuery = {}): Observable<Page<Service>> {
+    return this.page<Service>(`${this.base}/saved-services`, query as Record<string, unknown>);
+  }
+
+  saveService(serviceId: number): Observable<void> {
+    return this.http.post(`${this.base}/saved-services/${serviceId}`, {}).pipe(map(() => undefined));
+  }
+
+  unsaveService(serviceId: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/saved-services/${serviceId}`);
+  }
+
+  // ---- V4: Unified discovery ("View Offers" union) -----------------------------
+
+  listUnifiedOffers(query: Record<string, unknown> = {}): Observable<Page<UnifiedListing>> {
+    return this.page<UnifiedListing>(`${this.base}/discovery/offers`, query);
+  }
+
+  // ---- V4: Service analytics ---------------------------------------------------
+
+  private serviceAnalytics<T>(
+    path: string,
+    filters: AnalyticsFilters,
+    extra: Record<string, unknown> = {},
+  ): Observable<T> {
+    return this.data(
+      this.http.get<ApiEnvelope<T>>(`${this.base}/service-analytics/${path}`, {
+        params: toParams({ ...filters, ...extra }),
+      }),
+    );
+  }
+
+  serviceAnalyticsOverview(filters: AnalyticsFilters): Observable<ServiceAnalyticsOverview> {
+    return this.serviceAnalytics<ServiceAnalyticsOverview>('overview', filters);
+  }
+
+  serviceAnalyticsPerformance(filters: AnalyticsFilters): Observable<ServicePerformance> {
+    return this.serviceAnalytics<ServicePerformance>('performance', filters);
+  }
+
+  serviceAnalyticsFunnel(filters: AnalyticsFilters): Observable<ServiceFunnelStage[]> {
+    return this.serviceAnalytics<ServiceFunnelStage[]>('funnel', filters);
+  }
+
+  serviceAnalyticsOfferPerformance(filters: AnalyticsFilters): Observable<ServiceOfferPerformanceSplit> {
+    return this.serviceAnalytics<ServiceOfferPerformanceSplit>('offer-performance', filters);
+  }
+
+  serviceAnalyticsBranches(filters: AnalyticsFilters): Observable<ServiceBranchRow[]> {
+    return this.serviceAnalytics<ServiceBranchRow[]>('branches', filters);
+  }
+
+  serviceAnalyticsLocations(filters: AnalyticsFilters): Observable<ServiceLocationRow[]> {
+    return this.serviceAnalytics<ServiceLocationRow[]>('locations', filters);
+  }
+
+  serviceAnalyticsCustomers(filters: AnalyticsFilters): Observable<ServiceCustomerInsights> {
+    return this.serviceAnalytics<ServiceCustomerInsights>('customers', filters);
+  }
+
+  serviceAnalyticsCategoryInsights(filters: AnalyticsFilters): Observable<ServiceCategoryInsightRow[]> {
+    return this.serviceAnalytics<ServiceCategoryInsightRow[]>('category-insights', filters);
+  }
+
+  serviceAnalyticsComparison(filters: AnalyticsFilters, serviceIds: number[]): Observable<ServiceComparisonRow[]> {
+    return this.serviceAnalytics<ServiceComparisonRow[]>('comparison', filters, {
+      serviceIds: serviceIds.join(','),
+    });
   }
 }

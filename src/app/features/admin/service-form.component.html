@@ -1,0 +1,365 @@
+<div class="container page">
+  <div class="page-header">
+    <div>
+      <h1>{{ isEdit() ? 'Edit service' : 'Add a service' }}</h1>
+      <p class="subtitle">
+        @if (isEdit()) {
+          Changes are visible to customers as soon as you save.
+        } @else {
+          Save as a draft, schedule it, or publish it straight away.
+        }
+      </p>
+    </div>
+    <a routerLink="/admin/services" class="btn btn-ghost">← Back to services</a>
+  </div>
+
+  @if (loading()) {
+    <div class="skeleton" style="height: 400px"></div>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="save('active')" novalidate>
+      @if (formError()) {
+        <div class="alert" role="alert">{{ formError() }}</div>
+      }
+
+      <div class="form-layout">
+        <div>
+          <!-- Basic information -->
+          <fieldset>
+            <legend>Basic information</legend>
+
+            <div class="form-grid">
+              <div class="field">
+                <label for="shopId">Shop *</label>
+
+                @if (!shopsLoaded()) {
+                  <div class="skeleton" style="height: 40px"></div>
+                } @else if (shops().length === 0) {
+                  <div class="no-shop">
+                    You are not assigned to a shop yet, so there is nothing to add a service for.
+                    Ask a Super Admin to assign you to one from <em>Users → Shops</em>.
+                  </div>
+                } @else if (hasSingleShop || isEdit()) {
+                  <div class="locked-shop">
+                    <span class="shop-mark" aria-hidden="true">{{ selectedShopName.charAt(0) }}</span>
+                    <span class="shop-text">
+                      <strong>{{ selectedShopName }}</strong>
+                      <span class="small muted">
+                        {{ isEdit() ? 'A service cannot be moved to another shop.' : 'Taken from your role.' }}
+                      </span>
+                    </span>
+                  </div>
+                } @else {
+                  <select id="shopId" formControlName="shopId" (change)="onShopChange()" [class.invalid]="error('shopId', 'Shop')">
+                    <option [ngValue]="null">Choose a shop</option>
+                    @for (shop of shops(); track shop.id) {
+                      <option [ngValue]="shop.id">{{ shop.name }}</option>
+                    }
+                  </select>
+                  <span class="hint">You administer more than one shop — pick the right one.</span>
+                }
+
+                @if (error('shopId', 'Shop'); as message) {
+                  <span class="error-text">{{ message }}</span>
+                }
+              </div>
+
+              <div class="field">
+                <label for="categoryId">Category</label>
+                <select id="categoryId" formControlName="categoryId">
+                  <option [ngValue]="null">No category</option>
+                  @for (category of categories(); track category.id) {
+                    <option [ngValue]="category.id">{{ category.name }}</option>
+                  }
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="subcategoryId">Subcategory</label>
+                <select id="subcategoryId" formControlName="subcategoryId">
+                  <option [ngValue]="null">None</option>
+                  @for (category of categories(); track category.id) {
+                    <option [ngValue]="category.id">{{ category.name }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="name">Service name *</label>
+              <input
+                id="name"
+                type="text"
+                formControlName="name"
+                placeholder="e.g. Haircut and Beard Styling"
+                [class.invalid]="error('name', 'Name')"
+              />
+              @if (error('name', 'Name'); as message) {
+                <span class="error-text">{{ message }}</span>
+              }
+            </div>
+
+            <div class="field">
+              <label for="description">Description</label>
+              <textarea
+                id="description"
+                formControlName="description"
+                rows="3"
+                placeholder="What is included, and anything a customer should know."
+              ></textarea>
+            </div>
+          </fieldset>
+
+          <!-- Pricing and duration -->
+          <fieldset>
+            <legend>Pricing and duration</legend>
+
+            <div class="form-grid">
+              <div class="field">
+                <label for="pricingType">Pricing *</label>
+                <select id="pricingType" formControlName="pricingType">
+                  <option value="fixed">Fixed price</option>
+                  <option value="starting_from">Starting from</option>
+                  <option value="price_on_enquiry">Price on enquiry</option>
+                </select>
+              </div>
+
+              @if (showPrice) {
+                <div class="field">
+                  <label for="price">Price (₹) *</label>
+                  <input id="price" type="number" min="0" step="0.01" formControlName="price" />
+                </div>
+              }
+
+              <div class="field">
+                <label for="durationMinutes">Duration (minutes)</label>
+                <input id="durationMinutes" type="number" min="1" formControlName="durationMinutes" />
+              </div>
+
+              <div class="field">
+                <label for="durationLabel">Duration label</label>
+                <input id="durationLabel" type="text" formControlName="durationLabel" placeholder="e.g. 45 mins" />
+              </div>
+            </div>
+          </fieldset>
+
+          <!-- Availability and booking -->
+          <fieldset>
+            <legend>Availability and booking</legend>
+
+            <div class="field">
+              <label>Available days</label>
+              <div class="day-picker">
+                @for (day of days; track day.value) {
+                  <button
+                    type="button"
+                    class="chip"
+                    [class.active]="isDaySelected(day.value)"
+                    (click)="toggleDay(day.value)"
+                  >
+                    {{ day.label }}
+                  </button>
+                }
+              </div>
+            </div>
+
+            <div class="form-grid">
+              <div class="field">
+                <label for="availableTimeStart">Opens at</label>
+                <input id="availableTimeStart" type="time" formControlName="availableTimeStart" />
+              </div>
+              <div class="field">
+                <label for="availableTimeEnd">Closes at</label>
+                <input id="availableTimeEnd" type="time" formControlName="availableTimeEnd" />
+              </div>
+              <div class="field">
+                <label for="bookingType">Booking type *</label>
+                <select id="bookingType" formControlName="bookingType">
+                  <option value="walk_in">Walk-in only</option>
+                  <option value="appointment">Appointment only</option>
+                  <option value="both">Walk-in or appointment</option>
+                  <option value="enquiry_only">Enquiry only</option>
+                </select>
+              </div>
+            </div>
+
+            <label class="checkbox">
+              <input type="checkbox" formControlName="homeService" />
+              <span>Home service available</span>
+            </label>
+            <label class="checkbox">
+              <input type="checkbox" formControlName="walkInAvailable" />
+              <span>Walk-ins welcome</span>
+            </label>
+            <label class="checkbox">
+              <input type="checkbox" formControlName="appointmentRequired" />
+              <span>Appointment required</span>
+            </label>
+
+            <div class="field mt-1">
+              <label for="serviceArea">Service area</label>
+              <input id="serviceArea" type="text" formControlName="serviceArea" placeholder="e.g. Within 10 km of the branch" />
+            </div>
+          </fieldset>
+
+          <!-- Scheduling -->
+          <fieldset>
+            <legend>Scheduling (optional)</legend>
+
+            <div class="form-grid">
+              <div class="field">
+                <label for="startDate">Starts</label>
+                <input id="startDate" type="datetime-local" formControlName="startDate" />
+              </div>
+
+              <div class="field">
+                <label for="endDate">Ends</label>
+                <input id="endDate" type="datetime-local" formControlName="endDate" />
+              </div>
+            </div>
+
+            <p class="hint mt-1">
+              A start date is only required if you choose <strong>Schedule</strong> below. Otherwise, this
+              service stays available indefinitely once published.
+            </p>
+          </fieldset>
+
+          <!-- Location -->
+          <fieldset>
+            <legend>Where the service is available</legend>
+
+            <div class="radio-row">
+              <label class="radio-card">
+                <input type="radio" formControlName="applicabilityType" value="shop_wide" />
+                <span>
+                  <strong>All shop locations</strong>
+                  <span class="small muted">Every active branch of this shop.</span>
+                </span>
+              </label>
+
+              <label class="radio-card">
+                <input type="radio" formControlName="applicabilityType" value="selected_branches" />
+                <span>
+                  <strong>Selected branches</strong>
+                  <span class="small muted">Pick exactly where it is available.</span>
+                </span>
+              </label>
+
+              <label class="radio-card">
+                <input type="radio" formControlName="applicabilityType" value="online" />
+                <span>
+                  <strong>Online</strong>
+                  <span class="small muted">No store visit required.</span>
+                </span>
+              </label>
+            </div>
+
+            @if (form.controls.applicabilityType.value === 'selected_branches') {
+              @if (branches().length === 0) {
+                <p class="small muted">
+                  This shop has no branches yet. Add one from the shop's branches page first.
+                </p>
+              } @else {
+                <div class="row mb-1">
+                  <span class="small muted">{{ selectedBranchIds().length }} of {{ branches().length }} selected</span>
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="selectAllBranches()">Select all</button>
+                </div>
+                <div class="branch-picker">
+                  @for (branch of branches(); track branch.id) {
+                    <label class="branch-option" [class.selected]="isBranchSelected(branch.id)">
+                      <input
+                        type="checkbox"
+                        [checked]="isBranchSelected(branch.id)"
+                        (change)="toggleBranch(branch.id)"
+                      />
+                      <span>
+                        <strong>{{ branch.branchName }}</strong>
+                        <span class="small muted">{{ branch.city }}@if (branch.pincode) { – {{ branch.pincode }} }</span>
+                      </span>
+                    </label>
+                  }
+                </div>
+              }
+            }
+          </fieldset>
+
+          <!-- Terms -->
+          <fieldset>
+            <legend>Terms and conditions</legend>
+            <div class="field">
+              <label for="termsConditions">Terms</label>
+              <textarea id="termsConditions" formControlName="termsConditions" rows="3" placeholder="Anything a customer should know before booking."></textarea>
+            </div>
+          </fieldset>
+        </div>
+
+        <!-- Sidebar: images, actions -->
+        <aside class="stack">
+          <section class="card">
+            <div class="card-header"><h3>Images</h3></div>
+            <div class="card-body">
+              <label class="btn btn-secondary btn-block btn-sm" for="service-images">
+                {{ uploading() ? 'Uploading…' : '＋ Add images' }}
+              </label>
+              <input
+                id="service-images"
+                type="file"
+                accept="image/*"
+                multiple
+                class="sr-only"
+                (change)="uploadImages($event)"
+              />
+              <p class="hint mt-1">Up to 8 images. The first one is used on the service card.</p>
+
+              @if (images().length) {
+                <ul class="image-list">
+                  @for (image of images(); track image.url; let i = $index) {
+                    <li>
+                      <img [src]="image.thumbnailUrl || image.url" [alt]="'Image ' + (i + 1)" />
+                      <span class="image-meta">
+                        @if (i === 0) {
+                          <span class="badge badge-brand">Cover</span>
+                        }
+                      </span>
+                      <span class="image-actions">
+                        <button type="button" class="icon-btn" [disabled]="i === 0" (click)="moveImage(i, -1)" title="Move up">↑</button>
+                        <button type="button" class="icon-btn" [disabled]="i === images().length - 1" (click)="moveImage(i, 1)" title="Move down">↓</button>
+                        <button type="button" class="icon-btn" (click)="removeImage(i)" title="Remove">×</button>
+                      </span>
+                    </li>
+                  }
+                </ul>
+              }
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card-header"><h3>Publish</h3></div>
+            <div class="card-body stack" style="gap: 0.5rem">
+              <button type="button" class="btn btn-block" [disabled]="saving()" (click)="save('active')">
+                @if (saving()) {
+                  <span class="spinner"></span> Saving…
+                } @else {
+                  {{ isEdit() ? 'Save and publish' : 'Publish service' }}
+                }
+              </button>
+              <button type="button" class="btn btn-secondary btn-block" [disabled]="saving()" (click)="save('scheduled')">
+                Schedule
+              </button>
+              <button type="button" class="btn btn-ghost btn-block" [disabled]="saving()" (click)="save('draft')">
+                Save as draft
+              </button>
+              @if (existing(); as service) {
+                <p class="small muted mb-0 mt-1">
+                  Current status: <strong>{{ service.status }}</strong>
+                  @if (service.updatedBy) {
+                    <br />Last edited by {{ service.updatedBy.name }}
+                  }
+                </p>
+              }
+            </div>
+          </section>
+        </aside>
+      </div>
+    </form>
+  }
+</div>
