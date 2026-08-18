@@ -1371,6 +1371,8 @@ export interface UnifiedListing {
   imageUrl: string | null;
   distanceKm: number | null;
   isSaved: boolean;
+  latitude?: number | null;
+  longitude?: number | null;
   shop: { id: number; name: string; slug: string; logoUrl: string | null };
   category: { id: number; name: string; slug: string } | null;
 }
