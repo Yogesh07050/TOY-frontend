@@ -45,12 +45,18 @@ export const refreshInterceptor: HttpInterceptorFn = (request, next) => {
 
   return next(request).pipe(
     catchError((error: unknown) => {
+      // A 401 on a non-auth API call is worth one silent refresh: a customer
+      // should never meet the login screen because an access token aged out
+      // (§20). The refresh cookie can outlive the access token, so a missing
+      // token is not on its own a reason to skip the attempt - but there must
+      // be *some* sign of a session, or an anonymous visitor's 401 would end in
+      // a spurious logout and redirect to the login page.
       const isExpired =
         error instanceof HttpErrorResponse &&
         error.status === 401 &&
         isApiRequest(request) &&
         !isAuthEndpoint(request) &&
-        Boolean(auth.accessToken);
+        (Boolean(auth.accessToken) || auth.hasSession);
 
       if (!isExpired) return throwError(() => error);
 

@@ -3,6 +3,7 @@ import { Observable, tap } from 'rxjs';
 
 import { ApiService } from './api.service';
 import { AuthService } from './auth.service';
+import { RazorpayService } from './razorpay.service';
 import { Entitlements, FeatureName, PlanCatalogue, PlanKey } from './models';
 
 /**
@@ -19,6 +20,7 @@ import { Entitlements, FeatureName, PlanCatalogue, PlanKey } from './models';
 export class SubscriptionService {
   private readonly api = inject(ApiService);
   private readonly auth = inject(AuthService);
+  private readonly razorpay = inject(RazorpayService);
 
   private readonly entitlements = signal<Entitlements[]>([]);
   private readonly catalogue = signal<PlanCatalogue | null>(null);
@@ -55,7 +57,13 @@ export class SubscriptionService {
   readonly isPremium = computed(() => this.plan() === 'PREMIUM');
 
   /** True when a paid plan is awaiting payment, which the UI flags rather than hides. */
-  readonly paymentPending = computed(() => this.current()?.paymentStatus === 'pending');
+  readonly paymentPending = computed(() => {
+    const current = this.current();
+    return current?.paymentStatus === 'pending' || current?.status === 'created';
+  });
+
+  /** True when a renewal failed and the grace window is counting down (§10). */
+  readonly pastDue = computed(() => this.current()?.status === 'past_due');
 
   constructor() {
     // Entitlements belong to a session, so they are dropped the moment the
@@ -136,15 +144,46 @@ export class SubscriptionService {
     return this.catalogue()?.featureLabels[feature] ?? feature;
   }
 
-  changePlan(shopId: number, plan: PlanKey): Observable<Entitlements> {
-    return this.api.changePlan(shopId, plan).pipe(tap(() => this.load(true)));
+  /**
+   * Buys a paid plan through Razorpay Checkout (§3).
+   *
+   * Reloads entitlements once the gateway reports success, but the plan only
+   * changes when the webhook lands (§7) - so the caller should tell the
+   * merchant their plan is activating rather than that it is active.
+   */
+  purchase(shopId: number, plan: PlanKey, billingCycle: 'monthly' | 'yearly' = 'monthly') {
+    return this.razorpay.purchase(shopId, plan, billingCycle).pipe(tap(() => this.load(true)));
   }
 
-  confirmPayment(shopId: number): Observable<Entitlements> {
-    return this.api.confirmSubscriptionPayment(shopId).pipe(tap(() => this.load(true)));
+  /** Moves to a cheaper plan at the end of the paid period (§12). */
+  downgrade(shopId: number, plan: PlanKey, note?: string): Observable<Entitlements> {
+    return this.api.downgradePlan(shopId, plan, note).pipe(tap(() => this.load(true)));
   }
 
   cancel(shopId: number, note?: string): Observable<Entitlements> {
     return this.api.cancelSubscription(shopId, note).pipe(tap(() => this.load(true)));
   }
+
+  /** Active Super Admin grants for the shop in force, for the §11N panel. */
+  readonly specialAccess = computed(() =>
+    (this.current()?.specialAccess ?? []).filter((entry) => entry.status === 'active'),
+  );
+
+  /**
+   * Why a feature is available (§11G): the plan, a Super Admin grant, or both.
+   * Presentation only - the API resolves the same union server-side (§11K).
+   */
+  accessSourceFor(feature: FeatureName): 'plan' | 'override' | 'plan+override' | null {
+    const current = this.current();
+    if (!current) return null;
+    const fromPlan = (current.planFeatures ?? current.features).includes(feature);
+    const fromOverride = (current.overrideFeatures ?? []).includes(feature);
+    if (fromPlan && fromOverride) return 'plan+override';
+    if (fromPlan) return 'plan';
+    if (fromOverride) return 'override';
+    return null;
+  }
+
+  /** Whether online payment is available at all on this deployment. */
+  readonly paymentsEnabled = computed(() => this.catalogue()?.payment?.enabled ?? false);
 }

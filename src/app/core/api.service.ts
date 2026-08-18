@@ -38,6 +38,13 @@ import {
   ShopStat,
   UploadResult,
   Acquisition,
+  CatalogueFeature,
+  CheckoutSession,
+  FeatureOverride,
+  FeatureOverrideEvent,
+  FeatureOverrideSummary,
+  PaymentTransaction,
+  ShopOverrideOverview,
   AnalyticsFilters,
   BestTime,
   BranchPerformance,
@@ -621,20 +628,48 @@ export class ApiService {
     );
   }
 
-  changePlan(shopId: number, plan: PlanKey, billingCycle: 'monthly' | 'yearly' = 'monthly') {
+  /**
+   * Starts a paid-plan purchase (§3). Returns what Razorpay Checkout needs.
+   *
+   * This does not change the shop's plan: activation happens when Razorpay's
+   * webhook reaches the backend (§7), so nothing the browser reports back can
+   * unlock a feature on its own.
+   */
+  startCheckout(
+    shopId: number,
+    plan: PlanKey,
+    billingCycle: 'monthly' | 'yearly' = 'monthly',
+  ): Observable<CheckoutSession> {
     return this.data(
-      this.http.put<ApiEnvelope<Entitlements>>(`${this.base}/subscriptions/shops/${shopId}`, {
-        plan,
-        billingCycle,
-      }),
+      this.http.post<ApiEnvelope<CheckoutSession>>(
+        `${this.base}/subscriptions/shops/${shopId}/checkout`,
+        { plan, billingCycle },
+      ),
     );
   }
 
-  confirmSubscriptionPayment(shopId: number): Observable<Entitlements> {
+  /**
+   * Reports a completed Checkout so the backend can verify its signature.
+   * Still not an activation - it only lets the UI stop waiting (§7).
+   */
+  verifyCheckout(
+    shopId: number,
+    payload: { paymentId: string; subscriptionId?: string; orderId?: string; signature: string },
+  ): Observable<{ verified: boolean; subscriptionStatus: string; message: string }> {
+    return this.data(
+      this.http.post<ApiEnvelope<{ verified: boolean; subscriptionStatus: string; message: string }>>(
+        `${this.base}/subscriptions/shops/${shopId}/checkout/verify`,
+        payload,
+      ),
+    );
+  }
+
+  /** Moves to a cheaper plan; takes effect when the paid period ends (§12). */
+  downgradePlan(shopId: number, plan: PlanKey, note?: string): Observable<Entitlements> {
     return this.data(
       this.http.post<ApiEnvelope<Entitlements>>(
-        `${this.base}/subscriptions/shops/${shopId}/confirm-payment`,
-        {},
+        `${this.base}/subscriptions/shops/${shopId}/downgrade`,
+        { plan, note },
       ),
     );
   }
@@ -644,6 +679,15 @@ export class ApiService {
       this.http.post<ApiEnvelope<Entitlements>>(
         `${this.base}/subscriptions/shops/${shopId}/cancel`,
         { note },
+      ),
+    );
+  }
+
+  /** Payment ledger for the Billing screen (§15). */
+  billingHistory(shopId: number): Observable<PaymentTransaction[]> {
+    return this.data(
+      this.http.get<ApiEnvelope<PaymentTransaction[]>>(
+        `${this.base}/subscriptions/shops/${shopId}/billing-history`,
       ),
     );
   }
@@ -660,6 +704,85 @@ export class ApiService {
         `${this.base}/subscriptions/shops/${shopId}/history`,
       ),
     );
+  }
+
+  // ---- V3: Super Admin feature overrides (§11C) ---------------------------
+
+  /** The controlled catalogue a Super Admin may grant from (§11D). */
+  overrideCatalogue(): Observable<{ features: CatalogueFeature[] }> {
+    return this.data(
+      this.http.get<ApiEnvelope<{ features: CatalogueFeature[] }>>(
+        `${this.base}/feature-overrides/catalogue`,
+      ),
+    );
+  }
+
+  overrideSummary(): Observable<FeatureOverrideSummary> {
+    return this.data(
+      this.http.get<ApiEnvelope<FeatureOverrideSummary>>(`${this.base}/feature-overrides/summary`),
+    );
+  }
+
+  listOverrides(query: Record<string, unknown> = {}): Observable<Page<FeatureOverride>> {
+    return this.http
+      .get<ApiEnvelope<FeatureOverride[]>>(`${this.base}/feature-overrides`, {
+        params: toParams(query),
+      })
+      .pipe(map((response) => ({ items: response.data, meta: response.meta! })));
+  }
+
+  overrideHistory(query: Record<string, unknown> = {}): Observable<FeatureOverrideEvent[]> {
+    return this.data(
+      this.http.get<ApiEnvelope<FeatureOverrideEvent[]>>(`${this.base}/feature-overrides/history`, {
+        params: toParams(query),
+      }),
+    );
+  }
+
+  /** One shop: plan, plan features, and everything granted on top (§11C). */
+  shopOverrides(shopId: number): Observable<ShopOverrideOverview> {
+    return this.data(
+      this.http.get<ApiEnvelope<ShopOverrideOverview>>(
+        `${this.base}/feature-overrides/shops/${shopId}`,
+      ),
+    );
+  }
+
+  grantOverride(
+    shopId: number,
+    payload: {
+      featureKey: string;
+      adminUserId?: number;
+      startsAt?: string;
+      expiresAt?: string;
+      isPermanent?: boolean;
+      reason?: string;
+    },
+  ): Observable<FeatureOverride> {
+    return this.data(
+      this.http.post<ApiEnvelope<FeatureOverride>>(
+        `${this.base}/feature-overrides/shops/${shopId}`,
+        payload,
+      ),
+    );
+  }
+
+  revokeOverride(shopId: number, featureKey: string, reason?: string): Observable<FeatureOverride> {
+    return this.data(
+      this.http.delete<ApiEnvelope<FeatureOverride>>(
+        `${this.base}/feature-overrides/shops/${shopId}/${featureKey}`,
+        { body: { reason } },
+      ),
+    );
+  }
+
+  /** Platform-wide payment ledger, Super Admin only (§31). */
+  allTransactions(query: Record<string, unknown> = {}): Observable<Page<PaymentTransaction>> {
+    return this.http
+      .get<ApiEnvelope<PaymentTransaction[]>>(`${this.base}/payments/transactions`, {
+        params: toParams(query),
+      })
+      .pipe(map((response) => ({ items: response.data, meta: response.meta! })));
   }
 
   // ---- V3: campaigns ------------------------------------------------------

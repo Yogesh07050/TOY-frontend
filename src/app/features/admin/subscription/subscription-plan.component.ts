@@ -80,6 +80,24 @@ import { PERMISSIONS } from '../../../core/permissions';
                 <dt>Billing</dt>
                 <dd>{{ plan.billingCycle }}</dd>
               </div>
+              @if (plan.nextBillingDate && plan.status === 'active') {
+                <div>
+                  <dt>Next billing</dt>
+                  <dd>{{ plan.nextBillingDate | date: 'mediumDate' }}</dd>
+                </div>
+              }
+              @if (plan.paymentMethod) {
+                <div>
+                  <dt>Payment method</dt>
+                  <dd>{{ plan.paymentMethod | uppercase }}</dd>
+                </div>
+              }
+              @if (plan.plan !== 'FREE') {
+                <div>
+                  <dt>AutoPay</dt>
+                  <dd>{{ plan.autopayEnabled ? 'Active' : 'Not set up' }}</dd>
+                </div>
+              }
               <div>
                 <dt>Shop profile</dt>
                 <dd>{{ plan.profile }}</dd>
@@ -94,15 +112,11 @@ import { PERMISSIONS } from '../../../core/permissions';
               </div>
             </dl>
 
-            @if (plan.paymentStatus === 'pending') {
-              <div class="notice">
-                <p class="small">
-                  This plan is active but the payment for the current period has not been confirmed.
-                </p>
-                @if (canManage()) {
-                  <button type="button" class="btn btn-sm" [disabled]="busy()" (click)="confirm(plan)">
-                    Confirm payment
-                  </button>
+            @if (statusNotice(plan); as notice) {
+              <div class="notice" [class.danger]="notice.tone === 'danger'">
+                <p class="small">{{ notice.text }}</p>
+                @if (notice.retry && canManage()) {
+                  <a class="btn btn-sm" routerLink="/admin/subscription/upgrade">Retry payment</a>
                 }
               </div>
             }
@@ -145,7 +159,13 @@ import { PERMISSIONS } from '../../../core/permissions';
               } @else {
                 <ul class="features small">
                   @for (feature of plan.features; track feature) {
-                    <li><span aria-hidden="true">✓</span> {{ subscriptions.labelFor(feature) }}</li>
+                    <li>
+                      <span aria-hidden="true">✓</span>
+                      {{ subscriptions.labelFor(feature) }}
+                      @if (subscriptions.accessSourceFor(feature) === 'override') {
+                        <span class="badge badge-brand tiny">Super Admin grant</span>
+                      }
+                    </li>
                   }
                 </ul>
               }
@@ -153,14 +173,68 @@ import { PERMISSIONS } from '../../../core/permissions';
           </section>
         </div>
 
-        @if (canManage() && plan.plan !== 'FREE') {
+        <!--
+          §11N: features the Super Admin granted are shown apart from the plan,
+          so a Free merchant with Premium-like capability is never confusing.
+        -->
+        @if (specialAccess().length) {
+          <section class="card mt-2 special">
+            <div class="card-header">
+              <h2>Special access</h2>
+              <p class="small subtle">
+                Granted by the Offers App team, independently of your plan. Buying or changing a
+                plan does not affect these.
+              </p>
+            </div>
+            <div class="card-body">
+              <ul class="grants small">
+                @for (grant of specialAccess(); track grant.featureKey) {
+                  <li>
+                    <span class="tick" aria-hidden="true">✓</span>
+                    <div>
+                      <p class="strong">{{ grant.featureName }}</p>
+                      <p class="subtle">
+                        Granted by Super Admin ·
+                        {{
+                          grant.isPermanent
+                            ? 'Permanent'
+                            : 'Expires ' + (grant.expiresAt | date: 'mediumDate')
+                        }}
+                      </p>
+                    </div>
+                  </li>
+                }
+              </ul>
+            </div>
+          </section>
+        }
+
+        <div class="card mt-2">
+          <div class="card-body cancel">
+            <div>
+              <p class="strong">Billing history &amp; invoices</p>
+              <p class="small subtle">
+                Every payment, the method used and the invoices issued for them.
+              </p>
+            </div>
+            <a class="btn btn-sm" routerLink="/admin/subscription/billing">View billing</a>
+          </div>
+        </div>
+
+        @if (canManage() && plan.plan !== 'FREE' && plan.status !== 'cancelled') {
           <div class="card mt-2">
             <div class="card-body cancel">
               <div>
                 <p class="strong">Cancel subscription</p>
                 <p class="small subtle">
-                  Your shop moves to the Free plan. Published offers stay live, but features the
-                  Free plan does not include stop being available.
+                  @if (activeUntil(plan); as until) {
+                    Your current plan will remain active until
+                    {{ until | date: 'mediumDate' }}. Recurring billing stops immediately, and your
+                    shop data is kept.
+                  } @else {
+                    Your shop moves to the Free plan. Published offers stay live, but features the
+                    Free plan does not include stop being available. Your data is kept.
+                  }
                 </p>
               </div>
               <button type="button" class="btn btn-danger btn-sm" [disabled]="busy()" (click)="cancel(plan)">
@@ -228,6 +302,41 @@ import { PERMISSIONS } from '../../../core/permissions';
 
       .notice p {
         margin: 0;
+      }
+
+      .notice.danger {
+        background: var(--danger-bg, var(--warning-bg));
+        border-left-color: var(--danger);
+      }
+
+      .grants {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 0.75rem;
+      }
+
+      .grants li {
+        display: flex;
+        gap: 0.6rem;
+        align-items: flex-start;
+      }
+
+      .grants .tick {
+        color: var(--success);
+        font-weight: 700;
+      }
+
+      .grants p {
+        margin: 0;
+      }
+
+      .badge.tiny {
+        font-size: 0.62rem;
+        padding: 0.05rem 0.35rem;
+        margin-left: 0.35rem;
+        vertical-align: middle;
       }
 
       .split {
@@ -377,18 +486,63 @@ export class SubscriptionPlanComponent {
     }));
   });
 
-  confirm(plan: Entitlements): void {
-    this.busy.set(true);
-    this.subscriptions.confirmPayment(plan.shopId).subscribe({
-      next: () => {
-        this.busy.set(false);
-        this.toast.success('Payment confirmed.');
-      },
-      error: () => {
-        this.busy.set(false);
-        this.toast.error('That payment could not be confirmed.');
-      },
-    });
+  /** Active Super Admin grants for this shop (§11N). */
+  readonly specialAccess = this.subscriptions.specialAccess;
+
+  /** When the benefits already paid for run out (§13). */
+  activeUntil(plan: Entitlements): string | null {
+    return plan.currentPeriodEnd ?? plan.renewsAt;
+  }
+
+  /**
+   * The one-line explanation of the current billing state (§9, §10, §12, §13).
+   * `retry` marks the states the merchant can act on themselves.
+   */
+  statusNotice(plan: Entitlements): { text: string; tone: 'info' | 'danger'; retry: boolean } | null {
+    if (plan.status === 'past_due') {
+      return {
+        tone: 'danger',
+        retry: true,
+        text: plan.graceUntil
+          ? `Your last payment failed. Your ${plan.planName} features stay on until ${new Date(
+              plan.graceUntil,
+            ).toLocaleDateString()}, after which the plan moves to Free. Your data is kept.`
+          : 'Your last payment failed. Please retry the payment to keep your plan.',
+      };
+    }
+    if (plan.status === 'cancelled') {
+      const until = this.activeUntil(plan);
+      return {
+        tone: 'info',
+        retry: false,
+        text: until
+          ? `Cancelled. Your ${plan.planName} plan stays active until ${new Date(until).toLocaleDateString()}.`
+          : 'Cancelled. Your shop moves to the Free plan shortly.',
+      };
+    }
+    if (plan.status === 'paused') {
+      return { tone: 'info', retry: true, text: 'Your subscription is paused at the payment gateway.' };
+    }
+    if (plan.status === 'created' || plan.paymentStatus === 'pending') {
+      return {
+        tone: 'info',
+        retry: true,
+        // §7: the plan is not on until the gateway confirms it, and saying so
+        // is more honest than showing features the API will refuse.
+        text: `${plan.planName} is waiting for payment confirmation. Its features unlock as soon as the payment clears.`,
+      };
+    }
+    if (plan.cancelAtPeriodEnd && plan.pendingPlan) {
+      const until = this.activeUntil(plan);
+      return {
+        tone: 'info',
+        retry: false,
+        text: `Scheduled to move to the ${plan.pendingPlan} plan on ${
+          until ? new Date(until).toLocaleDateString() : 'the next billing date'
+        }.`,
+      };
+    }
+    return null;
   }
 
   cancel(plan: Entitlements): void {

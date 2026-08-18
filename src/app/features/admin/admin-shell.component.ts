@@ -248,6 +248,7 @@ export class AdminShellComponent {
     { label: 'Reviews', route: '/admin/reviews', icon: '⭐', permissions: [PERMISSIONS.MODERATE_REVIEWS] },
     { label: 'Users', route: '/admin/users', icon: '👥', permissions: [PERMISSIONS.VIEW_USERS] },
     { label: 'Roles & permissions', route: '/admin/roles', icon: '🔐', superAdminOnly: true },
+    { label: 'Feature overrides', route: '/admin/feature-overrides', icon: '🎁', superAdminOnly: true },
     { label: 'Audit logs', route: '/admin/audit-logs', icon: '📜', permissions: [PERMISSIONS.VIEW_AUDIT_LOGS] },
   ];
 

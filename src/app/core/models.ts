@@ -76,8 +76,16 @@ export interface PreferredLocation {
 export interface AuthSession {
   user: CurrentUser;
   accessToken: string;
+  /**
+   * Also returned for non-browser clients. The web app ignores it: its refresh
+   * token arrives as an httpOnly cookie instead (§22).
+   */
   refreshToken: string;
+  /** Seconds until the access token expires. */
   expiresIn: number;
+  /** Seconds until the refresh token expires - the "stay logged in" window. */
+  refreshExpiresIn?: number;
+  familyId?: string;
 }
 
 export interface ManagedUser {
@@ -679,19 +687,115 @@ export interface ComparisonRow {
   values: (string | boolean)[];
 }
 
+/** Whether checkout can actually be opened, and with which gateway. */
+export interface PaymentConfig {
+  gateway: 'razorpay';
+  enabled: boolean;
+  keyId: string | null;
+  supportsAutopay: boolean;
+  methods: string[];
+}
+
 export interface PlanCatalogue {
   plans: Plan[];
   featureLabels: Record<string, string>;
   comparison: ComparisonRow[];
+  payment?: PaymentConfig;
 }
 
 export interface SubscriptionUsage {
   period: string;
   offersThisMonth: number;
+  servicesThisMonth?: number;
   branches: number;
   categories: number;
   banners: number;
   exportsThisMonth: number;
+}
+
+/** Subscription lifecycle states (payments spec §9). */
+export type SubscriptionStatus = 'created' | 'active' | 'past_due' | 'paused' | 'cancelled' | 'expired';
+
+/**
+ * A feature the Super Admin granted independently of the plan (§11A).
+ * Read-only to a merchant; only a Super Admin can create or revoke one.
+ */
+export interface FeatureOverride {
+  id: number;
+  shopId: number;
+  shopName: string | null;
+  adminUserId: number | null;
+  adminName: string | null;
+  featureKey: string;
+  featureName: string;
+  category: string;
+  kind: 'feature' | 'limit';
+  status: 'active' | 'revoked' | 'expired';
+  startsAt: string | null;
+  expiresAt: string | null;
+  isPermanent: boolean;
+  reason: string | null;
+  grantedBy: number | null;
+  grantedByName: string | null;
+  revokedBy: number | null;
+  revokedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** An entry in the controlled catalogue a Super Admin may grant from (§11D). */
+export interface CatalogueFeature {
+  featureKey: string;
+  name: string;
+  description: string;
+  category: string;
+  kind: 'feature' | 'limit';
+  limitKey?: string;
+}
+
+/** One row of the override audit trail (§11I). */
+export interface FeatureOverrideEvent {
+  id: number;
+  overrideId: number | null;
+  shopId: number;
+  shopName: string | null;
+  featureKey: string;
+  featureName: string;
+  action: 'GRANTED' | 'REVOKED' | 'EXTENDED' | 'EXPIRED' | 'MODIFIED';
+  previousState: unknown;
+  newState: unknown;
+  startsAt: string | null;
+  expiresAt: string | null;
+  reason: string | null;
+  actorId: number | null;
+  actorName: string | null;
+  createdAt: string;
+}
+
+/** Dashboard tiles from §11M. */
+export interface FeatureOverrideSummary {
+  activeOverrides: number;
+  expiringThisWeek: number;
+  permanentOverrides: number;
+  revokedOverrides: number;
+  expiredOverrides: number;
+  mostGranted: { featureKey: string; featureName: string; count: number }[];
+}
+
+/** The Super Admin's per-shop view (§11C). */
+export interface ShopOverrideOverview {
+  shopId: number;
+  shopName: string;
+  subscription: {
+    plan: PlanKey;
+    planName: string;
+    status: SubscriptionStatus;
+    price: number;
+    renewsAt: string | null;
+  };
+  planFeatures: FeatureName[];
+  overrides: FeatureOverride[];
+  catalogue: CatalogueFeature[];
 }
 
 export interface Entitlements {
@@ -701,46 +805,155 @@ export interface Entitlements {
   tagline: string;
   price: number;
   currency: string;
-  status: 'active' | 'past_due' | 'cancelled' | 'expired';
+  status: SubscriptionStatus;
   billingCycle: 'monthly' | 'yearly';
   paymentStatus: 'not_required' | 'pending' | 'paid' | 'failed';
   startedAt: string;
   renewsAt: string | null;
   cancelledAt: string | null;
   limits: PlanLimits;
+  /** Effective set: plan features unioned with active Super Admin grants (§11K). */
   features: FeatureName[];
+  /** What the plan alone gives, so the UI can say where access came from (§11G). */
+  planFeatures?: FeatureName[];
+  overrideFeatures?: FeatureName[];
+  /** Active Super Admin grants with their expiry, for the §11N panel. */
+  specialAccess?: FeatureOverride[];
   profile: string;
   visibility: { nearMe: string; search: string; discoveryBoost: number };
+  // ---- Billing state (§14) ----
+  gateway?: string | null;
+  gatewaySubscriptionId?: string | null;
+  currentPeriodStart?: string | null;
+  currentPeriodEnd?: string | null;
+  nextBillingDate?: string | null;
+  cancelAtPeriodEnd?: boolean;
+  pendingPlan?: PlanKey | null;
+  graceUntil?: string | null;
+  autopayEnabled?: boolean;
+  paymentMethod?: string | null;
+  lastPaymentAt?: string | null;
+  lastFailureReason?: string | null;
+  /** True when the paid features are in force right now. */
+  entitled?: boolean;
+  /** Present on the cancel response: when the current benefits run out. */
+  activeUntil?: string | null;
   usage: SubscriptionUsage;
   /** `null` where the plan is unlimited. */
   remaining: {
     offersThisMonth: number | null;
+    servicesThisMonth?: number | null;
     branches: number | null;
     categories: number | null;
     banners: number | null;
   };
 }
 
+// ---- Payments (§3, §15, §16) ------------------------------------------------
+
+/** Everything the browser needs to open Razorpay Checkout for a plan purchase. */
+export interface CheckoutSession {
+  gateway: 'razorpay';
+  keyId: string;
+  subscriptionId: string;
+  /** Razorpay's hosted page - the fallback when the script cannot load. */
+  shortUrl: string | null;
+  status: string;
+  plan: PlanKey;
+  planName: string;
+  amount: number;
+  currency: string;
+  recurring: boolean;
+  previousPlan: PlanKey;
+  prefill: { name: string | null; email: string | null; contact: string | null };
+}
+
+export type PaymentStatus =
+  | 'CREATED'
+  | 'PENDING'
+  | 'AUTHORIZED'
+  | 'CAPTURED'
+  | 'FAILED'
+  | 'REFUNDED'
+  | 'PARTIALLY_REFUNDED'
+  | 'CANCELLED';
+
+export interface PaymentTransaction {
+  id: number;
+  shopId: number;
+  shopName?: string;
+  plan: PlanKey;
+  planName: string;
+  orderId: string | null;
+  paymentId: string | null;
+  amount: number;
+  amountRefunded: number;
+  currency: string;
+  /** 'upi' | 'card' | 'netbanking' | 'wallet' - never a credential (§6). */
+  paymentMethod: string | null;
+  /** Safe descriptor Razorpay echoes back, e.g. "Visa ****4242". */
+  methodDetail: string | null;
+  status: PaymentStatus;
+  failureReason: string | null;
+  paidAt: string | null;
+  createdAt: string;
+}
+
 export interface SubscriptionEvent {
   id: number;
   fromPlan: PlanKey | null;
   toPlan: PlanKey;
-  action: 'created' | 'upgraded' | 'downgraded' | 'renewed' | 'cancelled' | 'reactivated';
+  action:
+    | 'created'
+    | 'upgraded'
+    | 'downgraded'
+    | 'renewed'
+    | 'cancelled'
+    | 'reactivated'
+    | 'payment_failed'
+    | 'past_due'
+    | 'expired'
+    | 'grace_started';
   amount: number;
   note: string | null;
   actorName: string | null;
   createdAt: string;
 }
 
+/** §16: what a stored invoice carries. */
 export interface Invoice {
   id: number;
+  number: string;
   reference: string;
   plan: PlanKey;
+  planName: string;
   description: string;
+  periodStart: string | null;
+  periodEnd: string | null;
+  subtotal: number;
+  taxAmount: number;
+  taxPercent: number;
   amount: number;
+  total: number;
   currency: string;
-  status: string;
+  status: 'issued' | 'paid' | 'void' | 'refunded';
+  billingName: string | null;
+  billingAddress: string | null;
   issuedAt: string;
+}
+
+/** One signed-in device (§28). The id is that session's refresh-token family. */
+export interface DeviceSession {
+  id: string;
+  deviceType: 'mobile' | 'tablet' | 'desktop' | 'web' | 'unknown';
+  deviceName: string | null;
+  platform: string | null;
+  ipAddress: string | null;
+  createdAt: string;
+  lastUsedAt: string;
+  expiresAt: string;
+  /** True for the session making the request - never offered for revoke. */
+  current: boolean;
 }
 
 /** The `details` payload of a PLAN_UPGRADE_REQUIRED error (§31). */

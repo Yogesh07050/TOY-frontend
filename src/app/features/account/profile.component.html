@@ -219,6 +219,10 @@
                 }
               </div>
 
+              <p class="small muted">
+                Changing your password signs out every other device (§26). This one stays signed in.
+              </p>
+
               <button type="submit" class="btn" [disabled]="savingPassword()">
                 @if (savingPassword()) {
                   <span class="spinner"></span> Updating…
@@ -227,6 +231,18 @@
                 }
               </button>
             </form>
+          </div>
+        </section>
+
+        <!-- Devices (§28) -->
+        <section class="card">
+          <div class="card-header"><h2>Logged-in devices</h2></div>
+          <div class="card-body">
+            <p class="small muted mb-2">
+              You stay signed in on each device until you sign out there. Review the devices using
+              your account, and end any session you do not recognise.
+            </p>
+            <a class="btn btn-secondary" routerLink="/profile/devices">Manage devices</a>
           </div>
         </section>
 

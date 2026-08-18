@@ -122,6 +122,14 @@ export const routes: Routes = [
     title: 'My profile · Offers App',
     loadComponent: () => import('./features/account/profile.component').then((m) => m.ProfileComponent),
   },
+  // §28: the customer stays signed in on every device until they end a
+  // session, so they need somewhere to see and end them.
+  {
+    path: 'profile/devices',
+    canActivate: [authGuard],
+    title: 'Logged-in devices · Offers App',
+    loadComponent: () => import('./features/account/sessions.component').then((m) => m.SessionsComponent),
+  },
 
   // ---- Administration ------------------------------------------------------
   {
@@ -394,6 +402,17 @@ export const routes: Routes = [
         canActivate: [superAdminGuard],
         loadComponent: () =>
           import('./features/admin/role-manage.component').then((m) => m.RoleManageComponent),
+      },
+      // §11C: Super Admin only. The guard is navigation convenience - every
+      // override API re-checks the role and permission independently (§11L).
+      {
+        path: 'feature-overrides',
+        title: 'Feature overrides · Offers App',
+        canActivate: [superAdminGuard],
+        loadComponent: () =>
+          import('./features/admin/overrides/feature-overrides.component').then(
+            (m) => m.FeatureOverridesComponent,
+          ),
       },
       {
         path: 'reviews',

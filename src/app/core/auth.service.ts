@@ -1,14 +1,20 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { Observable, tap, of, catchError, map } from 'rxjs';
+import { Observable, tap, of, catchError, map, switchMap } from 'rxjs';
 
 import { environment } from '../../environments/environment';
-import { ApiEnvelope, AuthSession, CurrentUser, PreferredLocation } from './models';
+import { ApiEnvelope, AuthSession, CurrentUser, DeviceSession, PreferredLocation } from './models';
 import { PermissionName } from './permissions';
 
 const ACCESS_TOKEN_KEY = 'offers.accessToken';
-const REFRESH_TOKEN_KEY = 'offers.refreshToken';
+/**
+ * Marks that a session exists so the app knows to attempt a silent refresh on
+ * boot (§23). The refresh token itself lives in an httpOnly cookie the browser
+ * sends automatically and JavaScript cannot read (§22) - only this flag is
+ * kept here, and it is not a credential.
+ */
+const SESSION_FLAG_KEY = 'offers.hasSession';
 
 /** Whether the server actually managed to send the email it promised. */
 export interface MailResult {
@@ -44,21 +50,42 @@ export class AuthService {
     return localStorage.getItem(ACCESS_TOKEN_KEY);
   }
 
-  get refreshToken(): string | null {
-    return localStorage.getItem(REFRESH_TOKEN_KEY);
+  /**
+   * Whether a session was established in this browser and may still be live.
+   * Not a credential - just the hint that a refresh cookie is worth trying.
+   */
+  get hasSession(): boolean {
+    return localStorage.getItem(SESSION_FLAG_KEY) === '1';
   }
 
   /**
-   * Restores the session on app start. Resolves either way - a failure just
-   * means the visitor browses anonymously, which is a supported state.
+   * Restores the session on app start (§23).
+   *
+   *   existing session? -> refresh the access token if needed -> load profile
+   *
+   * The access token in localStorage is short-lived, so after the tab has been
+   * closed for a while it is usually already expired. Rather than showing the
+   * login screen, the refresh cookie is used to mint a new one - which is what
+   * makes the experience "log in once" (§19).
+   *
+   * Resolves either way: browsing anonymously is a supported state.
    */
   restore(): Observable<CurrentUser | null> {
-    if (!this.accessToken) {
+    if (!this.accessToken && !this.hasSession) {
       this.initialised.set(true);
       return of(null);
     }
-    return this.http.get<ApiEnvelope<CurrentUser>>(`${this.base}/me`).pipe(
-      map((response) => response.data),
+
+    const loadProfile = () =>
+      this.http.get<ApiEnvelope<CurrentUser>>(`${this.base}/me`).pipe(map((r) => r.data));
+
+    // With no access token there is nothing to send, so go straight to the
+    // cookie; otherwise try the token first and fall back on a 401.
+    const source = this.accessToken
+      ? loadProfile().pipe(catchError(() => this.refreshSession().pipe(switchMap(loadProfile))))
+      : this.refreshSession().pipe(switchMap(loadProfile));
+
+    return source.pipe(
       tap((user) => {
         this.currentUser.set(user);
         this.unreadCount.set(user.unreadNotifications ?? 0);
@@ -74,18 +101,27 @@ export class AuthService {
 
   login(email: string, password: string, rememberMe = false): Observable<CurrentUser> {
     return this.http
-      .post<ApiEnvelope<AuthSession>>(`${this.base}/login`, { email, password, rememberMe })
+      .post<ApiEnvelope<AuthSession>>(
+        `${this.base}/login`,
+        { email, password, rememberMe },
+        // Needed for the browser to store the httpOnly refresh cookie (§22).
+        { withCredentials: true },
+      )
       .pipe(map((response) => this.acceptSession(response.data)));
   }
 
   register(payload: RegisterPayload): Observable<CurrentUser> {
     return this.http
-      .post<ApiEnvelope<AuthSession>>(`${this.base}/register`, payload)
+      .post<ApiEnvelope<AuthSession>>(`${this.base}/register`, payload, { withCredentials: true })
       .pipe(map((response) => this.acceptSession(response.data)));
   }
 
+  /**
+   * Ends the persistent session (§25): revoke server-side, clear the local
+   * token and the refresh cookie, then send the user to the login screen.
+   */
   logout(redirectTo = '/auth/login'): void {
-    this.http.post(`${this.base}/logout`, {}).subscribe({
+    this.http.post(`${this.base}/logout`, {}, { withCredentials: true }).subscribe({
       complete: () => undefined,
       error: () => undefined,
     });
@@ -123,18 +159,44 @@ export class AuthService {
     });
   }
 
-  /** Used by the HTTP interceptor when an access token expires mid-session. */
+  /**
+   * Exchanges the refresh cookie for a fresh access token (§20).
+   *
+   * The body is deliberately empty: the refresh token travels as an httpOnly
+   * cookie, which is why `withCredentials` matters here and why an XSS bug
+   * cannot walk off with a long-lived credential (§22).
+   */
   refreshSession(): Observable<AuthSession> {
     return this.http
-      .post<ApiEnvelope<AuthSession>>(
-        `${this.base}/refresh-token`,
-        this.refreshToken ? { refreshToken: this.refreshToken } : {},
-        { withCredentials: true },
-      )
+      .post<ApiEnvelope<AuthSession>>(`${this.base}/refresh-token`, {}, { withCredentials: true })
       .pipe(
         map((response) => response.data),
         tap((session) => this.acceptSession(session)),
       );
+  }
+
+  // ---- Device sessions (§28) ----------------------------------------------
+
+  sessions(): Observable<DeviceSession[]> {
+    return this.http
+      .get<ApiEnvelope<DeviceSession[]>>(`${this.base}/sessions`, { withCredentials: true })
+      .pipe(map((response) => response.data));
+  }
+
+  revokeSession(sessionId: string) {
+    return this.http.delete<ApiEnvelope<{ revoked: number }>>(
+      `${this.base}/sessions/${sessionId}`,
+      { withCredentials: true },
+    );
+  }
+
+  /** "Log out other devices" - this browser stays signed in (§28). */
+  revokeOtherSessions() {
+    return this.http.post<ApiEnvelope<{ revoked: number }>>(
+      `${this.base}/sessions/revoke-others`,
+      {},
+      { withCredentials: true },
+    );
   }
 
   /** Refreshes the cached user, e.g. after a profile or role change. */
@@ -194,16 +256,22 @@ export class AuthService {
    */
   readonly unassignedShopRoles = computed(() => this.currentUser()?.unassignedShopRoles ?? []);
 
-  /** Where to send a user after signing in (§20 - permission based, not role name). */
+  /**
+   * Where to send a user after signing in (§24, and V3 §20 - decided by the
+   * permissions the API resolved, never by a role name the client supplied).
+   */
   landingRoute(): string {
     const user = this.currentUser();
     if (!user) return '/offers';
+    if (user.isSuperAdmin) return '/admin/dashboard';
     return user.canAccessAdmin ? '/admin/dashboard' : '/offers';
   }
 
   private acceptSession(session: AuthSession): CurrentUser {
     localStorage.setItem(ACCESS_TOKEN_KEY, session.accessToken);
-    localStorage.setItem(REFRESH_TOKEN_KEY, session.refreshToken);
+    // The refresh token is also returned in the body for non-browser clients;
+    // the web app ignores it and relies on the httpOnly cookie instead (§22).
+    localStorage.setItem(SESSION_FLAG_KEY, '1');
     this.currentUser.set(session.user);
     this.unreadCount.set(session.user.unreadNotifications ?? 0);
     this.initialised.set(true);
@@ -212,6 +280,8 @@ export class AuthService {
 
   private clearTokens(): void {
     localStorage.removeItem(ACCESS_TOKEN_KEY);
-    localStorage.removeItem(REFRESH_TOKEN_KEY);
+    localStorage.removeItem(SESSION_FLAG_KEY);
+    // Anything cached under a previous session must not survive it (§25.4).
+    localStorage.removeItem('offers.refreshToken');
   }
 }

@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 
 import { AuthService } from '../../../core/auth.service';
 import { SubscriptionService } from '../../../core/subscription.service';
+import { RazorpayService } from '../../../core/razorpay.service';
 import { ToastService } from '../../../core/toast.service';
 import { Plan, PlanKey } from '../../../core/models';
 import { PERMISSIONS } from '../../../core/permissions';
@@ -266,6 +267,13 @@ export class SubscriptionUpgradeComponent {
     return `${limit} ${limit === 1 ? one : many}`;
   }
 
+  /**
+   * Moves the shop onto `plan`.
+   *
+   * A paid plan opens Razorpay Checkout (§3); a cheaper one is scheduled for
+   * the end of the period already paid for (§12). Neither path lets this
+   * component decide the outcome - the plan is whatever the server says next.
+   */
   choose(plan: Plan): void {
     const shopId = this.subscriptions.current()?.shopId;
     if (!shopId) {
@@ -273,23 +281,69 @@ export class SubscriptionUpgradeComponent {
       return;
     }
 
-    const action = this.isDowngrade(plan.key) ? 'switch to' : 'upgrade to';
-    const cost = plan.price > 0 ? ` You will be billed ₹${plan.price.toLocaleString('en-IN')} a month.` : '';
-    if (!confirm(`${action === 'switch to' ? 'Switch' : 'Upgrade'} this shop to the ${plan.name} plan?${cost}`)) {
+    if (this.isDowngrade(plan.key) || plan.price === 0) {
+      this.downgrade(shopId, plan);
+      return;
+    }
+
+    if (!this.subscriptions.paymentsEnabled()) {
+      this.toast.error('Online payments are not available on this server yet.');
+      return;
+    }
+
+    const cost = `₹${plan.price.toLocaleString('en-IN')} a month`;
+    if (!confirm(`Continue to payment for the ${plan.name} plan? You will be billed ${cost}.`)) return;
+
+    this.busy.set(true);
+    this.subscriptions.purchase(shopId, plan.key).subscribe({
+      next: (result) => {
+        this.busy.set(false);
+        // Deliberately not "you are now on Premium": only the webhook decides
+        // that, and it may arrive a moment after checkout closes (§7).
+        this.toast.success(result.message);
+        this.router.navigate(['/admin/subscription']);
+      },
+      error: (error: unknown) => {
+        this.busy.set(false);
+        if (RazorpayService.isCancellation(error)) return;
+        this.toast.error(this.messageFor(error, 'That payment could not be completed.'));
+      },
+    });
+  }
+
+  private downgrade(shopId: number, plan: Plan): void {
+    const current = this.subscriptions.current();
+    const until = current?.currentPeriodEnd ?? current?.renewsAt;
+    const keepsBenefits =
+      until && new Date(until) > new Date()
+        ? ` Your current benefits continue until ${new Date(until).toLocaleDateString()}.`
+        : '';
+
+    if (!confirm(`Switch this shop to the ${plan.name} plan?${keepsBenefits} Your data is kept either way.`)) {
       return;
     }
 
     this.busy.set(true);
-    this.subscriptions.changePlan(shopId, plan.key).subscribe({
+    this.subscriptions.downgrade(shopId, plan.key).subscribe({
       next: () => {
         this.busy.set(false);
-        this.toast.success(`Your shop is now on the ${plan.name} plan.`);
+        this.toast.success(
+          keepsBenefits
+            ? `Scheduled. Your shop moves to ${plan.name} at the end of the current billing period.`
+            : `Your shop is now on the ${plan.name} plan.`,
+        );
         this.router.navigate(['/admin/subscription']);
       },
-      error: (error) => {
+      error: (error: unknown) => {
         this.busy.set(false);
-        this.toast.error(error?.error?.error?.message ?? 'That plan change could not be applied.');
+        this.toast.error(this.messageFor(error, 'That plan change could not be applied.'));
       },
     });
+  }
+
+  private messageFor(error: unknown, fallback: string): string {
+    if (error instanceof Error && error.message) return error.message;
+    const body = (error as { error?: { error?: { message?: string } } })?.error?.error?.message;
+    return body ?? fallback;
   }
 }
