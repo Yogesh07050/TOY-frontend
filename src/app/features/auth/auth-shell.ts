@@ -15,8 +15,8 @@ import { HttpErrorResponse } from '@angular/common/http';
       <div class="auth-card card">
         <div class="card-body">
           <a class="brand" routerLink="/offers">
-            <span class="brand-mark" aria-hidden="true">%</span>
-            <span>Offers App</span>
+            <img class="brand-mark" src="logo.svg" alt="" aria-hidden="true" width="36" height="24" />
+            <span>Offers<span class="accent">Offer</span></span>
           </a>
           <h1>{{ heading }}</h1>
           @if (subheading) {
@@ -60,15 +60,13 @@ import { HttpErrorResponse } from '@angular/common/http';
       }
 
       .brand-mark {
-        display: grid;
-        place-items: center;
-        width: 28px;
-        height: 28px;
-        border-radius: 8px;
-        background: var(--gradient-brand);
-        color: var(--brand-ink);
-        font-weight: 800;
-        font-size: 0.9rem;
+        width: 40px;
+        height: auto;
+        display: block;
+      }
+
+      .accent {
+        color: var(--brand);
       }
 
       h1 {

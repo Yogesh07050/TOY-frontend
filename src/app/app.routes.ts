@@ -17,31 +17,31 @@ export const routes: Routes = [
       {
         path: 'login',
         canActivate: [guestGuard],
-        title: 'Sign in · Offers App',
+        title: 'Sign in · OffersOffer',
         loadComponent: () => import('./features/auth/login.component').then((m) => m.LoginComponent),
       },
       {
         path: 'register',
         canActivate: [guestGuard],
-        title: 'Create an account · Offers App',
+        title: 'Create an account · OffersOffer',
         loadComponent: () =>
           import('./features/auth/register.component').then((m) => m.RegisterComponent),
       },
       {
         path: 'forgot-password',
-        title: 'Forgot password · Offers App',
+        title: 'Forgot password · OffersOffer',
         loadComponent: () =>
           import('./features/auth/forgot-password.component').then((m) => m.ForgotPasswordComponent),
       },
       {
         path: 'reset-password',
-        title: 'Reset password · Offers App',
+        title: 'Reset password · OffersOffer',
         loadComponent: () =>
           import('./features/auth/reset-password.component').then((m) => m.ResetPasswordComponent),
       },
       {
         path: 'verify-email',
-        title: 'Verify email · Offers App',
+        title: 'Verify email · OffersOffer',
         loadComponent: () =>
           import('./features/auth/verify-email.component').then((m) => m.VerifyEmailComponent),
       },
@@ -52,46 +52,46 @@ export const routes: Routes = [
   // ---- Customer discovery --------------------------------------------------
   {
     path: 'offers',
-    title: 'Offers · Offers App',
+    title: 'Offers · OffersOffer',
     loadComponent: () => import('./features/offers/offer-list.component').then((m) => m.OfferListComponent),
   },
   {
     path: 'offers/:id',
-    title: 'Offer details · Offers App',
+    title: 'Offer details · OffersOffer',
     loadComponent: () =>
       import('./features/offers/offer-detail.component').then((m) => m.OfferDetailComponent),
   },
   {
     path: 'nearby',
-    title: 'Nearby offers · Offers App',
+    title: 'Nearby offers · OffersOffer',
     loadComponent: () => import('./features/offers/offer-list.component').then((m) => m.OfferListComponent),
     data: { nearby: true },
   },
   {
     path: 'categories',
-    title: 'Categories · Offers App',
+    title: 'Categories · OffersOffer',
     loadComponent: () =>
       import('./features/categories/category-browse.component').then((m) => m.CategoryBrowseComponent),
   },
   {
     path: 'shops',
-    title: 'Shops · Offers App',
+    title: 'Shops · OffersOffer',
     loadComponent: () => import('./features/shops/shop-list.component').then((m) => m.ShopListComponent),
   },
   {
     path: 'shops/:idOrSlug',
-    title: 'Shop · Offers App',
+    title: 'Shop · OffersOffer',
     loadComponent: () => import('./features/shops/shop-detail.component').then((m) => m.ShopDetailComponent),
   },
   {
     path: 'services',
-    title: 'Services · Offers App',
+    title: 'Services · OffersOffer',
     loadComponent: () =>
       import('./features/services/service-list.component').then((m) => m.ServiceListComponent),
   },
   {
     path: 'services/:id',
-    title: 'Service details · Offers App',
+    title: 'Service details · OffersOffer',
     loadComponent: () =>
       import('./features/services/service-detail.component').then((m) => m.ServiceDetailComponent),
   },
@@ -100,26 +100,26 @@ export const routes: Routes = [
   {
     path: 'favorites',
     canActivate: [authGuard],
-    title: 'My favourites · Offers App',
+    title: 'My favourites · OffersOffer',
     loadComponent: () => import('./features/account/favorites.component').then((m) => m.FavoritesComponent),
   },
   {
     path: 'following',
     canActivate: [authGuard],
-    title: 'Following · Offers App',
+    title: 'Following · OffersOffer',
     loadComponent: () => import('./features/account/following.component').then((m) => m.FollowingComponent),
   },
   {
     path: 'notifications',
     canActivate: [authGuard],
-    title: 'Notifications · Offers App',
+    title: 'Notifications · OffersOffer',
     loadComponent: () =>
       import('./features/account/notifications.component').then((m) => m.NotificationsComponent),
   },
   {
     path: 'profile',
     canActivate: [authGuard],
-    title: 'My profile · Offers App',
+    title: 'My profile · OffersOffer',
     loadComponent: () => import('./features/account/profile.component').then((m) => m.ProfileComponent),
   },
   // §28: the customer stays signed in on every device until they end a
@@ -127,7 +127,7 @@ export const routes: Routes = [
   {
     path: 'profile/devices',
     canActivate: [authGuard],
-    title: 'Logged-in devices · Offers App',
+    title: 'Logged-in devices · OffersOffer',
     loadComponent: () => import('./features/account/sessions.component').then((m) => m.SessionsComponent),
   },
 
@@ -140,53 +140,53 @@ export const routes: Routes = [
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
       {
         path: 'dashboard',
-        title: 'Dashboard · Offers App',
+        title: 'Dashboard · OffersOffer',
         loadComponent: () =>
           import('./features/admin/dashboard.component').then((m) => m.DashboardComponent),
       },
       {
         path: 'offers',
-        title: 'Manage offers · Offers App',
+        title: 'Manage offers · OffersOffer',
         canActivate: [permissionGuard(PERMISSIONS.VIEW_OFFERS)],
         loadComponent: () =>
           import('./features/admin/offer-manage.component').then((m) => m.OfferManageComponent),
       },
       {
         path: 'offers/new',
-        title: 'Post an offer · Offers App',
+        title: 'Post an offer · OffersOffer',
         canActivate: [permissionGuard(PERMISSIONS.CREATE_OFFER)],
         loadComponent: () => import('./features/admin/offer-form.component').then((m) => m.OfferFormComponent),
       },
       {
         path: 'offers/:id/edit',
-        title: 'Edit offer · Offers App',
+        title: 'Edit offer · OffersOffer',
         canActivate: [permissionGuard(PERMISSIONS.EDIT_OFFER)],
         loadComponent: () => import('./features/admin/offer-form.component').then((m) => m.OfferFormComponent),
       },
       {
         path: 'services',
-        title: 'Manage services · Offers App',
+        title: 'Manage services · OffersOffer',
         canActivate: [permissionGuard(PERMISSIONS.VIEW_SERVICE)],
         loadComponent: () =>
           import('./features/admin/service-manage.component').then((m) => m.ServiceManageComponent),
       },
       {
         path: 'services/new',
-        title: 'Add a service · Offers App',
+        title: 'Add a service · OffersOffer',
         canActivate: [permissionGuard(PERMISSIONS.CREATE_SERVICE)],
         loadComponent: () =>
           import('./features/admin/service-form.component').then((m) => m.ServiceFormComponent),
       },
       {
         path: 'services/:id/edit',
-        title: 'Edit service · Offers App',
+        title: 'Edit service · OffersOffer',
         canActivate: [permissionGuard(PERMISSIONS.EDIT_SERVICE)],
         loadComponent: () =>
           import('./features/admin/service-form.component').then((m) => m.ServiceFormComponent),
       },
       {
         path: 'services/:id/offers',
-        title: 'Service offers · Offers App',
+        title: 'Service offers · OffersOffer',
         canActivate: [permissionGuard(PERMISSIONS.MANAGE_SERVICE_OFFER)],
         loadComponent: () =>
           import('./features/admin/service-offer-manage.component').then(
@@ -195,39 +195,39 @@ export const routes: Routes = [
       },
       {
         path: 'service-analytics',
-        title: 'Service analytics · Offers App',
+        title: 'Service analytics · OffersOffer',
         canActivate: [permissionGuard(PERMISSIONS.VIEW_SERVICE_ANALYTICS)],
         loadComponent: () =>
           import('./features/admin/service-analytics.component').then((m) => m.ServiceAnalyticsComponent),
       },
       {
         path: 'shops',
-        title: 'Shops · Offers App',
+        title: 'Shops · OffersOffer',
         loadComponent: () =>
           import('./features/admin/shop-manage.component').then((m) => m.ShopManageComponent),
       },
       {
         path: 'shops/new',
-        title: 'Create a shop · Offers App',
+        title: 'Create a shop · OffersOffer',
         canActivate: [permissionGuard(PERMISSIONS.CREATE_SHOP)],
         loadComponent: () => import('./features/admin/shop-form.component').then((m) => m.ShopFormComponent),
       },
       {
         path: 'shops/:id/edit',
-        title: 'Edit shop · Offers App',
+        title: 'Edit shop · OffersOffer',
         canActivate: [permissionGuard(PERMISSIONS.EDIT_SHOP)],
         loadComponent: () => import('./features/admin/shop-form.component').then((m) => m.ShopFormComponent),
       },
       {
         path: 'shops/:id/branches',
-        title: 'Branches · Offers App',
+        title: 'Branches · OffersOffer',
         canActivate: [permissionGuard(PERMISSIONS.MANAGE_LOCATIONS)],
         loadComponent: () =>
           import('./features/admin/branch-manage.component').then((m) => m.BranchManageComponent),
       },
       {
         path: 'shops/:id/members',
-        title: 'Shop members · Offers App',
+        title: 'Shop members · OffersOffer',
         canActivate: [permissionGuard(PERMISSIONS.VIEW_SHOP_MEMBERS)],
         loadComponent: () =>
           import('./features/admin/member-manage.component').then((m) => m.MemberManageComponent),
@@ -236,21 +236,21 @@ export const routes: Routes = [
       // banner permission, which the API re-checks independently.
       {
         path: 'banners',
-        title: 'Featured banners · Offers App',
+        title: 'Featured banners · OffersOffer',
         canActivate: [permissionGuard(PERMISSIONS.VIEW_BANNERS)],
         loadComponent: () =>
           import('./features/admin/banner-manage.component').then((m) => m.BannerManageComponent),
       },
       {
         path: 'banners/new',
-        title: 'New banner · Offers App',
+        title: 'New banner · OffersOffer',
         canActivate: [permissionGuard(PERMISSIONS.CREATE_BANNER)],
         loadComponent: () =>
           import('./features/admin/banner-form.component').then((m) => m.BannerFormComponent),
       },
       {
         path: 'banners/:id/edit',
-        title: 'Edit banner · Offers App',
+        title: 'Edit banner · OffersOffer',
         canActivate: [permissionGuard(PERMISSIONS.EDIT_BANNER)],
         loadComponent: () =>
           import('./features/admin/banner-form.component').then((m) => m.BannerFormComponent),
@@ -269,7 +269,7 @@ export const routes: Routes = [
           { path: '', pathMatch: 'full', redirectTo: 'overview' },
           {
             path: 'overview',
-            title: 'Analytics overview · Offers App',
+            title: 'Analytics overview · OffersOffer',
             loadComponent: () =>
               import('./features/admin/analytics/premium-overview.component').then(
                 (m) => m.PremiumOverviewComponent,
@@ -277,7 +277,7 @@ export const routes: Routes = [
           },
           {
             path: 'offer-performance',
-            title: 'Offer performance · Offers App',
+            title: 'Offer performance · OffersOffer',
             loadComponent: () =>
               import('./features/admin/analytics/offer-performance.component').then(
                 (m) => m.OfferPerformanceComponent,
@@ -285,7 +285,7 @@ export const routes: Routes = [
           },
           {
             path: 'funnel',
-            title: 'Customer funnel · Offers App',
+            title: 'Customer funnel · OffersOffer',
             loadComponent: () =>
               import('./features/admin/analytics/customer-funnel.component').then(
                 (m) => m.CustomerFunnelComponent,
@@ -293,7 +293,7 @@ export const routes: Routes = [
           },
           {
             path: 'locations',
-            title: 'Location insights · Offers App',
+            title: 'Location insights · OffersOffer',
             loadComponent: () =>
               import('./features/admin/analytics/location-insights.component').then(
                 (m) => m.LocationInsightsComponent,
@@ -301,7 +301,7 @@ export const routes: Routes = [
           },
           {
             path: 'branches',
-            title: 'Branch performance · Offers App',
+            title: 'Branch performance · OffersOffer',
             loadComponent: () =>
               import('./features/admin/analytics/branch-performance.component').then(
                 (m) => m.BranchPerformanceComponent,
@@ -309,7 +309,7 @@ export const routes: Routes = [
           },
           {
             path: 'customers',
-            title: 'Customer insights · Offers App',
+            title: 'Customer insights · OffersOffer',
             loadComponent: () =>
               import('./features/admin/analytics/customer-insights.component').then(
                 (m) => m.CustomerInsightsComponent,
@@ -317,7 +317,7 @@ export const routes: Routes = [
           },
           {
             path: 'campaigns',
-            title: 'Campaign performance · Offers App',
+            title: 'Campaign performance · OffersOffer',
             loadComponent: () =>
               import('./features/admin/analytics/campaign-performance.component').then(
                 (m) => m.CampaignPerformanceComponent,
@@ -325,7 +325,7 @@ export const routes: Routes = [
           },
           {
             path: 'intelligence',
-            title: 'Offer intelligence · Offers App',
+            title: 'Offer intelligence · OffersOffer',
             loadComponent: () =>
               import('./features/admin/analytics/offer-intelligence.component').then(
                 (m) => m.OfferIntelligenceComponent,
@@ -333,7 +333,7 @@ export const routes: Routes = [
           },
           {
             path: 'reports',
-            title: 'Reports · Offers App',
+            title: 'Reports · OffersOffer',
             loadComponent: () =>
               import('./features/admin/analytics/reports.component').then(
                 (m) => m.AnalyticsReportsComponent,
@@ -343,7 +343,7 @@ export const routes: Routes = [
           // only place a Super Admin sees cross-shop totals.
           {
             path: 'platform',
-            title: 'Platform analytics · Offers App',
+            title: 'Platform analytics · OffersOffer',
             loadComponent: () =>
               import('./features/admin/analytics.component').then((m) => m.AnalyticsComponent),
           },
@@ -358,7 +358,7 @@ export const routes: Routes = [
           {
             path: '',
             pathMatch: 'full',
-            title: 'Subscription · Offers App',
+            title: 'Subscription · OffersOffer',
             loadComponent: () =>
               import('./features/admin/subscription/subscription-plan.component').then(
                 (m) => m.SubscriptionPlanComponent,
@@ -366,7 +366,7 @@ export const routes: Routes = [
           },
           {
             path: 'billing',
-            title: 'Billing · Offers App',
+            title: 'Billing · OffersOffer',
             loadComponent: () =>
               import('./features/admin/subscription/billing.component').then(
                 (m) => m.SubscriptionBillingComponent,
@@ -374,7 +374,7 @@ export const routes: Routes = [
           },
           {
             path: 'upgrade',
-            title: 'Upgrade · Offers App',
+            title: 'Upgrade · OffersOffer',
             loadComponent: () =>
               import('./features/admin/subscription/upgrade.component').then(
                 (m) => m.SubscriptionUpgradeComponent,
@@ -384,21 +384,21 @@ export const routes: Routes = [
       },
       {
         path: 'categories',
-        title: 'Categories · Offers App',
+        title: 'Categories · OffersOffer',
         canActivate: [permissionGuard(PERMISSIONS.MANAGE_CATEGORIES)],
         loadComponent: () =>
           import('./features/admin/category-manage.component').then((m) => m.CategoryManageComponent),
       },
       {
         path: 'users',
-        title: 'Users · Offers App',
+        title: 'Users · OffersOffer',
         canActivate: [permissionGuard(PERMISSIONS.VIEW_USERS)],
         loadComponent: () =>
           import('./features/admin/user-manage.component').then((m) => m.UserManageComponent),
       },
       {
         path: 'roles',
-        title: 'Roles & permissions · Offers App',
+        title: 'Roles & permissions · OffersOffer',
         canActivate: [superAdminGuard],
         loadComponent: () =>
           import('./features/admin/role-manage.component').then((m) => m.RoleManageComponent),
@@ -407,7 +407,7 @@ export const routes: Routes = [
       // override API re-checks the role and permission independently (§11L).
       {
         path: 'feature-overrides',
-        title: 'Feature overrides · Offers App',
+        title: 'Feature overrides · OffersOffer',
         canActivate: [superAdminGuard],
         loadComponent: () =>
           import('./features/admin/overrides/feature-overrides.component').then(
@@ -416,14 +416,14 @@ export const routes: Routes = [
       },
       {
         path: 'reviews',
-        title: 'Reviews · Offers App',
+        title: 'Reviews · OffersOffer',
         canActivate: [permissionGuard(PERMISSIONS.MODERATE_REVIEWS)],
         loadComponent: () =>
           import('./features/admin/review-manage.component').then((m) => m.ReviewManageComponent),
       },
       {
         path: 'audit-logs',
-        title: 'Audit logs · Offers App',
+        title: 'Audit logs · OffersOffer',
         canActivate: [permissionGuard(PERMISSIONS.VIEW_AUDIT_LOGS)],
         loadComponent: () => import('./features/admin/audit-log.component').then((m) => m.AuditLogComponent),
       },
@@ -432,7 +432,7 @@ export const routes: Routes = [
 
   {
     path: '**',
-    title: 'Page not found · Offers App',
+    title: 'Page not found · OffersOffer',
     loadComponent: () => import('./features/not-found.component').then((m) => m.NotFoundComponent),
   },
 ];

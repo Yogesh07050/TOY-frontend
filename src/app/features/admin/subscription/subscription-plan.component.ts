@@ -182,7 +182,7 @@ import { PERMISSIONS } from '../../../core/permissions';
             <div class="card-header">
               <h2>Special access</h2>
               <p class="small subtle">
-                Granted by the Offers App team, independently of your plan. Buying or changing a
+                Granted by the OffersOffer team, independently of your plan. Buying or changing a
                 plan does not affect these.
               </p>
             </div>

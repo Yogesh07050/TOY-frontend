@@ -52,21 +52,21 @@ main {
 }
 
 .brand:hover .brand-mark {
-  transform: rotate(-8deg) scale(1.06);
-  box-shadow: var(--shadow-brand);
+  transform: scale(1.06);
 }
 
+/* The interlocking-rings mark. It carries its own colour, so no tile or
+   background behind it - the shape is the identity. */
 .brand-mark {
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
-  background: var(--gradient-brand);
-  color: var(--brand-ink);
-  font-size: 0.95rem;
-  font-weight: 800;
-  transition: transform var(--normal) var(--ease-spring), box-shadow var(--normal) var(--ease);
+  width: 38px;
+  height: auto;
+  display: block;
+  transition: transform var(--normal) var(--ease-spring);
+}
+
+/* The second half of the wordmark is gold, matching the gold ring. */
+.brand-name-accent {
+  color: var(--brand);
 }
 
 /* ---- Location picker ----------------------------------------------------- */

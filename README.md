@@ -1,6 +1,6 @@
-# Offers App — Frontend
+# OffersOffer — Frontend
 
-Angular single-page app for the Offers App: customers discover discounts by
+Angular single-page app for the OffersOffer: customers discover discounts by
 search, category, shop and location; shop admins publish and manage offers;
 Super Admins run the platform.
 

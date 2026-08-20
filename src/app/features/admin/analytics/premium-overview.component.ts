@@ -15,7 +15,7 @@ import {
 import { AnalyticsFilterBarComponent } from './analytics-filter-bar.component';
 import { PremiumDashboard } from './premium-dashboard.base';
 
-/** §8 — Executive overview: "How is my business performing on the Offers App?" */
+/** §8 — Executive overview: "How is my business performing on the OffersOffer?" */
 @Component({
   selector: 'app-premium-overview',
   standalone: true,

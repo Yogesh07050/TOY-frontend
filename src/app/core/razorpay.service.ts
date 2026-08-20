@@ -134,7 +134,7 @@ export class RazorpayService {
           const instance = new window.Razorpay({
             key: session.keyId,
             subscription_id: session.subscriptionId,
-            name: 'Offers App',
+            name: 'OffersOffer',
             description: `${session.planName} plan · ₹${session.amount.toLocaleString('en-IN')}/month`,
             prefill: {
               name: session.prefill.name ?? undefined,
