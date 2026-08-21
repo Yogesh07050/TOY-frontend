@@ -6,12 +6,32 @@ import { filter } from 'rxjs';
 import { AuthService } from './core/auth.service';
 import { LocationService, SUGGESTED_CITIES } from './core/location.service';
 import { ThemeService, ThemePreference } from './core/theme.service';
+import { AuthPromptService } from './core/auth-prompt.service';
+import { SeoService } from './core/seo.service';
+import { AuthPromptComponent } from './shared/auth-prompt.component';
 import { ToastsComponent } from './shared/ui.components';
+
+/** Signed-in areas, and the title each should carry in the browser tab. */
+const PRIVATE_TITLES: ReadonlyArray<readonly [string, string]> = [
+  ['/admin', 'Dashboard'],
+  ['/profile', 'My profile'],
+  ['/favorites', 'Saved offers'],
+  ['/following', 'Following'],
+  ['/notifications', 'Notifications'],
+  ['/auth', 'Login'],
+];
+
+/** Public discovery pages (§2), with the copy a search result should show. */
+const PUBLIC_PAGES: ReadonlyArray<readonly [string, string, string]> = [
+  ['/services', 'Services near you', 'Browse local services, compare pricing and availability, and see which ones are running offers.'],
+  ['/shops', 'Shops', 'Browse shops near you, their branches, opening hours and the offers they are running right now.'],
+  ['/categories', 'Categories', 'Browse offers and services by category — clothing, food, salon, repairs and more.'],
+];
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, ToastsComponent],
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, AuthPromptComponent, ToastsComponent],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
@@ -19,6 +39,8 @@ export class App {
   readonly auth = inject(AuthService);
   readonly locations = inject(LocationService);
   readonly theme = inject(ThemeService);
+  private readonly prompt = inject(AuthPromptService);
+  private readonly seo = inject(SeoService);
   private readonly router = inject(Router);
 
   readonly cities = SUGGESTED_CITIES;
@@ -42,9 +64,41 @@ export class App {
 
   constructor() {
     this.router.events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe((event) => {
-      this.isAdminArea.set((event as NavigationEnd).urlAfterRedirects.startsWith('/admin'));
+      const url = (event as NavigationEnd).urlAfterRedirects;
+      this.isAdminArea.set(url.startsWith('/admin'));
+      this.describe(url);
       this.closeAll();
     });
+  }
+
+  /**
+   * Baseline page metadata (§27).
+   *
+   * Public discovery pages get a description a crawler can use; anything behind
+   * a login is marked `noindex` here, so a page added later is private by
+   * default rather than by remembering to say so. Detail components overwrite
+   * this with the specifics once their data has loaded.
+   */
+  private describe(url: string): void {
+    const path = url.split('?')[0];
+
+    for (const [prefix, title] of PRIVATE_TITLES) {
+      if (path.startsWith(prefix)) {
+        this.seo.account(title);
+        return;
+      }
+    }
+
+    const publicPage = PUBLIC_PAGES.find(([prefix]) => path === prefix || path.startsWith(`${prefix}/`));
+    if (publicPage) {
+      this.seo.apply({ title: publicPage[1], description: publicPage[2], path });
+      return;
+    }
+
+    // Offers and nearby are described by the listing component itself, which
+    // knows the category and city in play. All that is owed here is undoing any
+    // `noindex` left behind by a private page the visitor came from.
+    this.seo.indexable(path);
   }
 
   /** Closes the dropdowns when the user clicks anywhere outside them. */
@@ -87,6 +141,8 @@ export class App {
   }
 
   logout(): void {
+    // A held guest action must not survive the session that answered it (§25.4).
+    this.prompt.clearPending();
     this.auth.logout();
   }
 

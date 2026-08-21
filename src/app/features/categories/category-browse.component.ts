@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 
 import { ApiService } from '../../core/api.service';
+import { AuthPromptService } from '../../core/auth-prompt.service';
 import { AuthService } from '../../core/auth.service';
 import { ToastService } from '../../core/toast.service';
 import { Category } from '../../core/models';
@@ -147,6 +148,7 @@ export class CategoryBrowseComponent {
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
   readonly auth = inject(AuthService);
+  readonly prompt = inject(AuthPromptService);
 
   readonly categories = signal<Category[]>([]);
   readonly loading = signal(true);
@@ -181,11 +183,8 @@ export class CategoryBrowseComponent {
   }
 
   toggleFollow(category: Category): void {
-    if (!this.auth.isAuthenticated()) {
-      this.toast.info('Sign in to follow categories.');
-      void this.router.navigate(['/auth/login'], { queryParams: { returnUrl: '/categories' } });
-      return;
-    }
+    // Browsing categories is public (§2); only following needs an account.
+    if (!this.prompt.require('follow-category', () => this.toggleFollow(category))) return;
 
     const following = Boolean(category.isFollowing);
     const request = following

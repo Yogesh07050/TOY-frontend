@@ -6,6 +6,7 @@ import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { ApiService } from '../../core/api.service';
+import { AuthPromptService } from '../../core/auth-prompt.service';
 import { AuthService } from '../../core/auth.service';
 import { LocationService } from '../../core/location.service';
 import { ToastService } from '../../core/toast.service';
@@ -235,6 +236,7 @@ export class ShopListComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly toast = inject(ToastService);
   readonly auth = inject(AuthService);
+  readonly prompt = inject(AuthPromptService);
   readonly locations = inject(LocationService);
 
   readonly shops = signal<Shop[]>([]);
@@ -303,11 +305,8 @@ export class ShopListComponent {
   }
 
   toggleFollow(shop: Shop): void {
-    if (!this.auth.isAuthenticated()) {
-      this.toast.info('Sign in to follow shops.');
-      void this.router.navigate(['/auth/login'], { queryParams: { returnUrl: '/shops' } });
-      return;
-    }
+    // §15: the shop directory is public; only following needs an account.
+    if (!this.prompt.require('follow-shop', () => this.toggleFollow(shop))) return;
 
     const following = Boolean(shop.isFollowing);
     const request = following ? this.api.unfollowShop(shop.id) : this.api.followShop(shop.id);

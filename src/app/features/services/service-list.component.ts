@@ -6,6 +6,7 @@ import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { ApiService } from '../../core/api.service';
+import { AuthPromptService } from '../../core/auth-prompt.service';
 import { AuthService } from '../../core/auth.service';
 import { LocationService, SUGGESTED_CITIES } from '../../core/location.service';
 import { ToastService } from '../../core/toast.service';
@@ -64,6 +65,7 @@ export class ServiceListComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly toast = inject(ToastService);
   readonly auth = inject(AuthService);
+  readonly prompt = inject(AuthPromptService);
   readonly locations = inject(LocationService);
 
   readonly sorts = SORTS;
@@ -244,9 +246,9 @@ export class ServiceListComponent {
     });
   }
 
-  promptLogin(): void {
-    this.toast.info('Sign in to save services.');
-    void this.router.navigate(['/auth/login'], { queryParams: { returnUrl: this.router.url } });
+  /** §5/§7: overlay over the list, then the save is replayed after login. */
+  promptLogin(service: Service): void {
+    this.prompt.require('save-service', () => this.toggleSave(service));
   }
 
   private patchService(id: number, changes: Partial<Service>): void {

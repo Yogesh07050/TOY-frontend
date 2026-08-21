@@ -54,7 +54,7 @@ import { OfferCardComponent } from './offer-card.component';
               <app-offer-card
                 [offer]="offer"
                 (toggleFavorite)="toggleFavorite.emit($event)"
-                (requireLogin)="requireLogin.emit()"
+                (requireLogin)="requireLogin.emit($event)"
               />
             </div>
           }
@@ -77,7 +77,8 @@ export class OfferRailComponent {
   @Input() note: ((offer: Offer) => string | null) | null = null;
 
   @Output() toggleFavorite = new EventEmitter<Offer>();
-  @Output() requireLogin = new EventEmitter<void>();
+  /** Forwards the card's guest-save attempt, offer included (§7). */
+  @Output() requireLogin = new EventEmitter<Offer>();
 
   noteFor(offer: Offer): string | null {
     return this.note ? this.note(offer) : null;

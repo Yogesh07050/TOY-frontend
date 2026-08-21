@@ -5,6 +5,8 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 import { ApiService } from '../../core/api.service';
+import { AuthPromptService } from '../../core/auth-prompt.service';
+import { SeoService } from '../../core/seo.service';
 import { AuthService } from '../../core/auth.service';
 import { LocationService } from '../../core/location.service';
 import { ToastService } from '../../core/toast.service';
@@ -52,6 +54,8 @@ export class ServiceDetailComponent implements OnDestroy {
   private readonly toast = inject(ToastService);
   private readonly sanitizer = inject(DomSanitizer);
   readonly auth = inject(AuthService);
+  readonly prompt = inject(AuthPromptService);
+  private readonly seo = inject(SeoService);
   readonly locations = inject(LocationService);
 
   private readonly mapUrlCache = new Map<number, SafeResourceUrl | null>();
@@ -77,6 +81,15 @@ export class ServiceDetailComponent implements OnDestroy {
       const id = Number(params.get('id'));
       if (Number.isFinite(id)) this.load(id);
     });
+
+    // §14/§7: a guest who tapped Book Now and then signed in comes back to a
+    // fresh instance of this page. The intent travels in the url rather than in
+    // a closure over the component that no longer exists, so the form is open
+    // and waiting for them.
+    this.route.queryParamMap.subscribe((params) => {
+      const mode = params.get('book');
+      if (mode === 'book' || mode === 'enquire') this.bookingMode.set(mode);
+    });
   }
 
   ngOnDestroy(): void {
@@ -90,6 +103,7 @@ export class ServiceDetailComponent implements OnDestroy {
     this.api.getService(id, this.locations.position).subscribe({
       next: (service) => {
         this.service.set(service);
+        this.seo.service(service);
         this.loading.set(false);
         this.activeImage.set(0);
         this.canEdit.set(this.auth.hasForShop(service.shop.id, PERMISSIONS.EDIT_SERVICE));
@@ -137,11 +151,8 @@ export class ServiceDetailComponent implements OnDestroy {
   toggleSave(): void {
     const service = this.service();
     if (!service) return;
-    if (!this.auth.isAuthenticated()) {
-      this.toast.info('Sign in to save services.');
-      void this.router.navigate(['/auth/login'], { queryParams: { returnUrl: this.router.url } });
-      return;
-    }
+    // §14: the whole service page is public; only the save needs an account.
+    if (!this.prompt.require('save-service', () => this.toggleSave())) return;
 
     const request = service.isSaved ? this.api.unsaveService(service.id) : this.api.saveService(service.id);
 
@@ -168,13 +179,25 @@ export class ServiceDetailComponent implements OnDestroy {
     return this.service()?.bookingType === 'walk_in';
   }
 
+  /**
+   * §14: "Guest -> [Book Now] -> Login / Sign Up". The booking form opens by
+   * itself once the customer is back, so the tap is not wasted.
+   */
   openBooking(mode: 'book' | 'enquire'): void {
-    if (!this.auth.isAuthenticated()) {
-      this.toast.info('Sign in to continue.');
-      void this.router.navigate(['/auth/login'], { queryParams: { returnUrl: this.router.url } });
-      return;
-    }
+    const intent = mode === 'book' ? 'book-service' : 'enquire-service';
+    // The returnUrl the prompt captures is this page's current url, so adding
+    // the mode to it now is what reopens the form after the login (§7).
+    if (!this.prompt.require(intent, undefined, { returnTo: this.urlWithBooking(mode) })) return;
     this.bookingMode.set(this.bookingMode() === mode ? null : mode);
+  }
+
+  private urlWithBooking(mode: 'book' | 'enquire'): string {
+    const tree = this.router.createUrlTree([], {
+      relativeTo: this.route,
+      queryParams: { book: mode },
+      queryParamsHandling: 'merge',
+    });
+    return this.router.serializeUrl(tree);
   }
 
   submitBooking(): void {

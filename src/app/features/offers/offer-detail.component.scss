@@ -384,3 +384,18 @@ dl.facts dd {
     font-size: 1.4rem;
   }
 }
+
+/* Inline "Login to leave a review" (§13) - a button for correctness, styled as
+   the link it reads as. */
+.linklike {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--brand);
+  cursor: pointer;
+}
+
+.linklike:hover {
+  text-decoration: underline;
+}

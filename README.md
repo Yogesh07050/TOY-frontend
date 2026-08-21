@@ -68,6 +68,38 @@ each screen ships as its own chunk.
   that 401 together share a single refresh.
 - The refresh token also lives in an `httpOnly` cookie set by the API.
 
+### Guest browsing (public-first)
+
+Every discovery route — Offers, Nearby, Services, Shops, Categories and all the
+detail pages — is open with no guard. A visitor is only asked to authenticate at
+the moment they reach for something that belongs to an account.
+
+`AuthPromptService` is the single entry point for that. Instead of navigating to
+the login screen, a component asks whether it may proceed:
+
+```ts
+// Returns false and raises the overlay when nobody is signed in.
+if (!this.prompt.require('save-offer', () => this.toggleFavorite())) return;
+```
+
+Two things follow from the closure that is handed over:
+
+- The prompt is an **overlay** (a bottom sheet on narrow screens), so the offer
+  the guest was reading stays behind it and "Continue browsing as guest"
+  dismisses it with nothing lost.
+- After a successful login or registration the closure is **replayed**, so the
+  save the guest started completes on its own. It runs before the navigation
+  back, which is why the offer page renders as already saved on first paint
+  rather than flickering into it.
+
+Page state that cannot be replayed by a closure — a booking form that should be
+open on arrival — travels in the `returnUrl` instead, because the component that
+captured the intent no longer exists by the time the customer returns.
+
+Guests are never shown a rail called "Recommended for you": with no account
+history, the API ranks on location, trending and freshness, so the same rail is
+labelled "Popular near you" until someone signs in.
+
 ### Permissions in the UI
 
 `auth.has()`, `auth.hasAny()` and `auth.hasForShop()` drive menu items, buttons
@@ -183,6 +215,10 @@ back if the request fails.
 
 ## Screens
 
+**Guest** — everything under Customer below except Favourites, Following,
+Notifications and Profile. Saving, following, claiming, booking and reviewing
+raise the login overlay and then complete themselves.
+
 **Customer** — Offers (search, category strip, filters, sorting, radius),
 Nearby, Offer details (gallery, live countdown, terms, branch maps, directions,
 share to WhatsApp/email/copy, reviews), Shops, Shop details (branches, map,
@@ -216,6 +252,13 @@ moderation, Audit logs.
 
 ## Notes
 
+- Public pages describe themselves for search engines. `SeoService` writes the
+  title, description, canonical and Open Graph tags from the loaded offer,
+  service, shop or category — "30% OFF at Zara, Coimbatore", "Clothing offers in
+  Coimbatore" — and marks every account and admin page `noindex`. The canonical
+  drops query parameters, so one listing under a dozen filter combinations is
+  not presented as a dozen pages. Tags are written after hydration; moving to
+  SSR later would render the same calls into the initial HTML unchanged.
 - Maps are OpenStreetMap embeds and directions link out to Google Maps, so no
   map API key is needed. URLs are built from numeric coordinates and marked
   trusted via `DomSanitizer`; they are cached per branch so the iframe does not

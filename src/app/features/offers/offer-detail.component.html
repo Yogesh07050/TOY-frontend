@@ -294,8 +294,10 @@
                 </button>
               </div>
             } @else {
+              <!-- §13: public ratings and reviews are readable by anyone;
+                   writing one is the part that needs an account. -->
               <p class="muted small">
-                <a routerLink="/auth/login" [queryParams]="{ returnUrl: '/offers/' + o.id }">Sign in</a>
+                <button type="button" class="linklike" (click)="prompt.open('review')">Login</button>
                 to leave a review.
               </p>
             }

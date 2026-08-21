@@ -127,8 +127,10 @@
           }
         </div>
       } @else {
-        <a routerLink="/auth/login" class="btn btn-secondary btn-sm">Sign in</a>
-        <a routerLink="/auth/register" class="btn btn-sm register-btn">Register</a>
+        <!-- Guest header (§3): browsing is never gated, so these are an
+             invitation rather than a wall. -->
+        <a routerLink="/auth/login" class="btn btn-secondary btn-sm">Login</a>
+        <a routerLink="/auth/register" class="btn btn-sm register-btn">Sign Up</a>
       }
 
       <button type="button" class="menu-toggle" (click)="toggleMenu()" [attr.aria-expanded]="menuOpen()" aria-label="Toggle navigation">
@@ -165,8 +167,8 @@
             <a routerLink="/favorites">Saved offers</a>
             <a routerLink="/notifications">Notifications</a>
           } @else {
-            <a routerLink="/auth/login">Sign in</a>
-            <a routerLink="/auth/register">Create an account</a>
+            <a routerLink="/auth/login">Login</a>
+            <a routerLink="/auth/register">Create a free account</a>
           }
         </div>
       </div>
@@ -175,4 +177,5 @@
   </footer>
 }
 
+<app-auth-prompt />
 <app-toasts />

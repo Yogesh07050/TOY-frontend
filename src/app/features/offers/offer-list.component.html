@@ -115,7 +115,7 @@
       seeAllLink="/offers"
       [seeAllParams]="{ sort: 'endingSoon' }"
       (toggleFavorite)="toggleFavorite($event)"
-      (requireLogin)="promptLogin()"
+      (requireLogin)="promptLogin($event)"
     />
 
     <app-offer-rail
@@ -126,17 +126,37 @@
       [note]="distanceNote"
       seeAllLink="/nearby"
       (toggleFavorite)="toggleFavorite($event)"
-      (requireLogin)="promptLogin()"
+      (requireLogin)="promptLogin($event)"
     />
 
+    <!-- §11/§12: the same rail, honestly labelled. A guest's ranking comes from
+         location, trending and freshness, so calling it "Recommended for you"
+         would promise a personalisation there is no account to base it on. -->
     <app-offer-rail
-      icon="✨"
-      title="Recommended for you"
+      [icon]="auth.isAuthenticated() ? '✨' : '🔥'"
+      [title]="auth.isAuthenticated() ? 'Recommended for you' : 'Popular near you'"
+      [subtitle]="auth.isAuthenticated() ? '' : 'Trending with shoppers in your area'"
       [offers]="recommended()"
       [note]="recommendedNote"
       (toggleFavorite)="toggleFavorite($event)"
-      (requireLogin)="promptLogin()"
+      (requireLogin)="promptLogin($event)"
     />
+
+    <!-- §28: one contextual invitation, placed where the difference an account
+         makes is visible. Not repeated on every page view. -->
+    @if (!auth.isAuthenticated()) {
+      <section class="personalise card">
+        <div class="card-body">
+          <h2>✨ Make OffersOffer personal</h2>
+          <p class="muted mb-0">
+            Get recommendations based on what you like, save offers and hear before they expire.
+          </p>
+          <button type="button" class="btn mt-2" (click)="prompt.open('generic')">
+            Create Free Account
+          </button>
+        </div>
+      </section>
+    }
   }
 
   <!-- Sorting (§10) -->
@@ -269,7 +289,7 @@
         <app-offer-card
           [offer]="offer"
           (toggleFavorite)="toggleFavorite($event)"
-          (requireLogin)="promptLogin()"
+          (requireLogin)="promptLogin($event)"
         />
       }
     </div>

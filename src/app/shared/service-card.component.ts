@@ -356,7 +356,11 @@ export class ServiceCardComponent {
   @Input() showStatus = false;
 
   @Output() toggleSave = new EventEmitter<Service>();
-  @Output() requireLogin = new EventEmitter<void>();
+  /**
+   * Raised instead of the save when a guest taps the heart (§5). Carries the
+   * service so the parent can replay the save once the visitor signs in (§7).
+   */
+  @Output() requireLogin = new EventEmitter<Service>();
 
   get offerChip(): string {
     return new ServiceOfferChipPipe().transform(this.service);
@@ -366,7 +370,7 @@ export class ServiceCardComponent {
     event.preventDefault();
     event.stopPropagation();
     if (!this.auth.isAuthenticated()) {
-      this.requireLogin.emit();
+      this.requireLogin.emit(this.service);
       return;
     }
     this.toggleSave.emit(this.service);

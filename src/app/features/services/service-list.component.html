@@ -218,7 +218,7 @@
         <app-service-card
           [service]="service"
           (toggleSave)="toggleSave($event)"
-          (requireLogin)="promptLogin()"
+          (requireLogin)="promptLogin($event)"
         />
       }
     </div>

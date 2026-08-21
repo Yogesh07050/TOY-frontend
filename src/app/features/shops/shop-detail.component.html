@@ -186,7 +186,7 @@
             [offer]="offer"
             [showStatus]="tab() === 'expired'"
             (toggleFavorite)="toggleFavorite($event)"
-            (requireLogin)="promptLogin()"
+            (requireLogin)="promptLogin($event)"
           />
         }
       </div>

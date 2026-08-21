@@ -376,7 +376,11 @@ export class OfferCardComponent {
   @Input() showStatus = false;
 
   @Output() toggleFavorite = new EventEmitter<Offer>();
-  @Output() requireLogin = new EventEmitter<void>();
+  /**
+   * Raised instead of the save when a guest taps the heart (§5). Carries the
+   * offer so the parent can replay the save once the visitor signs in (§7).
+   */
+  @Output() requireLogin = new EventEmitter<Offer>();
 
   get discountChip(): string {
     return new DiscountChipPipe().transform(this.offer);
@@ -392,7 +396,7 @@ export class OfferCardComponent {
     event.preventDefault();
     event.stopPropagation();
     if (!this.auth.isAuthenticated()) {
-      this.requireLogin.emit();
+      this.requireLogin.emit(this.offer);
       return;
     }
     this.toggleFavorite.emit(this.offer);

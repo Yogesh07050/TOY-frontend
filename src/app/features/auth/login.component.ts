@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
+import { AuthPromptService } from '../../core/auth-prompt.service';
 import { AuthService } from '../../core/auth.service';
 import { ToastService } from '../../core/toast.service';
 import { AuthShellComponent, applyServerErrors, errorFor } from './auth-shell';
@@ -12,7 +13,16 @@ import { AuthShellComponent, applyServerErrors, errorFor } from './auth-shell';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterLink, AuthShellComponent],
   template: `
-    <app-auth-shell heading="Welcome back" subheading="Sign in to save offers and follow your shops.">
+    <app-auth-shell heading="Welcome back" subheading="Login to save offers and follow your shops.">
+      <!-- §7: the guest was part-way through an action. Naming it here is what
+           makes the login feel like a step in that action rather than a wall. -->
+      @if (pendingCopy(); as pending) {
+        <p class="pending" role="status">
+          <span aria-hidden="true">{{ pending.icon }}</span> {{ pending.title }} — we&rsquo;ll finish this
+          for you as soon as you log in.
+        </p>
+      }
+
       <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
         @if (formError()) {
           <div class="alert" role="alert">{{ formError() }}</div>
@@ -68,13 +78,16 @@ import { AuthShellComponent, applyServerErrors, errorFor } from './auth-shell';
           @if (submitting()) {
             <span class="spinner"></span> Signing in…
           } @else {
-            Sign in
+            Login
           }
         </button>
       </form>
 
       <p class="center small mt-3 mb-0">
-        New here? <a routerLink="/auth/register">Create an account</a>
+        New here? <a routerLink="/auth/register">Create a free account</a>
+      </p>
+      <p class="center small mt-1 mb-0">
+        <a [routerLink]="['/offers']">Continue browsing as guest</a>
       </p>
     </app-auth-shell>
   `,
@@ -86,6 +99,15 @@ import { AuthShellComponent, applyServerErrors, errorFor } from './auth-shell';
         padding: 0.65rem 0.8rem;
         border-radius: var(--radius-sm);
         font-size: 0.88rem;
+        margin-bottom: 1rem;
+      }
+
+      .pending {
+        background: var(--brand-tint, var(--surface-alt));
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 0.6rem 0.75rem;
+        font-size: 0.85rem;
         margin-bottom: 1rem;
       }
 
@@ -118,6 +140,10 @@ export class LoginComponent {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly toast = inject(ToastService);
+  private readonly prompt = inject(AuthPromptService);
+
+  /** The action the guest started before being asked to log in (§7). */
+  readonly pendingCopy = () => this.prompt.pendingCopy();
 
   readonly submitting = signal(false);
   readonly formError = signal<string | null>(null);
@@ -148,6 +174,9 @@ export class LoginComponent {
         this.submitting.set(false);
         this.toast.success(`Welcome back, ${user.name.split(' ')[0]}.`);
         // Permission-based landing (§20): the returnUrl wins when present.
+        // §7/§29: the action the guest started completes before they land back
+        // on the page that started it, so it is already done when they get there.
+        this.prompt.resumePending();
         const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
         void this.router.navigateByUrl(returnUrl || this.auth.landingRoute());
       },

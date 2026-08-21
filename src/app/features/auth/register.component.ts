@@ -1,9 +1,10 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 
+import { AuthPromptService } from '../../core/auth-prompt.service';
 import { AuthService } from '../../core/auth.service';
 import { ToastService } from '../../core/toast.service';
 import { AuthShellComponent, applyServerErrors, errorFor } from './auth-shell';
@@ -14,7 +15,26 @@ import { passwordStrength, passwordsMatch, strengthScore } from './password.vali
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterLink, AuthShellComponent],
   template: `
-    <app-auth-shell heading="Create your account" subheading="Save offers, follow shops and get notified.">
+    <app-auth-shell
+      heading="Browse freely. Make it personal when you're ready."
+      subheading="Creating an account is free — it only adds the things that need to know who you are."
+    >
+      <!-- §18: registration is positioned as unlocking personalisation, not as
+           the price of admission. Everything the guest was already doing stays
+           free; this list is only what an account adds. -->
+      <ul class="benefits">
+        @for (benefit of benefits; track benefit) {
+          <li>{{ benefit }}</li>
+        }
+      </ul>
+
+      @if (pendingCopy(); as pending) {
+        <p class="pending" role="status">
+          <span aria-hidden="true">{{ pending.icon }}</span> {{ pending.title }} — we&rsquo;ll finish this
+          for you as soon as your account is ready.
+        </p>
+      }
+
       <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
         @if (formError()) {
           <div class="alert" role="alert">{{ formError() }}</div>
@@ -79,16 +99,47 @@ import { passwordStrength, passwordsMatch, strengthScore } from './password.vali
           @if (submitting()) {
             <span class="spinner"></span> Creating account…
           } @else {
-            Create account
+            Create Free Account
           }
         </button>
       </form>
 
-      <p class="center small mt-3 mb-0">Already registered? <a routerLink="/auth/login">Sign in</a></p>
+      <p class="center small mt-3 mb-0">Already registered? <a routerLink="/auth/login">Login</a></p>
+      <p class="center small mt-1 mb-0">
+        <a [routerLink]="['/offers']">Continue browsing as guest</a>
+      </p>
     </app-auth-shell>
   `,
   styles: [
     `
+      .benefits {
+        list-style: none;
+        margin: 0 0 1.25rem;
+        padding: 0.9rem 1rem;
+        background: var(--surface-alt);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        display: grid;
+        gap: 0.3rem;
+        font-size: 0.87rem;
+      }
+
+      .benefits li::before {
+        content: '\\2713';
+        color: var(--brand);
+        font-weight: 700;
+        margin-right: 0.5rem;
+      }
+
+      .pending {
+        background: var(--brand-tint, var(--surface-alt));
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 0.6rem 0.75rem;
+        font-size: 0.85rem;
+        margin-bottom: 1rem;
+      }
+
       .alert {
         background: var(--danger-bg);
         color: var(--danger);
@@ -131,6 +182,23 @@ export class RegisterComponent {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly prompt = inject(AuthPromptService);
+
+  /** §18. Kept as data so the same list can be reused by a marketing block. */
+  readonly benefits = [
+    'Save offers',
+    'Follow shops',
+    'Get expiry alerts',
+    'Receive personalized recommendations',
+    'Claim offers',
+    'Track redemptions',
+    'Save services',
+    'Manage bookings',
+    'Track your savings',
+  ];
+
+  readonly pendingCopy = () => this.prompt.pendingCopy();
 
   readonly submitting = signal(false);
   readonly formError = signal<string | null>(null);
@@ -179,7 +247,11 @@ export class RegisterComponent {
         next: () => {
           this.submitting.set(false);
           this.toast.success('Account created. Check your email to verify the address.');
-          void this.router.navigateByUrl('/offers');
+          // §7/§29: a guest who signed up mid-action returns to it and finds it
+          // already done.
+          this.prompt.resumePending();
+          const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+          void this.router.navigateByUrl(returnUrl || '/offers');
         },
         error: (error: unknown) => {
           this.submitting.set(false);

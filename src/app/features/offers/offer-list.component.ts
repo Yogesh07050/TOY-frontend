@@ -6,6 +6,8 @@ import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { ApiService } from '../../core/api.service';
+import { AuthPromptService } from '../../core/auth-prompt.service';
+import { SeoService } from '../../core/seo.service';
 import { AuthService } from '../../core/auth.service';
 import { LocationService, SUGGESTED_CITIES } from '../../core/location.service';
 import { ToastService } from '../../core/toast.service';
@@ -76,6 +78,8 @@ export class OfferListComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly toast = inject(ToastService);
   readonly auth = inject(AuthService);
+  readonly prompt = inject(AuthPromptService);
+  private readonly seo = inject(SeoService);
   readonly locations = inject(LocationService);
 
   readonly sorts = SORTS;
@@ -167,10 +171,16 @@ export class OfferListComponent {
       this.sort = sortParam ?? (this.nearbyMode() ? 'nearest' : 'newest');
 
       this.filterTick.update((tick) => tick + 1);
+      this.describePage();
       this.load();
     });
 
-    this.api.listCategories().subscribe((categories) => this.categories.set(categories));
+    this.api.listCategories().subscribe((categories) => {
+      this.categories.set(categories);
+      // The category name is only known once this resolves, so the title is
+      // written again rather than left as the generic "Offers near you".
+      this.describePage();
+    });
     this.api
       .listShops({ limit: 100, sort: 'name' })
       .subscribe((page) => this.shops.set(page.items));
@@ -221,6 +231,24 @@ export class OfferListComponent {
       next: (offers) => this.recommended.set(offers),
       error: () => this.recommended.set([]),
     });
+  }
+
+  /**
+   * §27: "Clothing Offers in Coimbatore". The listing is the page a search
+   * engine is most likely to land on, so its title tracks the category and city
+   * the visitor is actually filtered to. The canonical drops the query string,
+   * which is why the same listing under a dozen filter combinations does not
+   * present itself as a dozen pages.
+   */
+  private describePage(): void {
+    const category = this.categoryId
+      ? (this.categories().find((item) => item.id === this.categoryId) ?? null)
+      : null;
+    // Only a real place belongs in the title - the picker's "All locations" and
+    // "Near me" placeholders would read as city names to a search engine.
+    const picked = this.locations.location();
+    const city = this.city || (picked.city ?? null);
+    this.seo.categoryListing(category, city, this.nearbyMode() ? '/nearby' : '/offers');
   }
 
   // ---- Data ---------------------------------------------------------------
@@ -358,9 +386,13 @@ export class OfferListComponent {
     });
   }
 
-  promptLogin(): void {
-    this.toast.info('Sign in to save offers.');
-    void this.router.navigate(['/auth/login'], { queryParams: { returnUrl: this.router.url } });
+  /**
+   * §5/§7: browsing never redirects. The heart raises an overlay over the list
+   * the guest is already reading, and the save itself is replayed after login
+   * so they never have to find the offer again.
+   */
+  promptLogin(offer: Offer): void {
+    this.prompt.require('save-offer', () => this.toggleFavorite(offer));
   }
 
   private patchOffer(id: number, changes: Partial<Offer>): void {

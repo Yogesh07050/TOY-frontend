@@ -5,6 +5,8 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 import { ApiService } from '../../core/api.service';
+import { AuthPromptService } from '../../core/auth-prompt.service';
+import { SeoService } from '../../core/seo.service';
 import { AuthService } from '../../core/auth.service';
 import { LocationService } from '../../core/location.service';
 import { ToastService } from '../../core/toast.service';
@@ -46,6 +48,8 @@ export class OfferDetailComponent implements OnDestroy {
   private readonly toast = inject(ToastService);
   private readonly sanitizer = inject(DomSanitizer);
   readonly auth = inject(AuthService);
+  readonly prompt = inject(AuthPromptService);
+  private readonly seo = inject(SeoService);
   readonly locations = inject(LocationService);
 
   private readonly mapUrlCache = new Map<number, SafeResourceUrl | null>();
@@ -84,6 +88,8 @@ export class OfferDetailComponent implements OnDestroy {
     this.api.getOffer(id, this.locations.position).subscribe({
       next: (offer) => {
         this.offer.set(offer);
+        // §27: public offer pages are indexable, so they describe themselves.
+        this.seo.offer(offer);
         this.loading.set(false);
         this.activeImage.set(0);
         this.canEdit.set(this.auth.hasForShop(offer.shop.id, PERMISSIONS.EDIT_OFFER));
@@ -157,11 +163,8 @@ export class OfferDetailComponent implements OnDestroy {
   toggleFavorite(): void {
     const offer = this.offer();
     if (!offer) return;
-    if (!this.auth.isAuthenticated()) {
-      this.toast.info('Sign in to save offers.');
-      void this.router.navigate(['/auth/login'], { queryParams: { returnUrl: this.router.url } });
-      return;
-    }
+    // §13: the offer page is fully public; only the save needs an account.
+    if (!this.prompt.require('save-offer', () => this.toggleFavorite())) return;
 
     const request = offer.isFavorite
       ? this.api.removeFavorite(offer.id)
@@ -177,10 +180,7 @@ export class OfferDetailComponent implements OnDestroy {
   followShop(): void {
     const offer = this.offer();
     if (!offer) return;
-    if (!this.auth.isAuthenticated()) {
-      void this.router.navigate(['/auth/login'], { queryParams: { returnUrl: this.router.url } });
-      return;
-    }
+    if (!this.prompt.require('follow-shop', () => this.followShop())) return;
     this.api.followShop(offer.shop.id).subscribe({
       next: () => this.toast.success(`You are now following ${offer.shop.name}.`),
     });

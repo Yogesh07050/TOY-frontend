@@ -146,3 +146,15 @@
   font-size: 1.2rem;
   margin-bottom: 0.85rem;
 }
+
+/* Guest personalisation invitation (§28). Sits between rails, so it reads as
+   part of the page rather than as an interruption of it. */
+.personalise {
+  margin: 1.5rem 0;
+  text-align: center;
+
+  h2 {
+    margin: 0 0 0.35rem;
+    font-size: 1.15rem;
+  }
+}

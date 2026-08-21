@@ -4,6 +4,8 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 import { ApiService } from '../../core/api.service';
+import { AuthPromptService } from '../../core/auth-prompt.service';
+import { SeoService } from '../../core/seo.service';
 import { AuthService } from '../../core/auth.service';
 import { LocationService } from '../../core/location.service';
 import { ToastService } from '../../core/toast.service';
@@ -35,6 +37,8 @@ export class ShopDetailComponent {
   private readonly toast = inject(ToastService);
   private readonly sanitizer = inject(DomSanitizer);
   readonly auth = inject(AuthService);
+  readonly prompt = inject(AuthPromptService);
+  private readonly seo = inject(SeoService);
   readonly locations = inject(LocationService);
 
   readonly shop = signal<Shop | null>(null);
@@ -64,6 +68,7 @@ export class ShopDetailComponent {
     this.api.getShop(idOrSlug, this.locations.position).subscribe({
       next: (shop) => {
         this.shop.set(shop);
+        this.seo.shop(shop);
         this.loading.set(false);
         this.canManage.set(this.auth.hasForShop(shop.id, PERMISSIONS.EDIT_SHOP));
         this.loadOffers();
@@ -118,11 +123,7 @@ export class ShopDetailComponent {
   toggleFollow(): void {
     const shop = this.shop();
     if (!shop) return;
-    if (!this.auth.isAuthenticated()) {
-      this.toast.info('Sign in to follow shops.');
-      void this.router.navigate(['/auth/login'], { queryParams: { returnUrl: this.router.url } });
-      return;
-    }
+    if (!this.prompt.require('follow-shop', () => this.toggleFollow())) return;
 
     const following = Boolean(shop.isFollowing);
     const request = following ? this.api.unfollowShop(shop.id) : this.api.followShop(shop.id);
@@ -154,9 +155,8 @@ export class ShopDetailComponent {
     });
   }
 
-  promptLogin(): void {
-    this.toast.info('Sign in to save offers.');
-    void this.router.navigate(['/auth/login'], { queryParams: { returnUrl: this.router.url } });
+  promptLogin(offer: Offer): void {
+    this.prompt.require('save-offer', () => this.toggleFavorite(offer));
   }
 
   /** Cached so the iframe is not recreated on every change-detection pass. */
