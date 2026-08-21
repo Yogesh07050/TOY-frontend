@@ -56,6 +56,11 @@ export const PERMISSIONS = {
   MANAGE_SERVICE_BOOKING: 'MANAGE_SERVICE_BOOKING',
   VIEW_SERVICE_ANALYTICS: 'VIEW_SERVICE_ANALYTICS',
   EXPORT_SERVICE_ANALYTICS: 'EXPORT_SERVICE_ANALYTICS',
+  // AI. Holding these only makes the screens reachable — whether a generation
+  // actually runs is decided by the shop's subscription plan, server-side.
+  USE_AI_ASSISTANT: 'USE_AI_ASSISTANT',
+  USE_AI_CONTENT: 'USE_AI_CONTENT',
+  MANAGE_SUBSCRIPTIONS: 'MANAGE_SUBSCRIPTIONS',
 } as const;
 
 export type PermissionName = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];

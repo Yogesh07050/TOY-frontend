@@ -219,3 +219,26 @@ fieldset {
   font-size: 0.85rem;
   line-height: 1.5;
 }
+
+/* Shown when the form was opened from an AI recommendation (§9). Reassures the
+   admin that nothing has been saved yet. */
+.ai-prefill-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  padding: 0.8rem 1rem;
+  margin-bottom: 1rem;
+  border-radius: var(--radius-sm);
+  background: var(--brand-tint);
+  border: 1px solid var(--brand-light);
+  border-left: 4px solid var(--brand);
+}
+
+.ai-prefill-banner > div {
+  display: flex;
+  flex-direction: column;
+}
+
+.ai-prefill-banner .small {
+  color: var(--text-muted);
+}

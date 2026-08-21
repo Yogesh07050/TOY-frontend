@@ -1,0 +1,227 @@
+<section class="card ai-panel" [class.open]="open()">
+  <button type="button" class="panel-toggle" (click)="toggle()" [attr.aria-expanded]="open()">
+    <span class="title">
+      <span aria-hidden="true">✨</span>
+      Generate offer content
+    </span>
+    <span class="chevron" aria-hidden="true">{{ open() ? '▴' : '▾' }}</span>
+  </button>
+
+  @if (open()) {
+    <div class="card-body">
+      <p class="small muted">Your offer is ready. Let AI write the content.</p>
+
+      @if (!shopId) {
+        <p class="small subtle">Choose a shop first.</p>
+      } @else if (!ready) {
+        <p class="small subtle">
+          Add an offer title or headline first — the copy is written from the offer, never
+          invented around it.
+        </p>
+      } @else {
+        <!-- Plan gate (§3), explained rather than hidden. -->
+        @if (capabilities() && !canGenerate) {
+          <div class="notice">
+            @if (status?.exhausted) {
+              <strong>You've used this month's allowance</strong>
+              <p class="small mb-0">
+                Your {{ capabilities()!.plan.name }} plan includes {{ status!.limit }} content
+                generations a month. The counter resets at the start of next month.
+              </p>
+            } @else {
+              <strong>AI content generation is not included in your {{ capabilities()!.plan.name }} plan</strong>
+              <p class="small mb-0">Ask a Super Admin about upgrading.</p>
+            }
+          </div>
+        }
+
+        <!-- §18: tone, length, language, audience, emoji, CTA. -->
+        <form [formGroup]="form">
+          <div class="form-grid">
+            <div class="field">
+              <label for="ai-tone">Tone</label>
+              <select id="ai-tone" formControlName="tone">
+                <option value="professional">Professional</option>
+                <option value="friendly">Friendly</option>
+                <option value="exciting">Exciting</option>
+                <option value="minimal">Minimal</option>
+                <option value="urgent">Urgent</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="ai-length">Length</label>
+              <select id="ai-length" formControlName="length">
+                <option value="short">Short</option>
+                <option value="medium">Medium</option>
+                <option value="long">Long</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="ai-language">Language</label>
+              <input id="ai-language" type="text" formControlName="language" placeholder="English" />
+            </div>
+
+            <div class="field">
+              <label for="ai-audience">Target audience</label>
+              <input id="ai-audience" type="text" formControlName="targetAudience" placeholder="General customers" />
+            </div>
+
+            <div class="field">
+              <label for="ai-cta">Call to action</label>
+              <input id="ai-cta" type="text" formControlName="callToAction" placeholder="e.g. Shop Now" />
+            </div>
+
+            <div class="field">
+              <label for="ai-variants">Versions per section</label>
+              <select id="ai-variants" formControlName="variants">
+                <option [ngValue]="1">One</option>
+                <option [ngValue]="2">Two</option>
+                <option [ngValue]="3">Three</option>
+              </select>
+            </div>
+          </div>
+
+          <label class="checkbox">
+            <input type="checkbox" formControlName="emoji" />
+            <span>Allow emoji</span>
+          </label>
+
+          <div class="field">
+            <label for="ai-notes">Anything else the copy should mention?</label>
+            <input id="ai-notes" type="text" formControlName="additionalNotes" placeholder="Optional" />
+          </div>
+        </form>
+
+        <!-- §16: what to generate. -->
+        <span class="label">Content to generate</span>
+        <div class="section-list">
+          @for (section of sections; track section.key) {
+            <label
+              class="section-option"
+              [class.disabled]="!sectionAvailable(section.key)"
+              [class.checked]="isSelected(section.key) && sectionAvailable(section.key)"
+            >
+              <input
+                type="checkbox"
+                [checked]="isSelected(section.key)"
+                [disabled]="!sectionAvailable(section.key)"
+                (change)="toggleSection(section.key)"
+              />
+              <span>
+                <strong>{{ section.label }}</strong>
+                <span class="small muted">
+                  {{ sectionAvailable(section.key) ? section.hint : 'Premium plans only' }}
+                </span>
+              </span>
+            </label>
+          }
+        </div>
+
+        <button type="button" class="btn btn-block mt-2" [disabled]="loading() || !canGenerate" (click)="generate()">
+          {{ loading() ? '✨ Writing your offer content…' : '✨ Generate content' }}
+        </button>
+
+        @if (loading()) {
+          <p class="small muted center mt-1" aria-live="polite">
+            Checking the offer details, then writing the copy…
+          </p>
+        }
+
+        @if (status && status.enabled && !status.unlimited) {
+          <p class="small muted center mt-1">
+            {{ status.remaining }} of {{ status.limit }} generations left this month
+          </p>
+        }
+
+        <!-- §36: never a dependency. -->
+        @if (error()) {
+          <div class="notice error" role="alert">
+            <strong>{{ error() }}</strong>
+          </div>
+        }
+
+        @if (result(); as data) {
+          <div class="results">
+            @if (data.warnings.length) {
+              <!-- §23: copy that did not match the offer was dropped, and saying
+                   so is more useful than silently returning fewer versions. -->
+              <p class="small subtle">
+                Some wording was rejected because it did not match your offer exactly, so it is
+                not shown.
+              </p>
+            }
+
+            <!-- §34: steer the next attempt. -->
+            <div class="refine">
+              <span class="label">Ask for a change</span>
+              <div class="chips">
+                @for (item of refinements; track item) {
+                  <button type="button" class="chip" [class.active]="refinement.value === item" (click)="applyRefinement(item)">
+                    {{ item }}
+                  </button>
+                }
+              </div>
+              <div class="row">
+                <input type="text" [formControl]="refinement" placeholder="Or describe the change you want" />
+                <button type="button" class="btn btn-secondary btn-sm" [disabled]="loading()" (click)="regenerate()">
+                  Regenerate all
+                </button>
+              </div>
+            </div>
+
+            @for (section of resultSections(); track section) {
+              <div class="generated">
+                <div class="generated-head">
+                  <h4>{{ labelFor(section) }}</h4>
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-sm"
+                    [disabled]="regenerating() === section"
+                    (click)="regenerate(section)"
+                  >
+                    {{ regenerating() === section ? 'Rewriting…' : 'Regenerate' }}
+                  </button>
+                </div>
+
+                @for (variant of variantsFor(section); track $index; let v = $index) {
+                  <div class="variant">
+                    @if (variantsFor(section).length > 1) {
+                      <span class="variant-label">Version {{ v + 1 }}</span>
+                    }
+                    <p class="copy">{{ variant }}</p>
+                    <div class="row">
+                      <button type="button" class="btn btn-sm" (click)="use(section, variant)">Use this</button>
+                      <button type="button" class="btn btn-ghost btn-sm" (click)="copy(variant)">Copy</button>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+
+            <!-- §24: generic wording only, and the merchant's own terms win. -->
+            @if (data.suggestedTerms.length) {
+              <div class="generated">
+                <div class="generated-head"><h4>Suggested terms</h4></div>
+                @for (term of data.suggestedTerms; track term) {
+                  <div class="variant">
+                    <p class="copy">{{ term }}</p>
+                    <button type="button" class="btn btn-sm" (click)="use('terms', term)">Add to conditions</button>
+                  </div>
+                }
+                <p class="small subtle mb-0">
+                  Generic wording only. Your own terms always take precedence.
+                </p>
+              </div>
+            }
+
+            <p class="small subtle approval">
+              Nothing here is saved until you save the offer yourself.
+            </p>
+          </div>
+        }
+      }
+    </div>
+  }
+</section>

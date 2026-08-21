@@ -6,9 +6,12 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { ToastService } from '../../core/toast.service';
+import { AiService } from '../../core/ai.service';
+import { AiOfferFacts, ContentSection } from '../../core/ai.models';
 import { Branch, Category, Offer, OfferPayload, Shop } from '../../core/models';
 import { PERMISSIONS } from '../../core/permissions';
 import { applyServerErrors, errorFor } from '../auth/auth-shell';
+import { AiContentPanelComponent } from '../ai/ai-content-panel.component';
 
 interface UploadedImage {
   url: string;
@@ -28,7 +31,7 @@ const HEADLINE_PRESETS = [
 @Component({
   selector: 'app-offer-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, AiContentPanelComponent],
   templateUrl: './offer-form.component.html',
   styleUrl: './offer-form.component.scss',
 })
@@ -38,9 +41,14 @@ export class OfferFormComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
+  private readonly ai = inject(AiService);
   readonly auth = inject(AuthService);
 
   readonly headlinePresets = HEADLINE_PRESETS;
+  /** Set when the form was opened from an AI recommendation (§9). */
+  readonly fromAi = signal(false);
+  /** The history row that pre-fill came from, so accepting it is recorded (§33). */
+  private aiHistoryId: number | null = null;
   readonly shops = signal<Shop[]>([]);
   readonly categories = signal<Category[]>([]);
   readonly branches = signal<Branch[]>([]);
@@ -131,7 +139,57 @@ export class OfferFormComponent {
         startDate: this.toLocalInput(new Date()),
         endDate: this.toLocalInput(new Date(Date.now() + 14 * 86400000)),
       });
+      this.applyAiPrefill();
     }
+  }
+
+  /**
+   * Fills the form from a recommendation the admin chose in the AI assistant
+   * (§9). This is the whole hand-off: a pre-filled form, with every field still
+   * editable and nothing saved. §10 keeps publishing with the admin.
+   */
+  private applyAiPrefill(): void {
+    const staged = this.ai.takePrefill();
+    if (!staged) return;
+
+    const { prefill, historyId } = staged;
+    this.aiHistoryId = historyId;
+    this.fromAi.set(true);
+
+    this.form.patchValue({
+      shopId: prefill.shopId,
+      title: prefill.title,
+      offerText: prefill.offerText ?? '',
+      description: prefill.description ?? '',
+      productName: prefill.productName ?? '',
+      offerType: prefill.offerType,
+      discountType: prefill.discountType,
+      discountValue: prefill.discountValue,
+      buyQuantity: prefill.buyQuantity,
+      getQuantity: prefill.getQuantity,
+      startDate: this.toLocalInput(new Date(prefill.startDate)),
+      endDate: this.toLocalInput(new Date(prefill.endDate)),
+      // Deliberately left as a draft: the AI must never put an offer live (§10).
+      status: 'draft',
+    });
+
+    // The category arrives as a name; match it to the real list once loaded.
+    if (prefill.categoryName) this.matchCategory(prefill.categoryName);
+    if (prefill.shopId) this.loadBranches(prefill.shopId);
+  }
+
+  /** Best-effort match of an AI-suggested category name to a real category. */
+  private matchCategory(name: string): void {
+    const apply = () => {
+      const wanted = name.trim().toLowerCase();
+      const match = this.categories().find(
+        (category) => category.name.toLowerCase() === wanted,
+      );
+      if (match) this.form.patchValue({ categoryId: match.id });
+    };
+    if (this.categories().length) apply();
+    // Categories load asynchronously, so retry once they have arrived.
+    else setTimeout(apply, 600);
   }
 
   private loadOffer(id: number): void {
@@ -295,6 +353,72 @@ export class OfferFormComponent {
     });
   }
 
+  // ---- AI content generation (§15-§22) ------------------------------------
+
+  /**
+   * The offer as it stands right now, for the content panel.
+   *
+   * A function rather than a value so the panel always reads the live form -
+   * generated copy has to describe what is actually on screen (§23).
+   */
+  readonly aiFacts = (): AiOfferFacts => {
+    const value = this.form.getRawValue();
+    const category = this.categories().find((item) => item.id === value.categoryId);
+    return {
+      title: value.title || null,
+      productName: value.productName || null,
+      categoryName: category?.name ?? null,
+      offerType: value.offerType as AiOfferFacts['offerType'],
+      offerText: value.offerText || null,
+      discountType: value.discountType as AiOfferFacts['discountType'],
+      discountValue: value.discountValue,
+      originalPrice: value.originalPrice,
+      discountedPrice: value.discountedPrice,
+      buyQuantity: value.buyQuantity,
+      getQuantity: value.getQuantity,
+      minPurchase: value.minPurchase,
+      startDate: value.startDate ? new Date(value.startDate).toISOString() : null,
+      endDate: value.endDate ? new Date(value.endDate).toISOString() : null,
+      termsConditions: value.termsConditions || null,
+      eligibility: value.eligibility || null,
+      usageRestrictions: value.usageRestrictions || null,
+      applicableProducts: value.applicableProducts || null,
+    };
+  };
+
+  /** There is nothing to write about until the offer says what it is. */
+  get aiReady(): boolean {
+    const value = this.form.getRawValue();
+    return Boolean(value.title?.trim() || value.offerText?.trim() || value.productName?.trim());
+  }
+
+  /** Puts an accepted piece of AI copy into the matching field (§35). */
+  applyAiContent(event: { section: ContentSection | 'terms'; text: string }): void {
+    switch (event.section) {
+      case 'title':
+        this.form.patchValue({ title: event.text.slice(0, 200) });
+        break;
+      case 'shortDescription':
+      case 'detailedDescription':
+        this.form.patchValue({ description: event.text });
+        break;
+      case 'bannerText':
+      case 'pushNotification':
+      case 'socialCaption':
+        // These are not offer fields: the admin copies them into the banner or
+        // notification tools, so the form only offers them as a headline.
+        this.form.patchValue({ offerText: event.text.split('\n')[0].slice(0, 200) });
+        break;
+      case 'terms': {
+        const existing = this.form.controls.termsConditions.value;
+        this.form.patchValue({
+          termsConditions: existing ? `${existing}\n${event.text}` : event.text,
+        });
+        break;
+      }
+    }
+  }
+
   // ---- Save ---------------------------------------------------------------
 
   error(control: string, label: string): string | null {
@@ -355,6 +479,13 @@ export class OfferFormComponent {
     request.subscribe({
       next: (offer) => {
         this.saving.set(false);
+        // §33: the recommendation was acted on, so the history row says so.
+        if (this.aiHistoryId) {
+          this.ai.setHistoryOutcome(this.aiHistoryId, 'accepted', offer.id).subscribe({
+            error: () => undefined,
+          });
+          this.aiHistoryId = null;
+        }
         this.toast.success(
           id ? 'Offer updated.' : `Offer created and saved as ${offer.status}.`,
         );
