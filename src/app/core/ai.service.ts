@@ -212,19 +212,28 @@ export class AiService {
   /**
    * Move a shop onto a plan.
    *
-   * This goes to the billing module, not to the AI plan endpoints, because a
-   * plan change is a commercial act - it can start a charge or end a mandate -
-   * and there is deliberately only one writer of that record. The API takes the
+   * Both calls go to the billing module rather than the AI plan endpoints,
+   * because a plan change is a commercial act - it can start a charge or end a
+   * mandate - and there is deliberately one writer of that record. They take a
    * plan *code* for the same reason: it is the billing model's own identifier.
    *
-   * The server refuses to grant a paid plan without a checkout
-   * (`CHECKOUT_REQUIRED`); the caller surfaces that rather than working around
-   * it, since the way to hand a shop a paid feature for free is a feature
-   * override, not a silent subscription.
+   * Free and paid take different routes, because they are different acts. Free
+   * is a downgrade, which honours whatever period the merchant already paid
+   * for. A paid plan without a payment is a Super Admin grant, recorded as one.
    */
-  setShopPlan(shopId: number, plan: PlanCode): Observable<ShopSubscription> {
-    return this.data(
-      this.http.put<ApiEnvelope<ShopSubscription>>(`${this.billingBase}/shops/${shopId}`, { plan }),
-    );
+  setShopPlan(shopId: number, plan: PlanCode, note?: string): Observable<void> {
+    const request =
+      plan === 'FREE'
+        ? this.http.put<ApiEnvelope<unknown>>(`${this.billingBase}/shops/${shopId}`, { plan, note })
+        : this.http.post<ApiEnvelope<unknown>>(`${this.billingBase}/shops/${shopId}/grant`, {
+            plan,
+            note,
+          });
+
+    // Deliberately void. These answer with the billing module's subscription
+    // shape, which is not the AI-entitlement shape this screen renders, and a
+    // downgrade does not take effect immediately anyway. The caller re-reads
+    // `shopSubscription` instead of inferring the new state from the reply.
+    return request.pipe(map(() => undefined));
   }
 }

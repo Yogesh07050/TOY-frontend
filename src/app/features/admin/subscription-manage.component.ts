@@ -301,31 +301,48 @@ export class SubscriptionManageComponent {
   }
 
   assign(shop: Shop, event: Event): void {
-    const planId = Number((event.target as HTMLSelectElement).value);
+    const select = event.target as HTMLSelectElement;
+    const planId = Number(select.value);
     if (!planId) return;
 
     const plan = this.plans().find((item) => item.id === planId);
     if (!plan) return;
 
     this.ai.setShopPlan(shop.id, plan.code).subscribe({
-      next: (subscription) => {
-        this.assignments.update((map) => {
-          const next = new Map(map);
-          next.set(shop.id, { planId: subscription.plan.id, source: subscription.source });
-          return next;
+      next: () => {
+        this.toast.success(
+          plan.code === 'FREE'
+            ? `${shop.name} will move to Free at the end of any period it has paid for.`
+            : `${shop.name} is now on the ${plan.name} plan, granted without a charge.`,
+        );
+
+        // Re-read rather than assume. A grant applies at once, but a downgrade
+        // only takes effect when the paid period ends - so the row has to show
+        // what the server actually holds, not what was just asked for.
+        this.ai.shopSubscription(shop.id).subscribe({
+          next: (current) => {
+            this.assignments.update((map) => {
+              const next = new Map(map);
+              next.set(shop.id, { planId: current.plan.id, source: current.source });
+              return next;
+            });
+
+            // Write the authoritative answer back onto the control. A downgrade
+            // is deferred to the end of the paid period, so the shop is still on
+            // the old plan afterwards - and leaving the dropdown showing what was
+            // picked would tell the admin the change had already taken effect.
+            // The binding alone will not do this: it re-renders on a *changed*
+            // value, and here the value it holds never changed.
+            select.value = String(current.plan.id);
+          },
         });
-        this.toast.success(`${shop.name} is now on the ${subscription.plan.name} plan.`);
       },
-      // The server refuses to hand out a paid plan without a checkout, which is
-      // a rule rather than a failure - so say what it said instead of a generic
-      // "could not be assigned" that leaves the admin guessing.
+      // Surface what the server actually said. A merchant Admin reaching this
+      // screen is refused by design (§31), and saying so is more use than a
+      // generic "could not be assigned".
       error: (error: unknown) => {
         const detail = error instanceof HttpErrorResponse ? error.error?.error : null;
-        this.toast.error(
-          detail?.code === 'CHECKOUT_REQUIRED'
-            ? `${plan.name} is a paid plan, so it has to go through checkout. To grant it without a charge, use Feature overrides.`
-            : (detail?.message ?? 'That plan could not be assigned.'),
-        );
+        this.toast.error(detail?.message ?? 'That plan could not be assigned.');
       },
     });
   }
