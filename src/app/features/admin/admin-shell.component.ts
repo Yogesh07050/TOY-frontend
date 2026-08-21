@@ -218,6 +218,18 @@ export class AdminShellComponent {
     { label: 'Offers', route: '/admin/offers', icon: '🏷️', permissions: [PERMISSIONS.VIEW_OFFERS] },
     { label: 'Post an offer', route: '/admin/offers/new', icon: '➕', permissions: [PERMISSIONS.CREATE_OFFER] },
     {
+      label: 'AI Offer Assistant',
+      route: '/admin/ai/assistant',
+      icon: '✨',
+      permissions: [PERMISSIONS.USE_AI_ASSISTANT],
+    },
+    {
+      label: 'AI usage & history',
+      route: '/admin/ai/history',
+      icon: '🧾',
+      permissions: [PERMISSIONS.USE_AI_CONTENT, PERMISSIONS.USE_AI_ASSISTANT],
+    },
+    {
       label: 'Shops',
       route: '/admin/shops',
       icon: '🏬',
@@ -234,6 +246,7 @@ export class AdminShellComponent {
     { label: 'Reviews', route: '/admin/reviews', icon: '⭐', permissions: [PERMISSIONS.MODERATE_REVIEWS] },
     { label: 'Users', route: '/admin/users', icon: '👥', permissions: [PERMISSIONS.VIEW_USERS] },
     { label: 'Roles & permissions', route: '/admin/roles', icon: '🔐', superAdminOnly: true },
+    { label: 'Subscriptions & AI', route: '/admin/subscriptions', icon: '💳', superAdminOnly: true },
     { label: 'Audit logs', route: '/admin/audit-logs', icon: '📜', permissions: [PERMISSIONS.VIEW_AUDIT_LOGS] },
   ];
 

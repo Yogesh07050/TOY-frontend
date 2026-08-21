@@ -14,6 +14,10 @@
       @if (auth.has('CREATE_OFFER')) {
         <a routerLink="/admin/offers/new" class="btn">➕ Post an offer</a>
       }
+      <!-- §5: the assistant's second entry point, for "not sure what to run?" -->
+      @if (auth.has('USE_AI_ASSISTANT')) {
+        <a routerLink="/admin/ai/assistant" class="btn btn-secondary">✨ AI Offer Assistant</a>
+      }
       @if (auth.has('CREATE_SHOP')) {
         <a routerLink="/admin/shops/new" class="btn btn-secondary">Create a shop</a>
       }

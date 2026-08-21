@@ -143,6 +143,39 @@ export const routes: Routes = [
         canActivate: [permissionGuard(PERMISSIONS.EDIT_OFFER)],
         loadComponent: () => import('./features/admin/offer-form.component').then((m) => m.OfferFormComponent),
       },
+      // ---- AI (TOY.md) ----
+      // The assistant and the improver are gated on the permission here and on
+      // the shop's subscription plan by the API, which is the real check.
+      {
+        path: 'ai/assistant',
+        title: 'AI Offer Assistant · Offers App',
+        canActivate: [permissionGuard(PERMISSIONS.USE_AI_ASSISTANT)],
+        loadComponent: () =>
+          import('./features/ai/ai-assistant.component').then((m) => m.AiAssistantComponent),
+      },
+      {
+        path: 'ai/history',
+        title: 'AI usage & history · Offers App',
+        canActivate: [permissionGuard(PERMISSIONS.USE_AI_CONTENT, PERMISSIONS.USE_AI_ASSISTANT)],
+        loadComponent: () =>
+          import('./features/ai/ai-history.component').then((m) => m.AiHistoryComponent),
+      },
+      {
+        path: 'offers/:id/improve',
+        title: 'Improve this offer · Offers App',
+        canActivate: [permissionGuard(PERMISSIONS.USE_AI_CONTENT)],
+        loadComponent: () =>
+          import('./features/ai/ai-improve.component').then((m) => m.AiImproveComponent),
+      },
+      {
+        path: 'subscriptions',
+        title: 'Subscriptions & AI limits · Offers App',
+        canActivate: [superAdminGuard],
+        loadComponent: () =>
+          import('./features/admin/subscription-manage.component').then(
+            (m) => m.SubscriptionManageComponent,
+          ),
+      },
       {
         path: 'shops',
         title: 'Shops · Offers App',

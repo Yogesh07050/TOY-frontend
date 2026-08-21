@@ -1,0 +1,378 @@
+<div class="container page">
+  <div class="page-header">
+    <div>
+      <h1><span aria-hidden="true">✨</span> AI Offer Assistant</h1>
+      <p class="subtitle">Tell us your goal. We'll help you create the right offer.</p>
+    </div>
+    <a routerLink="/admin/offers" class="btn btn-ghost">← Back to offers</a>
+  </div>
+
+  @if (!shopsLoaded()) {
+    <div class="skeleton" style="height: 320px"></div>
+  } @else if (shops().length === 0) {
+    <app-empty-state
+      emoji="🏬"
+      title="You are not assigned to a shop yet"
+      message="The assistant needs a shop to look at. Ask a Super Admin to assign you to one."
+    />
+  } @else {
+    <!-- Plan gate (§3). Explained rather than hidden, so the upgrade path is clear. -->
+    @if (capabilities() && !canGenerate()) {
+      <section class="card upgrade">
+        <div class="card-body">
+          <span class="badge badge-brand">{{ capabilities()!.plan.name }} plan</span>
+          @if (assistantStatus()?.exhausted) {
+            <h2>You've used this month's assistant allowance</h2>
+            <p class="muted">
+              Your plan includes {{ assistantStatus()!.limit }} AI Offer Assistant
+              {{ assistantStatus()!.limit === 1 ? 'recommendation' : 'recommendations' }} a month, and
+              the counter resets at the start of next month.
+            </p>
+          } @else {
+            <h2>The AI Offer Assistant is a Premium feature</h2>
+            <p class="muted">
+              Don't just create offers — create smarter offers. Premium uses your own offer
+              history, location performance and timing data to suggest what to run next.
+            </p>
+          }
+          <div class="row">
+            <a routerLink="/admin/offers/new" class="btn btn-secondary">Create an offer manually</a>
+          </div>
+        </div>
+      </section>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="generate(false)" novalidate>
+      <div class="assistant-layout">
+        <div class="stack">
+          <!-- §6: what are you trying to achieve? -->
+          <section class="card">
+            <div class="card-header"><h2>What are you trying to achieve?</h2></div>
+            <div class="card-body">
+              @if (shops().length > 1) {
+                <div class="field">
+                  <label for="shopId">Shop</label>
+                  <select id="shopId" formControlName="shopId" (change)="onShopChange()">
+                    @for (shop of shops(); track shop.id) {
+                      <option [ngValue]="shop.id">{{ shop.name }}</option>
+                    }
+                  </select>
+                </div>
+              }
+
+              <div class="goal-grid" role="radiogroup" aria-label="Business goal">
+                @for (goal of goals; track goal.value) {
+                  <button
+                    type="button"
+                    class="goal"
+                    role="radio"
+                    [attr.aria-checked]="form.controls.goal.value === goal.value"
+                    [class.selected]="form.controls.goal.value === goal.value"
+                    (click)="selectGoal(goal.value)"
+                  >
+                    <span class="glyph" aria-hidden="true">{{ goal.icon }}</span>
+                    <span>{{ goal.label }}</span>
+                  </button>
+                }
+              </div>
+
+              <div class="field mt-2">
+                <label for="details">Tell us more</label>
+                <textarea
+                  id="details"
+                  formControlName="details"
+                  rows="3"
+                  placeholder="I want to increase shirt sales this weekend and attract customers within 10 km."
+                ></textarea>
+                <span class="hint">
+                  The more you say about your products and your customers, the more specific the
+                  suggestion can be.
+                </span>
+              </div>
+            </div>
+          </section>
+
+          <!-- §27: optional inputs. None of them is mandatory. -->
+          <section class="card">
+            <div class="card-header">
+              <h3>Optional details</h3>
+              <span class="small muted">Everything here can be left blank</span>
+            </div>
+            <div class="card-body">
+              <div class="form-grid">
+                <div class="field">
+                  <label for="productOrCategory">Product or category</label>
+                  <input id="productOrCategory" type="text" formControlName="productOrCategory" placeholder="e.g. Shirts" />
+                </div>
+
+                <div class="field">
+                  <label for="locationRadiusKm">Preferred radius (km)</label>
+                  <input id="locationRadiusKm" type="number" min="0" max="500" formControlName="locationRadiusKm" placeholder="10" />
+                </div>
+
+                <div class="field">
+                  <label for="startDate">Start date</label>
+                  <input id="startDate" type="date" formControlName="startDate" />
+                </div>
+
+                <div class="field">
+                  <label for="endDate">End date</label>
+                  <input id="endDate" type="date" formControlName="endDate" />
+                </div>
+
+                <div class="field">
+                  <label for="preferredDiscount">Budget or discount preference</label>
+                  <input id="preferredDiscount" type="text" formControlName="preferredDiscount" placeholder="e.g. no more than 30%" />
+                </div>
+
+                <div class="field">
+                  <label for="targetCustomer">Target customer</label>
+                  <input id="targetCustomer" type="text" formControlName="targetCustomer" placeholder="e.g. families, students" />
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="inventoryNotes">Inventory notes</label>
+                <textarea id="inventoryNotes" formControlName="inventoryNotes" rows="2" placeholder="e.g. 200 shirts left in medium and large"></textarea>
+              </div>
+
+              <div class="field">
+                <label for="optionCount">How many options?</label>
+                <select id="optionCount" formControlName="optionCount">
+                  <option [ngValue]="1">One recommendation</option>
+                  <option [ngValue]="2">Two to compare</option>
+                  <option [ngValue]="3">Three strategies</option>
+                </select>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <aside class="stack">
+          <section class="card sticky">
+            <div class="card-body">
+              <button type="submit" class="btn btn-block" [disabled]="loading() || !canGenerate()">
+                {{ loading() ? 'Working…' : '✨ Get recommendations' }}
+              </button>
+
+              @if (assistantStatus(); as status) {
+                <p class="small muted center mt-1">
+                  @if (status.unlimited) {
+                    Included in your {{ capabilities()!.plan.name }} plan
+                  } @else if (status.enabled) {
+                    {{ status.remaining }} of {{ status.limit }} left this month
+                  }
+                </p>
+              }
+
+              <p class="small subtle mt-2">
+                The assistant suggests — you review, edit and publish. Nothing is created or
+                published for you.
+              </p>
+            </div>
+          </section>
+        </aside>
+      </div>
+    </form>
+
+    <!-- §37: progress in plain language, never a technical message. -->
+    @if (loading()) {
+      <section class="card thinking" aria-live="polite">
+        <div class="card-body">
+          <span class="spinner" aria-hidden="true"></span>
+          <div>
+            <strong>✨ Creating your recommendation…</strong>
+            <p class="small muted mb-0">{{ loadingStep() }}</p>
+          </div>
+        </div>
+      </section>
+    }
+
+    <!-- §36: AI is an enhancement, not a dependency. -->
+    @if (error()) {
+      <section class="card error-card" role="alert">
+        <div class="card-body">
+          <h3>{{ error() }}</h3>
+          <div class="row">
+            <button type="button" class="btn btn-secondary btn-sm" (click)="generate(false)">Try again</button>
+            <a routerLink="/admin/offers/new" class="btn btn-ghost btn-sm">Create the offer manually</a>
+          </div>
+        </div>
+      </section>
+    }
+
+    @if (result(); as data) {
+      <div class="results">
+        <div class="results-head">
+          <h2>✨ AI Recommendations</h2>
+          <div class="row">
+            <button type="button" class="btn btn-secondary btn-sm" [disabled]="loading()" (click)="generate(true)">
+              Try another recommendation
+            </button>
+            <button type="button" class="btn btn-ghost btn-sm" (click)="dismiss()">Dismiss</button>
+          </div>
+        </div>
+
+        <!-- §38: say what was missing, never fill the gap with an assumption. -->
+        @if (data.insufficientData) {
+          <div class="notice">
+            <strong>These are based on your goal, not on past performance.</strong>
+            @if (data.dataNotes.length) {
+              <ul>
+                @for (note of data.dataNotes; track note) {
+                  <li>{{ note }}</li>
+                }
+              </ul>
+            }
+            <p class="small mb-0">We'll keep learning as more of your offers finish running.</p>
+          </div>
+        }
+
+        <!-- §12 and §13: only ever shown when the data actually supported them. -->
+        @if (data.locationInsight || data.timingInsight) {
+          <div class="insights">
+            @if (data.locationInsight) {
+              <div class="insight">
+                <span class="label">📍 Location insight</span>
+                <p class="mb-0">{{ data.locationInsight }}</p>
+              </div>
+            }
+            @if (data.timingInsight) {
+              <div class="insight">
+                <span class="label">🕒 Timing insight</span>
+                <p class="mb-0">{{ data.timingInsight }}</p>
+              </div>
+            }
+          </div>
+        }
+
+        <div class="options">
+          @for (recommendation of data.recommendations; track $index; let i = $index) {
+            <article class="card option">
+              <div class="option-head">
+                <span class="badge badge-brand">Option {{ i + 1 }} — {{ recommendation.label }}</span>
+                @if (recommendation.goal) {
+                  <span class="small muted">{{ recommendation.goal }}</span>
+                }
+              </div>
+
+              <div class="card-body">
+                <p class="headline">{{ headline(recommendation) }}</p>
+                <h3>{{ recommendation.title }}</h3>
+                @if (recommendation.description) {
+                  <p class="muted">{{ recommendation.description }}</p>
+                }
+
+                <dl class="facts">
+                  @if (schedule(recommendation)) {
+                    <div><dt>Duration</dt><dd>{{ schedule(recommendation) }}</dd></div>
+                  }
+                  @if (recommendation.targetRadiusKm) {
+                    <div><dt>Target</dt><dd>Customers within {{ recommendation.targetRadiusKm }} km</dd></div>
+                  }
+                  @if (recommendation.categoryName) {
+                    <div><dt>Category</dt><dd>{{ recommendation.categoryName }}</dd></div>
+                  }
+                  @if (recommendation.productName) {
+                    <div><dt>Product</dt><dd>{{ recommendation.productName }}</dd></div>
+                  }
+                </dl>
+
+                @if (recommendation.reasoning.length) {
+                  <div class="reasoning">
+                    <span class="label">Why this may work</span>
+                    <ul>
+                      @for (reason of recommendation.reasoning; track reason.text) {
+                        <li>
+                          <span class="tick" aria-hidden="true">✓</span>
+                          <span>
+                            {{ reason.text }}
+                            <!-- §11: observed data and general advice must stay
+                                 distinguishable, so each reason is labelled. -->
+                            <span class="basis" [class.observed]="reason.basis === 'observed'">
+                              {{ reason.basis === 'observed' ? 'from your data' : 'general advice' }}
+                            </span>
+                          </span>
+                        </li>
+                      }
+                    </ul>
+                  </div>
+                }
+
+                @if (recommendation.tradeOffs.length) {
+                  <div class="tradeoffs">
+                    <span class="label">Worth knowing</span>
+                    <ul>
+                      @for (tradeOff of recommendation.tradeOffs; track tradeOff) {
+                        <li>{{ tradeOff }}</li>
+                      }
+                    </ul>
+                  </div>
+                }
+
+                <!-- §7's three actions. -->
+                <div class="row actions">
+                  <button type="button" class="btn btn-sm" (click)="use(i)">Use this recommendation</button>
+                  <button type="button" class="btn btn-secondary btn-sm" (click)="customize(i)">
+                    {{ customising() === i ? 'Close' : 'Customize' }}
+                  </button>
+                </div>
+
+                @if (customising() === i) {
+                  <form [formGroup]="customForm" class="customise">
+                    <div class="form-grid">
+                      <div class="field">
+                        <label for="c-title">Title</label>
+                        <input id="c-title" type="text" formControlName="title" />
+                      </div>
+                      <div class="field">
+                        <label for="c-offerText">Headline</label>
+                        <input id="c-offerText" type="text" formControlName="offerText" />
+                      </div>
+
+                      @if (showBuyGet(i)) {
+                        <div class="field">
+                          <label for="c-buy">Buy quantity</label>
+                          <input id="c-buy" type="number" min="1" formControlName="buyQuantity" />
+                        </div>
+                        <div class="field">
+                          <label for="c-get">Free quantity</label>
+                          <input id="c-get" type="number" min="1" formControlName="getQuantity" />
+                        </div>
+                      } @else if (showDiscount(i)) {
+                        <div class="field">
+                          <label for="c-discount">Discount</label>
+                          <input id="c-discount" type="number" min="0" formControlName="discountValue" />
+                        </div>
+                      }
+
+                      <div class="field">
+                        <label for="c-start">Starts</label>
+                        <input id="c-start" type="datetime-local" formControlName="startDate" />
+                      </div>
+                      <div class="field">
+                        <label for="c-end">Ends</label>
+                        <input id="c-end" type="datetime-local" formControlName="endDate" />
+                      </div>
+                      <div class="field">
+                        <label for="c-radius">Target radius (km)</label>
+                        <input id="c-radius" type="number" min="0" formControlName="targetRadiusKm" />
+                      </div>
+                    </div>
+
+                    <button type="button" class="btn btn-sm" (click)="useCustomised(i)">
+                      Continue with these values
+                    </button>
+                    <p class="small subtle mb-0">
+                      You can still change every field on the offer form before publishing.
+                    </p>
+                  </form>
+                }
+              </div>
+            </article>
+          }
+        </div>
+      </div>
+    }
+  }
+</div>

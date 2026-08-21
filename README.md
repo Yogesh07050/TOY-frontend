@@ -15,6 +15,9 @@ Pairs with the API in `TOY-backend`.
 
 ## Getting started
 
+The quickest route is `./start.sh` at the repository root, which brings up the
+API, the AI service and this app together. On its own:
+
 ```bash
 npm install
 npm start          # http://localhost:4200
@@ -24,8 +27,9 @@ npm start          # http://localhost:4200
 npm run build      # production bundle in dist/
 ```
 
-Point the app at a different API by editing `apiUrl` in
-`src/environments/environment.ts` (dev) or `environment.production.ts`.
+`/api` and `/uploads` are proxied to `http://localhost:3000` by
+`proxy.conf.json`, so the API port is not baked into the bundle. Point the app
+at a different API by editing that file (dev) or `environment.production.ts`.
 
 ### Try it with the seeded accounts
 
@@ -155,11 +159,42 @@ shops give a picker, and none explains that a shop assignment is missing.
 
 **Super Admin** — everything above across all shops, plus Shops CRUD,
 Categories, Users and role assignment, Roles & permissions matrix, Review
-moderation, Audit logs.
+moderation, Audit logs, and Subscriptions & AI limits.
+
+### V3: the AI features
+
+Two features, both of which assist the admin rather than act for them
+(`AI recommends → admin reviews → admin edits → admin publishes`):
+
+| Screen | Route | What it does |
+|---|---|---|
+| ✨ AI Offer Assistant | `/admin/ai/assistant` | Pick a goal, add optional detail, get up to three strategies with reasoning and trade-offs. |
+| Generate offer content | inside the offer form | Title, descriptions, banner text, push notification and social caption, with tone/length/language/emoji/CTA controls and per-section regeneration. |
+| ✨ Improve this offer | `/admin/offers/:id/improve` | Critique of an existing offer's wording, plus a rewrite to apply or reject. |
+| AI usage & history | `/admin/ai/history` | Remaining monthly allowance per feature, and what was generated and whether it was used. |
+| Subscriptions & AI limits | `/admin/subscriptions` | Super Admin: which plan includes what, the monthly allowances, and each shop's plan. |
+
+Three details worth knowing:
+
+- **The assistant hands off, it does not create.** Choosing a recommendation
+  stages a pre-fill in `AiService` and navigates to the normal offer form, which
+  consumes it once and shows a banner saying nothing has been saved. Every field
+  stays editable and the status is forced to draft, so the AI cannot publish.
+- **Each reason is labelled.** A reason drawn from the shop's own numbers is
+  tagged *from your data*; anything else is *general advice*. When there is not
+  enough history the screen says so instead of showing an invented pattern.
+- **Plan limits are explained, not hidden.** A feature the plan excludes shows
+  what it is and how to get it, rather than disappearing — and the API is what
+  actually enforces it.
 
 ---
 
 ## Notes
+
+- The dev server proxies `/api` and `/uploads` to the API (`proxy.conf.json`),
+  and `environment.ts` uses a relative `/api` just like production does. That
+  keeps the API port out of the bundle, so `../start.sh` can move the API to
+  another port without rebuilding the app.
 
 - Maps are OpenStreetMap embeds and directions link out to Google Maps, so no
   map API key is needed. URLs are built from numeric coordinates and marked

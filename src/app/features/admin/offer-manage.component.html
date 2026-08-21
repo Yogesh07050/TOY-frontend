@@ -112,6 +112,16 @@
                       <a class="btn btn-secondary btn-sm" [routerLink]="['/admin/offers', offer.id, 'edit']">
                         Edit
                       </a>
+                      <!-- §14: better wording for an offer that already exists. -->
+                      @if (auth.hasAny('USE_AI_CONTENT')) {
+                        <a
+                          class="btn btn-ghost btn-sm"
+                          [routerLink]="['/admin/offers', offer.id, 'improve']"
+                          title="Suggest clearer wording for this offer"
+                        >
+                          ✨ Improve
+                        </a>
+                      }
                       @for (option of nextStatuses(offer); track option.value) {
                         <button
                           type="button"

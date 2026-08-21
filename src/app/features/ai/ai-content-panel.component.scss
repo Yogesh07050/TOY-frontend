@@ -1,0 +1,169 @@
+/* The content generator panel. Lives inside the offer form, so it announces
+   itself with the brand gradient and otherwise stays out of the way. */
+
+.ai-panel {
+  overflow: hidden;
+}
+
+.panel-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.85rem 1rem;
+  font: inherit;
+  font-weight: 660;
+  color: var(--brand-ink);
+  background: var(--gradient-brand);
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+.panel-toggle .title {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.panel-toggle .chevron {
+  font-size: 0.8rem;
+}
+
+.label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 660;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+  margin: 0.9rem 0 0.4rem;
+}
+
+/* ---- Section checklist (§16) --------------------------------------------- */
+
+.section-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.4rem;
+}
+
+.section-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-alt);
+  cursor: pointer;
+  transition: border-color var(--fast) var(--ease), background var(--fast) var(--ease);
+}
+
+.section-option span {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+
+.section-option.checked {
+  border-color: var(--brand);
+  background: var(--brand-tint);
+}
+
+/* Disabled means "your plan does not include this", so it stays visible and
+   readable rather than being removed from the list (§22). */
+.section-option.disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ---- Notices ------------------------------------------------------------- */
+
+.notice {
+  background: var(--warning-bg);
+  border-left: 3px solid var(--warning);
+  border-radius: var(--radius-sm);
+  padding: 0.7rem 0.85rem;
+  margin: 0.75rem 0;
+}
+
+.notice.error {
+  background: var(--danger-bg);
+  border-left-color: var(--danger);
+}
+
+/* ---- Results ------------------------------------------------------------- */
+
+.results {
+  margin-top: 1rem;
+  border-top: 1px solid var(--border);
+  padding-top: 0.9rem;
+}
+
+.refine {
+  margin-bottom: 1rem;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.5rem;
+}
+
+.refine .row {
+  gap: 0.5rem;
+}
+
+.refine input {
+  flex: 1;
+  min-width: 0;
+}
+
+.generated {
+  margin-bottom: 1rem;
+}
+
+.generated-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+
+.generated-head h4 {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.variant {
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.7rem 0.8rem;
+  margin-bottom: 0.5rem;
+}
+
+.variant-label {
+  display: block;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-subtle);
+  margin-bottom: 0.25rem;
+}
+
+/* Banner and push copy are written with real line breaks and must keep them. */
+.copy {
+  white-space: pre-wrap;
+  margin: 0 0 0.55rem;
+  font-size: 0.93rem;
+}
+
+.approval {
+  margin: 0.75rem 0 0;
+  padding-top: 0.6rem;
+  border-top: 1px dashed var(--border-strong);
+}

@@ -2,7 +2,8 @@
   "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
   "version": 1,
   "cli": {
-    "packageManager": "npm"
+    "packageManager": "npm",
+    "analytics": "82484a22-996c-44ed-87ab-8634550796c0"
   },
   "newProjectRoot": "projects",
   "projects": {
@@ -62,6 +63,10 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
+          "defaultConfiguration": "development",
+          "options": {
+            "proxyConfig": "proxy.conf.json"
+          },
           "configurations": {
             "production": {
               "buildTarget": "TOY-frontend:build:production"
@@ -69,8 +74,7 @@
             "development": {
               "buildTarget": "TOY-frontend:build:development"
             }
-          },
-          "defaultConfiguration": "development"
+          }
         },
         "extract-i18n": {
           "builder": "@angular/build:extract-i18n"
