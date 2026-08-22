@@ -137,4 +137,15 @@ export class DashboardComponent {
   shortDay(value: string): string {
     return new Date(value).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
   }
+
+  /**
+   * "1 offer" / "4 offers" — a bare +s reads as a bug at one. Nouns ending in a
+   * sibilant take -es ("branch" → "branches"), so pass `many` for anything the
+   * +s/-es rule would get wrong.
+   */
+  plural(value: number | null | undefined, noun: string, many?: string): string {
+    const amount = value ?? 0;
+    if (amount === 1) return `${amount} ${noun}`;
+    return `${amount} ${many ?? (/(s|x|z|ch|sh)$/.test(noun) ? `${noun}es` : `${noun}s`)}`;
+  }
 }

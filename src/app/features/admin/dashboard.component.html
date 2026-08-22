@@ -241,7 +241,7 @@
                 @for (shop of topShops(); track shop.id) {
                   <li>
                     <strong class="truncate">{{ shop.name }}</strong>
-                    <span class="small muted">{{ shop.followers }} followers · {{ shop.activeOffers }} offers</span>
+                    <span class="small muted">{{ plural(shop.followers, 'follower') }} · {{ plural(shop.activeOffers, 'offer') }}</span>
                   </li>
                 }
               </ul>
@@ -257,7 +257,7 @@
                 @for (category of categories(); track category.id) {
                   <li>
                     <strong>{{ category.name }}</strong>
-                    <span class="small muted">{{ category.offerCount }} offers · {{ category.views }} views</span>
+                    <span class="small muted">{{ plural(category.offerCount, 'offer') }} · {{ plural(category.views, 'view') }}</span>
                   </li>
                 }
               </ul>
@@ -274,7 +274,7 @@
                   <li>
                     <strong>{{ location.city }}</strong>
                     <span class="small muted">
-                      {{ location.activeOffers }} offers · {{ location.branchCount }} branches
+                      {{ plural(location.activeOffers, 'offer') }} · {{ plural(location.branchCount, 'branch') }}
                     </span>
                   </li>
                 }
