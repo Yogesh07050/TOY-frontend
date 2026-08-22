@@ -4,6 +4,8 @@ import { RouterLink } from '@angular/router';
 
 import { SubscriptionService } from '../core/subscription.service';
 import { FeatureName, Kpi } from '../core/models';
+import { IconComponent } from '../shared/icon.component';
+import { IconName } from '../shared/icons';
 
 /**
  * Presentation primitives shared by every premium analytics dashboard (§33).
@@ -123,10 +125,10 @@ export class KpiCardComponent {
 @Component({
   selector: 'app-analytics-empty',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, IconComponent],
   template: `
     <div class="empty">
-      <span class="glyph" aria-hidden="true">{{ icon() }}</span>
+      <app-icon class="glyph" [name]="icon()" [size]="26" />
       <p class="title">{{ title() }}</p>
       <p class="small subtle">{{ message() }}</p>
       <ng-content />
@@ -163,7 +165,7 @@ export class KpiCardComponent {
   ],
 })
 export class AnalyticsEmptyComponent {
-  readonly icon = input('📊');
+  readonly icon = input<IconName>('bar-chart-outline');
   readonly title = input('Not enough data yet.');
   readonly message = input('Publish and promote more offers to unlock meaningful customer insights.');
 }
@@ -180,11 +182,11 @@ export class AnalyticsEmptyComponent {
 @Component({
   selector: 'app-upgrade-prompt',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, IconComponent],
   template: `
     <div class="card upgrade">
       <div class="card-body">
-        <span class="lock" aria-hidden="true">🔒</span>
+        <app-icon name="lock-closed-outline" [size]="16" />
         <h3>{{ heading() }}</h3>
         <p class="subtle">
           {{ label() }} is available with the {{ priceLabel() }} {{ required()?.name }} plan.

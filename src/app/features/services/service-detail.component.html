@@ -7,7 +7,7 @@
 } @else if (notFound()) {
   <div class="container page">
     <app-empty-state
-      emoji="🧰"
+      icon="briefcase-outline"
       title="Service not available"
       message="This service may have been paused, withdrawn, or never existed."
     >
@@ -39,7 +39,7 @@
           }
 
           @if (s | serviceOfferChip; as chip) {
-            <span class="discount-flag">🔥 {{ chip }}</span>
+            <span class="discount-flag"><app-icon name="flame-outline" [size]="15" /> {{ chip }}</span>
           }
         </div>
 
@@ -78,10 +78,10 @@
             <span class="badge">{{ s.subcategory.name }}</span>
           }
           @if (s.homeService) {
-            <span class="badge">🏠 Home service</span>
+            <span class="badge"><app-icon name="home-outline" [size]="16" /> Home service</span>
           }
           @if (s.walkInAvailable) {
-            <span class="badge">🚶 Walk-in</span>
+            <span class="badge"><app-icon name="walk-outline" [size]="16" /> Walk-in</span>
           }
         </div>
 
@@ -126,41 +126,44 @@
         }
 
         @if (s.distanceKm !== null) {
-          <p class="small"><strong>📍 {{ s.distanceKm | distance }}</strong> from {{ locations.location().label }}</p>
+          <p class="small"><strong><app-icon name="location-outline" [size]="15" /> {{ s.distanceKm | distance }}</strong> from {{ locations.location().label }}</p>
         }
 
         <div class="actions">
           <button type="button" class="btn" [class.btn-secondary]="s.isSaved" (click)="toggleSave()">
-            {{ s.isSaved ? '♥ Saved' : '♡ Save' }}
+            <app-icon [name]="s.isSaved ? 'heart' : 'heart-outline'" [size]="16" />
+            {{ s.isSaved ? 'Saved' : 'Save' }}
           </button>
 
           @if (isWalkInOnly) {
-            <span class="badge badge-success walk-in-note">🚶 Walk-in welcome — no booking needed</span>
+            <span class="badge badge-success walk-in-note"><app-icon name="walk-outline" [size]="16" /> Walk-in welcome — no booking needed</span>
           }
 
           @if (showBookButton) {
-            <button type="button" class="btn btn-secondary" (click)="openBooking('book')">📅 Book</button>
+            <button type="button" class="btn btn-secondary" (click)="openBooking('book')"><app-icon name="calendar-outline" [size]="16" /> Book</button>
           }
           @if (showEnquireButton) {
-            <button type="button" class="btn btn-secondary" (click)="openBooking('enquire')">💬 Enquire</button>
+            <button type="button" class="btn btn-secondary" (click)="openBooking('enquire')"><app-icon name="chatbubble-ellipses-outline" [size]="16" /> Enquire</button>
           }
 
           @if (s.shop.contactNumber) {
-            <a class="btn btn-secondary" [href]="'tel:' + s.shop.contactNumber">☎ Call</a>
+            <a class="btn btn-secondary" [href]="'tel:' + s.shop.contactNumber"><app-icon name="call-outline" [size]="16" /> Call</a>
           }
 
           <div class="share-wrap">
             <button type="button" class="btn btn-secondary" (click)="shareOpen.set(!shareOpen())">
-              ↗ Share
+              <app-icon name="share-social-outline" [size]="16" /> Share
             </button>
             @if (shareOpen()) {
               <div class="share-menu card">
                 @if (canUseNativeShare) {
-                  <button type="button" (click)="share('native')">📲 Share…</button>
+                  <button type="button" (click)="share('native')"><app-icon name="share-social-outline" [size]="16" /> Share…</button>
                 }
-                <button type="button" (click)="share('whatsapp')">💬 WhatsApp</button>
-                <button type="button" (click)="share('email')">✉️ Email</button>
-                <button type="button" (click)="share('copy')">🔗 Copy link</button>
+                <button type="button" (click)="share('whatsapp')"><app-icon name="chatbubble-ellipses-outline" [size]="16" /> WhatsApp</button>
+                <button type="button" (click)="share('email')">
+                  <app-icon name="mail-outline" [size]="16" /> Email
+                </button>
+                <button type="button" (click)="share('copy')"><app-icon name="link-outline" [size]="16" /> Copy link</button>
               </div>
             }
           </div>
@@ -269,10 +272,10 @@
                         @if (branch.pincode) { – {{ branch.pincode }} }
                       </p>
                       @if (branch.contactNumber) {
-                        <p class="small mb-0">☎ <a [href]="'tel:' + branch.contactNumber">{{ branch.contactNumber }}</a></p>
+                        <p class="small mb-0"><app-icon name="call-outline" [size]="15" /> <a [href]="'tel:' + branch.contactNumber">{{ branch.contactNumber }}</a></p>
                       }
                       @if (branch.distanceKm !== null) {
-                        <p class="small strong mb-0">📍 {{ branch.distanceKm | distance }}</p>
+                        <p class="small strong mb-0"><app-icon name="location-outline" [size]="15" /> {{ branch.distanceKm | distance }}</p>
                       }
                       <a
                         class="btn btn-secondary btn-sm mt-1"
@@ -281,7 +284,7 @@
                         rel="noopener"
                         (click)="trackClick(branch)"
                       >
-                        Get directions ↗
+                        Get directions <app-icon name="navigate-outline" [size]="13" />
                       </a>
                     </div>
 
@@ -311,7 +314,7 @@
               <p class="small">{{ s.shop.description }}</p>
             }
             @if (s.shop.contactNumber) {
-              <p class="small mb-1">☎ <a [href]="'tel:' + s.shop.contactNumber">{{ s.shop.contactNumber }}</a></p>
+              <p class="small mb-1"><app-icon name="call-outline" [size]="15" /> <a [href]="'tel:' + s.shop.contactNumber">{{ s.shop.contactNumber }}</a></p>
             }
             <a class="btn btn-secondary btn-block btn-sm" [routerLink]="['/shops', s.shop.slug]">
               View shop and all offers

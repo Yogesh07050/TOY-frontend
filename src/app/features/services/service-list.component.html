@@ -20,7 +20,7 @@
   <!-- Global search bar -->
   <div class="search-bar card">
     <div class="search-field">
-      <span aria-hidden="true">🔎</span>
+      <app-icon name="search-outline" [size]="16" />
       <input
         type="search"
         placeholder="Search services, shops or categories"
@@ -40,7 +40,7 @@
   <!-- Location strip -->
   <div class="location-strip">
     @if (locations.hasPosition()) {
-      <span class="badge badge-brand">📍 {{ locations.location().label }}</span>
+      <span class="badge badge-brand"><app-icon name="location-outline" [size]="15" /> {{ locations.location().label }}</span>
       <span class="label">Within</span>
       @for (km of radiusOptions; track km) {
         <button type="button" class="chip" [class.active]="radius === km" (click)="setRadius(km)">
@@ -56,7 +56,7 @@
         @if (locations.requesting()) {
           <span class="spinner dark"></span> Locating…
         } @else {
-          🎯 Use my location
+          <app-icon name="locate-outline" [size]="15" /> Use my location
         }
       </button>
       @for (city of cities.slice(0, 4); track city.city) {
@@ -206,7 +206,7 @@
     <app-card-skeletons [count]="8" />
   } @else if (services().length === 0) {
     <app-empty-state
-      emoji="🧰"
+      icon="briefcase-outline"
       title="No services match your search"
       message="Try removing a filter, widening the distance, or searching for something else."
     >

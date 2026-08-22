@@ -14,6 +14,8 @@ import {
 } from '../../../shared/analytics-ui.components';
 import { AnalyticsFilterBarComponent } from './analytics-filter-bar.component';
 import { PremiumDashboard } from './premium-dashboard.base';
+import { toIconName } from '../../../shared/icons';
+import { IconComponent } from '../../../shared/icon.component';
 
 /** §8 — Executive overview: "How is my business performing on the OffersOffer?" */
 @Component({
@@ -28,6 +30,7 @@ import { PremiumDashboard } from './premium-dashboard.base';
     KpiCardComponent,
     LineChartComponent,
     UpgradePromptComponent,
+    IconComponent,
   ],
   template: `
     <app-analytics-filter-bar [showBranch]="true" [showCategory]="true" />
@@ -43,7 +46,7 @@ import { PremiumDashboard } from './premium-dashboard.base';
         <div class="alerts mb-2">
           @for (alert of overview.alerts; track alert.key) {
             <div class="alert" [class]="alert.tone">
-              <span class="icon" aria-hidden="true">{{ alert.icon }}</span>
+              <app-icon class="icon" [name]="toIcon(alert.icon)" [size]="17" />
               <span>{{ alert.message }}</span>
             </div>
           }
@@ -139,6 +142,9 @@ import { PremiumDashboard } from './premium-dashboard.base';
   ],
 })
 export class PremiumOverviewComponent extends PremiumDashboard<PremiumOverview> {
+  /** Analytics payloads carry their own glyph; map it into the icon set. */
+  protected readonly toIcon = toIconName;
+
   protected readonly feature: FeatureName = 'ANALYTICS_ADVANCED';
 
   constructor() {

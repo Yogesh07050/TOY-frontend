@@ -26,6 +26,7 @@ import { OfferCardComponent } from '../../shared/offer-card.component';
 import { BannerCarouselComponent } from '../../shared/banner-carousel.component';
 import { OfferRailComponent } from '../../shared/offer-rail.component';
 import { CardSkeletonsComponent, EmptyStateComponent, PaginationComponent } from '../../shared/ui.components';
+import { IconComponent } from '../../shared/icon.component';
 
 interface SortOption {
   value: OfferSort;
@@ -68,6 +69,7 @@ const OFFER_TYPES = [
     PaginationComponent,
     EmptyStateComponent,
     CardSkeletonsComponent,
+    IconComponent,
   ],
   templateUrl: './offer-list.component.html',
   styleUrl: './offer-list.component.scss',

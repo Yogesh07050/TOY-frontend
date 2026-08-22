@@ -8,6 +8,7 @@ import { RazorpayService } from '../../../core/razorpay.service';
 import { ToastService } from '../../../core/toast.service';
 import { Plan, PlanKey } from '../../../core/models';
 import { PERMISSIONS } from '../../../core/permissions';
+import { IconComponent } from '../../../shared/icon.component';
 
 /**
  * §32 Subscription → Upgrade, and the product ladder from §40.
@@ -19,7 +20,7 @@ import { PERMISSIONS } from '../../../core/permissions';
 @Component({
   selector: 'app-subscription-upgrade',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, IconComponent],
   template: `
     <div class="container page">
       <div class="page-header">
@@ -100,7 +101,12 @@ import { PERMISSIONS } from '../../../core/permissions';
                       @for (value of row.values; track $index) {
                         <td class="center" [class.current]="$index === currentIndex()">
                           @if (value === true) {
-                            <span class="yes" aria-label="Included">✓</span>
+                            <app-icon
+                              class="yes"
+                              name="checkmark-circle-outline"
+                              [size]="16"
+                              label="Included"
+                            />
                           } @else if (value === false) {
                             <span class="no" aria-label="Not included">—</span>
                           } @else {

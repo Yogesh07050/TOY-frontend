@@ -1,5 +1,7 @@
 import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { IconComponent } from './icon.component';
+import { IconName } from './icons';
 
 import { ToastService } from '../core/toast.service';
 import { PageMeta } from '../core/models';
@@ -8,12 +10,12 @@ import { PageMeta } from '../core/models';
 @Component({
   selector: 'app-toasts',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, IconComponent],
   template: `
     <div class="toast-stack" role="status" aria-live="polite">
       @for (toast of toasts.toasts(); track toast.id) {
         <div class="toast" [class]="'toast-' + toast.kind">
-          <span class="glyph" aria-hidden="true">{{ glyphFor(toast.kind) }}</span>
+          <app-icon class="glyph" [name]="glyphFor(toast.kind)" [size]="18" />
           <span class="message">{{ toast.message }}</span>
           <button type="button" (click)="toasts.dismiss(toast.id)" aria-label="Dismiss">×</button>
         </div>
@@ -96,8 +98,12 @@ import { PageMeta } from '../core/models';
 export class ToastsComponent {
   readonly toasts = inject(ToastService);
 
-  glyphFor(kind: 'success' | 'error' | 'info'): string {
-    return { success: '✓', error: '⚠', info: 'ℹ' }[kind];
+  glyphFor(kind: 'success' | 'error' | 'info'): IconName {
+    return {
+      success: 'checkmark-circle-outline',
+      error: 'alert-circle-outline',
+      info: 'information-circle-outline',
+    }[kind] as IconName;
   }
 }
 
@@ -105,10 +111,10 @@ export class ToastsComponent {
 @Component({
   selector: 'app-empty-state',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, IconComponent],
   template: `
     <div class="empty-state">
-      <span class="emoji" aria-hidden="true">{{ emoji }}</span>
+      <span class="emoji"><app-icon [name]="icon" [size]="28" /></span>
       <h3>{{ title }}</h3>
       @if (message) {
         <p>{{ message }}</p>
@@ -118,7 +124,8 @@ export class ToastsComponent {
   `,
 })
 export class EmptyStateComponent {
-  @Input() emoji = '🔍';
+  /** Named rather than an emoji, so an empty state matches the rest of the UI. */
+  @Input() icon: IconName = 'search-outline';
   @Input({ required: true }) title!: string;
   @Input() message = '';
 }
@@ -301,7 +308,7 @@ export class PaginationComponent {
 @Component({
   selector: 'app-stars',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, IconComponent],
   template: `
     <span class="stars" [class.interactive]="interactive">
       @for (star of [1, 2, 3, 4, 5]; track star) {
@@ -314,7 +321,7 @@ export class PaginationComponent {
           (mouseleave)="hover = 0"
           [attr.aria-label]="star + ' star' + (star === 1 ? '' : 's')"
         >
-          ★
+          <app-icon [name]="star <= (hover || value) ? 'star' : 'star-outline'" [size]="15" />
         </button>
       }
       @if (count !== null) {

@@ -8,12 +8,13 @@ import { ToastService } from '../../core/toast.service';
 import { Permission, Role } from '../../core/models';
 import { applyServerErrors, errorFor } from '../auth/auth-shell';
 import { ConfirmComponent } from '../../shared/ui.components';
+import { IconComponent } from '../../shared/icon.component';
 
 /** Roles page (§4): granular permissions, not just role names. */
 @Component({
   selector: 'app-role-manage',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, ConfirmComponent],
+  imports: [CommonModule, ReactiveFormsModule, ConfirmComponent, IconComponent],
   templateUrl: './role-manage.component.html',
   styles: [
     `

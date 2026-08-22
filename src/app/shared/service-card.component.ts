@@ -6,6 +6,7 @@ import { Service } from '../core/models';
 import { AuthService } from '../core/auth.service';
 import { DistancePipe } from './offer-badge.pipe';
 import { ServiceOfferChipPipe, ServicePriceLabelPipe, ServiceStatusClassPipe } from './service-badge.pipe';
+import { IconComponent } from '../shared/icon.component';
 
 /** The service card (§10). Shows shop, name, price, active offer, location and the save control. */
 @Component({
@@ -17,6 +18,7 @@ import { ServiceOfferChipPipe, ServicePriceLabelPipe, ServiceStatusClassPipe } f
     DistancePipe,
     ServicePriceLabelPipe,
     ServiceStatusClassPipe,
+    IconComponent,
   ],
   template: `
     <article class="service-card" [class.dimmed]="service.status !== 'active'">
@@ -35,7 +37,7 @@ import { ServiceOfferChipPipe, ServicePriceLabelPipe, ServiceStatusClassPipe } f
         }
 
         @if (offerChip) {
-          <span class="discount-flag">🔥 {{ offerChip }}</span>
+          <span class="discount-flag"><app-icon name="flame-outline" [size]="15" /> {{ offerChip }}</span>
         }
         @if (showStatus && service.status !== 'active') {
           <span class="status-flag" [class]="service.status | serviceStatusClass">{{ service.status }}</span>
@@ -61,8 +63,7 @@ import { ServiceOfferChipPipe, ServicePriceLabelPipe, ServiceStatusClassPipe } f
         <div class="meta">
           @if (service.locationLabel || service.distanceKm !== null) {
             <span class="meta-item">
-              📍
-              <span class="truncate">
+              <app-icon name="location-outline" [size]="15" /> <span class="truncate">
                 {{ service.locationLabel || 'Multiple locations' }}
                 @if (service.distanceKm !== null) {
                   · {{ service.distanceKm | distance }}
@@ -74,7 +75,7 @@ import { ServiceOfferChipPipe, ServicePriceLabelPipe, ServiceStatusClassPipe } f
             <span class="meta-item">⏱ {{ service.durationLabel }}</span>
           }
           @if (service.homeService) {
-            <span class="meta-item">🏠 Home service</span>
+            <span class="meta-item"><app-icon name="home-outline" [size]="15" /> Home service</span>
           }
         </div>
 
@@ -89,7 +90,7 @@ import { ServiceOfferChipPipe, ServicePriceLabelPipe, ServiceStatusClassPipe } f
             [attr.aria-pressed]="service.isSaved"
             [attr.aria-label]="service.isSaved ? 'Remove from saved' : 'Save service'"
           >
-            <span class="heart" aria-hidden="true">{{ service.isSaved ? '♥' : '♡' }}</span>
+            <app-icon class="heart" [name]="service.isSaved ? 'heart' : 'heart-outline'" [size]="15" />
             <span class="save-label">{{ service.isSaved ? 'Saved' : 'Save' }}</span>
           </button>
         </div>

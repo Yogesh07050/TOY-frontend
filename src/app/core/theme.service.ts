@@ -1,4 +1,5 @@
 import { Injectable, effect, signal } from '@angular/core';
+import { IconName } from '../shared/icons';
 
 export type ThemePreference = 'light' | 'dark' | 'system';
 export type ResolvedTheme = 'light' | 'dark';
@@ -54,8 +55,10 @@ export class ThemeService {
     return { light: 'Light', dark: 'Dark', system: 'System' }[preference];
   }
 
-  icon(preference = this.preference()): string {
-    return { light: '☀️', dark: '🌙', system: '🖥️' }[preference];
+  icon(preference = this.preference()): IconName {
+    return { light: 'sunny-outline', dark: 'moon-outline', system: 'desktop-outline' }[
+      preference
+    ] as IconName;
   }
 
   private apply(): void {

@@ -323,7 +323,7 @@
                       <span class="image-actions">
                         <button type="button" class="icon-btn" [disabled]="i === 0" (click)="moveImage(i, -1)" title="Move up">↑</button>
                         <button type="button" class="icon-btn" [disabled]="i === images().length - 1" (click)="moveImage(i, 1)" title="Move down">↓</button>
-                        <button type="button" class="icon-btn" (click)="removeImage(i)" title="Remove">×</button>
+                        <button type="button" class="icon-btn" (click)="removeImage(i)" title="Remove"><app-icon name="close-outline" [size]="16" /></button>
                       </span>
                     </li>
                   }

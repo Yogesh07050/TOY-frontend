@@ -14,6 +14,7 @@ import { PERMISSIONS } from '../../core/permissions';
 import { DistancePipe } from '../../shared/offer-badge.pipe';
 import { OfferCardComponent } from '../../shared/offer-card.component';
 import { EmptyStateComponent, StarsComponent } from '../../shared/ui.components';
+import { IconComponent } from '../../shared/icon.component';
 
 /** Shop details page (§12): profile, branches, map, and the shop's offers. */
 @Component({
@@ -26,6 +27,7 @@ import { EmptyStateComponent, StarsComponent } from '../../shared/ui.components'
     OfferCardComponent,
     EmptyStateComponent,
     StarsComponent,
+    IconComponent,
   ],
   templateUrl: './shop-detail.component.html',
   styleUrl: './shop-detail.component.scss',

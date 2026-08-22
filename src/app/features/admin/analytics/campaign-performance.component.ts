@@ -52,7 +52,7 @@ interface CampaignBundle {
       @if (!bundle.performance.banners.length) {
         <app-analytics-section heading="Campaign performance">
           <app-analytics-empty
-            icon="📣"
+            icon="megaphone-outline"
             title="No campaigns or banners yet."
             message="Create a featured banner to start measuring campaign performance."
           />
@@ -153,7 +153,7 @@ interface CampaignBundle {
             <app-upgrade-prompt feature="ROI_DASHBOARD" heading="ROI dashboard" />
           } @else if (!bundle.roi.hasEnoughData) {
             <app-analytics-empty
-              icon="💰"
+              icon="cash-outline"
               title="No campaign has enough input to estimate ROI."
               [message]="roiPrompt()"
             />
@@ -265,22 +265,22 @@ export class CampaignPerformanceComponent extends PremiumDashboard<CampaignBundl
 
     const cards = [
       {
-        label: '🏆 Best campaign',
+        label: 'Best campaign',
         name: winners['bestCampaign']?.name ?? winners['bestCampaign']?.title,
         detail: `${this.count(winners['bestCampaign']?.impressions)} impressions`,
       },
       {
-        label: '🏆 Highest CTR',
+        label: 'Highest CTR',
         name: winners['highestCtr']?.name ?? winners['highestCtr']?.title,
         detail: this.percent(winners['highestCtr']?.ctr),
       },
       {
-        label: '🏆 Most claims',
+        label: 'Most claims',
         name: winners['highestClaims']?.name ?? winners['highestClaims']?.title,
         detail: `${this.count(winners['highestClaims']?.offerClaims)} claims`,
       },
       {
-        label: '🏆 Most redemptions',
+        label: 'Most redemptions',
         name: winners['highestRedemptions']?.name ?? winners['highestRedemptions']?.title,
         detail: `${this.count(winners['highestRedemptions']?.offerRedemptions)} redemptions`,
       },

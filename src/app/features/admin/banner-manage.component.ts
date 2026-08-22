@@ -9,6 +9,7 @@ import { ToastService } from '../../core/toast.service';
 import { Banner, BannerStatus, PageMeta } from '../../core/models';
 import { PERMISSIONS } from '../../core/permissions';
 import { ConfirmComponent, EmptyStateComponent, PaginationComponent } from '../../shared/ui.components';
+import { IconComponent } from '../../shared/icon.component';
 
 const TABS: { value: BannerStatus | 'all'; label: string }[] = [
   { value: 'all', label: 'All' },
@@ -35,6 +36,7 @@ const TABS: { value: BannerStatus | 'all'; label: string }[] = [
     PaginationComponent,
     EmptyStateComponent,
     ConfirmComponent,
+    IconComponent,
   ],
   templateUrl: './banner-manage.component.html',
   styleUrl: './banner-manage.component.scss',

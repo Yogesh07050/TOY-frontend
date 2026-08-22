@@ -5,7 +5,7 @@
   </div>
 } @else if (notFound()) {
   <div class="container page">
-    <app-empty-state emoji="🏬" title="Shop not found" message="This shop may have been removed.">
+    <app-empty-state icon="storefront-outline" title="Shop not found" message="This shop may have been removed.">
       <a routerLink="/shops" class="btn mt-2">Browse shops</a>
     </app-empty-state>
   </div>
@@ -52,7 +52,8 @@
 
         <div class="row mt-2">
           <button type="button" class="btn" [class.btn-secondary]="s.isFollowing" (click)="toggleFollow()">
-            {{ s.isFollowing ? '✓ Following' : '+ Follow shop' }}
+            <app-icon [name]="s.isFollowing ? 'checkmark-outline' : 'add-outline'" [size]="16" />
+            {{ s.isFollowing ? 'Following' : 'Follow shop' }}
           </button>
           @if (canManage()) {
             <a class="btn btn-ghost" [routerLink]="['/admin/shops', s.id, 'edit']">Edit shop</a>
@@ -65,14 +66,14 @@
         <div class="card-body">
           <h3 class="small">Contact</h3>
           @if (s.contactNumber) {
-            <p class="small mb-1">☎ <a [href]="'tel:' + s.contactNumber">{{ s.contactNumber }}</a></p>
+            <p class="small mb-1"><app-icon name="call-outline" [size]="15" /> <a [href]="'tel:' + s.contactNumber">{{ s.contactNumber }}</a></p>
           }
           @if (s.email) {
-            <p class="small mb-1">✉ <a [href]="'mailto:' + s.email">{{ s.email }}</a></p>
+            <p class="small mb-1"><app-icon name="mail-outline" [size]="15" /> <a [href]="'mailto:' + s.email">{{ s.email }}</a></p>
           }
           @if (s.websiteUrl) {
             <p class="small mb-1">
-              🌐 <a [href]="s.websiteUrl" target="_blank" rel="noopener">{{ websiteLabel(s.websiteUrl) }}</a>
+              <app-icon name="globe-outline" [size]="15" /> <a [href]="s.websiteUrl" target="_blank" rel="noopener">{{ websiteLabel(s.websiteUrl) }}</a>
             </p>
           }
           @for (link of socialEntries(s.socialLinks); track link.key) {
@@ -118,10 +119,10 @@
                   @if (branch.pincode) { – {{ branch.pincode }} }
                 </p>
                 @if (branch.contactNumber) {
-                  <p class="small mb-1">☎ <a [href]="'tel:' + branch.contactNumber">{{ branch.contactNumber }}</a></p>
+                  <p class="small mb-1"><app-icon name="call-outline" [size]="15" /> <a [href]="'tel:' + branch.contactNumber">{{ branch.contactNumber }}</a></p>
                 }
                 @if (branch.distanceKm !== null) {
-                  <p class="small strong mb-1">📍 {{ branch.distanceKm | distance }}</p>
+                  <p class="small strong mb-1"><app-icon name="location-outline" [size]="15" /> {{ branch.distanceKm | distance }}</p>
                 }
                 <div class="row">
                   <button type="button" class="btn btn-secondary btn-sm" (click)="selectBranch(branch.id)">
@@ -171,7 +172,7 @@
       </div>
     } @else if (offers().length === 0) {
       <app-empty-state
-        emoji="🏷️"
+        icon="pricetags-outline"
         [title]="tab() === 'active' ? 'No active offers right now' : 'No expired offers'"
         [message]="
           tab() === 'active'

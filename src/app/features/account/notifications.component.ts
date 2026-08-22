@@ -7,12 +7,14 @@ import { AuthService } from '../../core/auth.service';
 import { ToastService } from '../../core/toast.service';
 import { AppNotification, PageMeta } from '../../core/models';
 import { EmptyStateComponent, PaginationComponent } from '../../shared/ui.components';
+import { IconComponent } from '../../shared/icon.component';
+import { IconName } from '../../shared/icons';
 
 /** Notification centre (§24). */
 @Component({
   selector: 'app-notifications',
   standalone: true,
-  imports: [CommonModule, RouterLink, EmptyStateComponent, PaginationComponent],
+  imports: [CommonModule, RouterLink, EmptyStateComponent, PaginationComponent, IconComponent],
   template: `
     <div class="container page">
       <div class="page-header">
@@ -55,7 +57,7 @@ import { EmptyStateComponent, PaginationComponent } from '../../shared/ui.compon
         </div>
       } @else if (notifications().length === 0) {
         <app-empty-state
-          emoji="🔔"
+          icon="notifications-outline"
           title="No notifications"
           message="Follow shops and categories, and save offers, to get updates here."
         >
@@ -65,7 +67,7 @@ import { EmptyStateComponent, PaginationComponent } from '../../shared/ui.compon
         <ul class="notif-list card">
           @for (notification of notifications(); track notification.id) {
             <li [class.unread]="!notification.isRead">
-              <span class="icon" aria-hidden="true">{{ iconFor(notification.type) }}</span>
+              <app-icon class="icon" [name]="iconFor(notification.type)" [size]="18" />
 
               <button type="button" class="body" (click)="open(notification)">
                 <strong>{{ notification.title }}</strong>
@@ -78,10 +80,9 @@ import { EmptyStateComponent, PaginationComponent } from '../../shared/ui.compon
               <div class="actions">
                 @if (!notification.isRead) {
                   <button type="button" class="icon-btn" title="Mark as read" (click)="markRead(notification)">
-                    ✓
-                  </button>
+                    <app-icon name="checkmark-outline" [size]="15" /> </button>
                 }
-                <button type="button" class="icon-btn" title="Delete" (click)="remove(notification)">×</button>
+                <button type="button" class="icon-btn" title="Delete" (click)="remove(notification)"><app-icon name="close-outline" [size]="16" /></button>
               </div>
             </li>
           }
@@ -160,24 +161,24 @@ export class NotificationsComponent {
   readonly unreadOnly = signal(false);
   private page = 1;
 
-  private readonly icons: Record<string, string> = {
-    NEW_OFFER_FOLLOWED_SHOP: '🏬',
-    NEW_OFFER_FOLLOWED_CATEGORY: '🏷️',
-    NEW_OFFER_NEARBY: '📍',
-    FAVORITE_EXPIRING: '⏳',
-    SAVED_SERVICE_OFFER_EXPIRING: '⏳',
-    OFFER_UPDATED: '✏️',
-    OFFER_DEACTIVATED: '🚫',
-    OFFER_PUBLISHED: '📣',
-    ADMIN_ANNOUNCEMENT: '📢',
+  private readonly icons: Record<string, IconName> = {
+    NEW_OFFER_FOLLOWED_SHOP: 'storefront-outline',
+    NEW_OFFER_FOLLOWED_CATEGORY: 'pricetags-outline',
+    NEW_OFFER_NEARBY: 'location-outline',
+    FAVORITE_EXPIRING: 'hourglass-outline',
+    SAVED_SERVICE_OFFER_EXPIRING: 'hourglass-outline',
+    OFFER_UPDATED: 'create-outline',
+    OFFER_DEACTIVATED: 'ban-outline',
+    OFFER_PUBLISHED: 'megaphone-outline',
+    ADMIN_ANNOUNCEMENT: 'megaphone-outline',
   };
 
   constructor() {
     this.load();
   }
 
-  iconFor(type: string): string {
-    return this.icons[type] ?? '🔔';
+  iconFor(type: string): IconName {
+    return this.icons[type] ?? 'notifications-outline';
   }
 
   setFilter(unreadOnly: boolean): void {

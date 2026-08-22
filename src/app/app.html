@@ -8,9 +8,9 @@
     <!-- Location picker: optional, never blocks browsing (§8.6) -->
     <div class="location-picker">
       <button type="button" class="location-btn" (click)="toggleLocation($event)" [attr.aria-expanded]="locationOpen()">
-        <span aria-hidden="true">📍</span>
+        <app-icon name="location-outline" [size]="15" />
         <span class="truncate">{{ locations.location().label }}</span>
-        <span class="caret" aria-hidden="true">▾</span>
+        <app-icon class="caret" name="chevron-down-outline" [size]="12" />
       </button>
 
       @if (locationOpen()) {
@@ -19,7 +19,7 @@
             @if (locations.requesting()) {
               <span class="spinner dark"></span> Locating…
             } @else {
-              <span aria-hidden="true">🎯</span> Use my current location
+              <app-icon name="locate-outline" [size]="16" /> Use my current location
             }
           </button>
 
@@ -67,12 +67,12 @@
         [title]="'Theme: ' + theme.label() + ' (click to change)'"
         [attr.aria-label]="'Theme: ' + theme.label() + '. Click to change.'"
       >
-        {{ theme.icon() }}
+        <app-icon [name]="theme.icon()" [size]="18" />
       </button>
 
       @if (auth.isAuthenticated()) {
         <a routerLink="/notifications" class="icon-btn notif" aria-label="Notifications">
-          🔔
+          <app-icon name="notifications-outline" [size]="19" />
           @if (auth.unreadCount() > 0) {
             <span class="dot">{{ auth.unreadCount() > 9 ? '9+' : auth.unreadCount() }}</span>
           }
@@ -115,7 +115,7 @@
                     [class.active]="theme.preference() === option"
                     (click)="theme.set(option)"
                   >
-                    <span aria-hidden="true">{{ theme.icon(option) }}</span>
+                    <app-icon [name]="theme.icon(option)" [size]="15" />
                     {{ theme.label(option) }}
                   </button>
                 }
@@ -134,7 +134,7 @@
       }
 
       <button type="button" class="menu-toggle" (click)="toggleMenu()" [attr.aria-expanded]="menuOpen()" aria-label="Toggle navigation">
-        ☰
+        <app-icon name="menu-outline" [size]="21" />
       </button>
     </div>
   </div>

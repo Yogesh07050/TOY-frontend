@@ -7,12 +7,13 @@ import { ToastService } from '../../core/toast.service';
 import { Category, Offer, Shop } from '../../core/models';
 import { OfferCardComponent } from '../../shared/offer-card.component';
 import { EmptyStateComponent } from '../../shared/ui.components';
+import { IconComponent } from '../../shared/icon.component';
 
 /** Followed shops and categories, plus the resulting feed (§23). */
 @Component({
   selector: 'app-following',
   standalone: true,
-  imports: [CommonModule, RouterLink, OfferCardComponent, EmptyStateComponent],
+  imports: [CommonModule, RouterLink, OfferCardComponent, EmptyStateComponent, IconComponent],
   template: `
     <div class="container page">
       <div class="page-header">
@@ -79,7 +80,7 @@ import { EmptyStateComponent } from '../../shared/ui.components';
                 @for (category of categories(); track category.id) {
                   <li>
                     <a class="entry" routerLink="/offers" [queryParams]="{ categoryId: category.id }">
-                      <span class="mark">{{ category.icon || '🏷️' }}</span>
+                      <span class="mark"><app-icon name="pricetags-outline" [size]="16" /></span>
                       <span class="entry-body">
                         <strong class="truncate">{{ category.name }}</strong>
                         <span class="small muted">
@@ -108,7 +109,7 @@ import { EmptyStateComponent } from '../../shared/ui.components';
         </div>
       } @else if (feed().length === 0) {
         <app-empty-state
-          emoji="🔔"
+          icon="notifications-outline"
           title="Nothing new yet"
           message="Follow a shop or category and their new offers will appear here."
         />

@@ -7,6 +7,7 @@ import { AuthService } from '../../core/auth.service';
 import { PageMeta } from '../../core/models';
 import { AiFeature, AiHistoryEntry, AiUsage } from '../../core/ai.models';
 import { EmptyStateComponent, PaginationComponent } from '../../shared/ui.components';
+import { IconComponent } from '../../shared/icon.component';
 
 const FEATURE_LABELS: Record<AiFeature, string> = {
   AI_OFFER_ASSISTANT: 'Offer Assistant',
@@ -24,7 +25,7 @@ const FEATURE_LABELS: Record<AiFeature, string> = {
 @Component({
   selector: 'app-ai-history',
   standalone: true,
-  imports: [CommonModule, RouterLink, DatePipe, EmptyStateComponent, PaginationComponent],
+  imports: [CommonModule, RouterLink, DatePipe, EmptyStateComponent, PaginationComponent, IconComponent],
   template: `
     <div class="container page">
       <div class="page-header">
@@ -32,7 +33,7 @@ const FEATURE_LABELS: Record<AiFeature, string> = {
           <h1>AI usage & history</h1>
           <p class="subtitle">What your plan includes, and what the AI has been asked for.</p>
         </div>
-        <a routerLink="/admin/ai/assistant" class="btn btn-secondary">✨ AI Offer Assistant</a>
+        <a routerLink="/admin/ai/assistant" class="btn btn-secondary"><app-icon name="sparkles-outline" [size]="15" /> AI Offer Assistant</a>
       </div>
 
       <!-- §32: the allowance, per feature. -->
@@ -105,7 +106,7 @@ const FEATURE_LABELS: Record<AiFeature, string> = {
         } @else if (entries().length === 0) {
           <div class="card-body">
             <app-empty-state
-              emoji="✨"
+              icon="sparkles-outline"
               title="Nothing generated yet"
               message="Recommendations and generated content will be listed here."
             />

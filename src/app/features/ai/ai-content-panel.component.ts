@@ -12,6 +12,7 @@ import {
   ContentResult,
   ContentSection,
 } from '../../core/ai.models';
+import { IconComponent } from '../../shared/icon.component';
 
 /** §16's checklist, with the customer-facing label for each. */
 const SECTIONS: { key: ContentSection; label: string; hint: string; premium?: boolean }[] = [
@@ -46,7 +47,7 @@ const REFINEMENTS = [
 @Component({
   selector: 'app-ai-content-panel',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, IconComponent],
   templateUrl: './ai-content-panel.component.html',
   styleUrl: './ai-content-panel.component.scss',
 })

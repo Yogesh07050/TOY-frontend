@@ -11,7 +11,7 @@
       </p>
     </div>
     @if (canCreate) {
-      <a routerLink="/admin/offers/new" class="btn">➕ Post an offer</a>
+      <a routerLink="/admin/offers/new" class="btn"><app-icon name="add-circle-outline" [size]="16" /> Post an offer</a>
     }
   </div>
 
@@ -55,7 +55,7 @@
     <div class="skeleton" style="height: 320px"></div>
   } @else if (offers().length === 0) {
     <app-empty-state
-      emoji="🏷️"
+      icon="pricetags-outline"
       title="No offers here"
       message="Nothing matches this filter yet."
     >
@@ -119,7 +119,7 @@
                           [routerLink]="['/admin/offers', offer.id, 'improve']"
                           title="Suggest clearer wording for this offer"
                         >
-                          ✨ Improve
+                          <app-icon name="sparkles-outline" [size]="16" /> Improve
                         </a>
                       }
                       @for (option of nextStatuses(offer); track option.value) {

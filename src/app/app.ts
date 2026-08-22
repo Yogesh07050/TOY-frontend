@@ -9,6 +9,7 @@ import { ThemeService, ThemePreference } from './core/theme.service';
 import { AuthPromptService } from './core/auth-prompt.service';
 import { SeoService } from './core/seo.service';
 import { AuthPromptComponent } from './shared/auth-prompt.component';
+import { IconComponent } from './shared/icon.component';
 import { ToastsComponent } from './shared/ui.components';
 
 /** Signed-in areas, and the title each should carry in the browser tab. */
@@ -31,7 +32,15 @@ const PUBLIC_PAGES: ReadonlyArray<readonly [string, string, string]> = [
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, AuthPromptComponent, ToastsComponent],
+  imports: [
+    CommonModule,
+    RouterOutlet,
+    RouterLink,
+    RouterLinkActive,
+    AuthPromptComponent,
+    IconComponent,
+    ToastsComponent,
+  ],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })

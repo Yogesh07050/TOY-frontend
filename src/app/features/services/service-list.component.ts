@@ -13,6 +13,7 @@ import { ToastService } from '../../core/toast.service';
 import { BookingType, Category, PageMeta, PricingType, Service, ServiceQuery, ServiceSort, Shop } from '../../core/models';
 import { ServiceCardComponent } from '../../shared/service-card.component';
 import { CardSkeletonsComponent, EmptyStateComponent, PaginationComponent } from '../../shared/ui.components';
+import { IconComponent } from '../../shared/icon.component';
 
 interface SortOption {
   value: ServiceSort;
@@ -55,6 +56,7 @@ const BOOKING_TYPES: { value: BookingType; label: string }[] = [
     PaginationComponent,
     EmptyStateComponent,
     CardSkeletonsComponent,
+    IconComponent,
   ],
   templateUrl: './service-list.component.html',
   styleUrl: './service-list.component.scss',

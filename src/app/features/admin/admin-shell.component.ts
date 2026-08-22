@@ -4,11 +4,13 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 import { AuthService } from '../../core/auth.service';
 import { PERMISSIONS, PermissionName } from '../../core/permissions';
+import { IconComponent } from '../../shared/icon.component';
+import { IconName } from '../../shared/icons';
 
 interface NavItem {
   label: string;
   route: string;
-  icon: string;
+  icon: IconName;
   /** Shown when the user holds any of these; omitted means always shown. */
   permissions?: PermissionName[];
   superAdminOnly?: boolean;
@@ -22,7 +24,7 @@ interface NavItem {
 @Component({
   selector: 'app-admin-shell',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, IconComponent],
   template: `
     <div class="admin-layout">
       <aside class="sidebar" [class.open]="sidebarOpen()">
@@ -39,7 +41,7 @@ interface NavItem {
               [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
               (click)="sidebarOpen.set(false)"
             >
-              <span class="icon" aria-hidden="true">{{ item.icon }}</span>
+              <app-icon class="icon" [name]="item.icon" [size]="17" />
               <span>{{ item.label }}</span>
             </a>
           }
@@ -52,7 +54,7 @@ interface NavItem {
 
       <div class="admin-content">
         <button type="button" class="sidebar-toggle btn btn-secondary btn-sm" (click)="sidebarOpen.set(!sidebarOpen())">
-          ☰ Menu
+          <app-icon name="menu-outline" [size]="18" /> Menu
         </button>
         <router-outlet />
       </div>
@@ -214,55 +216,55 @@ export class AdminShellComponent {
   readonly sidebarOpen = signal(false);
 
   private readonly nav: NavItem[] = [
-    { label: 'Dashboard', route: '/admin/dashboard', icon: '📊' },
-    { label: 'Offers', route: '/admin/offers', icon: '🏷️', permissions: [PERMISSIONS.VIEW_OFFERS] },
-    { label: 'Post an offer', route: '/admin/offers/new', icon: '➕', permissions: [PERMISSIONS.CREATE_OFFER] },
-    { label: 'Services', route: '/admin/services', icon: '🧰', permissions: [PERMISSIONS.VIEW_SERVICE] },
-    { label: 'Add a service', route: '/admin/services/new', icon: '➕', permissions: [PERMISSIONS.CREATE_SERVICE] },
+    { label: 'Dashboard', route: '/admin/dashboard', icon: 'grid-outline' },
+    { label: 'Offers', route: '/admin/offers', icon: 'pricetags-outline', permissions: [PERMISSIONS.VIEW_OFFERS] },
+    { label: 'Post an offer', route: '/admin/offers/new', icon: 'add-circle-outline', permissions: [PERMISSIONS.CREATE_OFFER] },
+    { label: 'Services', route: '/admin/services', icon: 'briefcase-outline', permissions: [PERMISSIONS.VIEW_SERVICE] },
+    { label: 'Add a service', route: '/admin/services/new', icon: 'add-circle-outline', permissions: [PERMISSIONS.CREATE_SERVICE] },
     {
       label: 'AI Offer Assistant',
       route: '/admin/ai/assistant',
-      icon: '✨',
+      icon: 'sparkles-outline',
       permissions: [PERMISSIONS.USE_AI_ASSISTANT],
     },
     {
       label: 'AI usage & history',
       route: '/admin/ai/history',
-      icon: '🧾',
+      icon: 'document-text-outline',
       permissions: [PERMISSIONS.USE_AI_CONTENT, PERMISSIONS.USE_AI_ASSISTANT],
     },
     {
       label: 'Shops',
       route: '/admin/shops',
-      icon: '🏬',
+      icon: 'storefront-outline',
       permissions: [PERMISSIONS.VIEW_SHOP_MEMBERS, PERMISSIONS.EDIT_SHOP, PERMISSIONS.MANAGE_LOCATIONS],
     },
     {
       label: 'Featured banners',
       route: '/admin/banners',
-      icon: '🖼️',
+      icon: 'image-outline',
       permissions: [PERMISSIONS.VIEW_BANNERS],
     },
-    { label: 'Analytics', route: '/admin/analytics', icon: '📈', permissions: [PERMISSIONS.VIEW_ANALYTICS] },
+    { label: 'Analytics', route: '/admin/analytics', icon: 'bar-chart-outline', permissions: [PERMISSIONS.VIEW_ANALYTICS] },
     {
       label: 'Service analytics',
       route: '/admin/service-analytics',
-      icon: '📊',
+      icon: 'pulse-outline',
       permissions: [PERMISSIONS.VIEW_SERVICE_ANALYTICS],
     },
     {
       label: 'Subscription',
       route: '/admin/subscription',
-      icon: '💳',
+      icon: 'card-outline',
       permissions: [PERMISSIONS.VIEW_SUBSCRIPTION, PERMISSIONS.MANAGE_SUBSCRIPTION],
     },
-    { label: 'Categories', route: '/admin/categories', icon: '📚', permissions: [PERMISSIONS.MANAGE_CATEGORIES] },
-    { label: 'Reviews', route: '/admin/reviews', icon: '⭐', permissions: [PERMISSIONS.MODERATE_REVIEWS] },
-    { label: 'Users', route: '/admin/users', icon: '👥', permissions: [PERMISSIONS.VIEW_USERS] },
-    { label: 'Roles & permissions', route: '/admin/roles', icon: '🔐', superAdminOnly: true },
-    { label: 'Feature overrides', route: '/admin/feature-overrides', icon: '🎁', superAdminOnly: true },
-    { label: 'Subscriptions & AI', route: '/admin/subscriptions', icon: '💳', superAdminOnly: true },
-    { label: 'Audit logs', route: '/admin/audit-logs', icon: '📜', permissions: [PERMISSIONS.VIEW_AUDIT_LOGS] },
+    { label: 'Categories', route: '/admin/categories', icon: 'albums-outline', permissions: [PERMISSIONS.MANAGE_CATEGORIES] },
+    { label: 'Reviews', route: '/admin/reviews', icon: 'star-outline', permissions: [PERMISSIONS.MODERATE_REVIEWS] },
+    { label: 'Users', route: '/admin/users', icon: 'people-outline', permissions: [PERMISSIONS.VIEW_USERS] },
+    { label: 'Roles & permissions', route: '/admin/roles', icon: 'lock-closed-outline', superAdminOnly: true },
+    { label: 'Feature overrides', route: '/admin/feature-overrides', icon: 'gift-outline', superAdminOnly: true },
+    { label: 'Subscriptions & AI', route: '/admin/subscriptions', icon: 'wallet-outline', superAdminOnly: true },
+    { label: 'Audit logs', route: '/admin/audit-logs', icon: 'receipt-outline', permissions: [PERMISSIONS.VIEW_AUDIT_LOGS] },
   ];
 
   readonly visibleNav = computed(() => {

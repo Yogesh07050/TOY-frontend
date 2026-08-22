@@ -7,18 +7,19 @@ import { AuthPromptService } from '../../core/auth-prompt.service';
 import { AuthService } from '../../core/auth.service';
 import { ToastService } from '../../core/toast.service';
 import { AuthShellComponent, applyServerErrors, errorFor } from './auth-shell';
+import { IconComponent } from '../../shared/icon.component';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, AuthShellComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, AuthShellComponent, IconComponent],
   template: `
     <app-auth-shell heading="Welcome back" subheading="Login to save offers and follow your shops.">
       <!-- §7: the guest was part-way through an action. Naming it here is what
            makes the login feel like a step in that action rather than a wall. -->
       @if (pendingCopy(); as pending) {
         <p class="pending" role="status">
-          <span aria-hidden="true">{{ pending.icon }}</span> {{ pending.title }} — we&rsquo;ll finish this
+          <app-icon [name]="pending.icon" [size]="15" /> {{ pending.title }} — we&rsquo;ll finish this
           for you as soon as you log in.
         </p>
       }
@@ -58,7 +59,7 @@ import { AuthShellComponent, applyServerErrors, errorFor } from './auth-shell';
               (click)="showPassword.set(!showPassword())"
               [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
             >
-              {{ showPassword() ? '🙈' : '👁' }}
+              <app-icon [name]="showPassword() ? 'eye-off-outline' : 'eye-outline'" [size]="17" />
             </button>
           </div>
           @if (error('password'); as message) {

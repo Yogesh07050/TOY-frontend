@@ -9,6 +9,7 @@ import { ToastService } from '../../core/toast.service';
 import { AvailableDay, Branch, Category, Service, ServicePayload, Shop } from '../../core/models';
 import { PERMISSIONS } from '../../core/permissions';
 import { applyServerErrors, errorFor } from '../auth/auth-shell';
+import { IconComponent } from '../../shared/icon.component';
 
 interface UploadedImage {
   url: string;
@@ -29,7 +30,7 @@ const DAYS: { value: AvailableDay; label: string }[] = [
 @Component({
   selector: 'app-service-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, IconComponent],
   templateUrl: './service-form.component.html',
   styleUrl: './service-form.component.scss',
 })

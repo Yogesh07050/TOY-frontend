@@ -12,7 +12,7 @@
       </p>
     </div>
     @if (canCreate) {
-      <a routerLink="/admin/banners/new" class="btn">➕ New banner</a>
+      <a routerLink="/admin/banners/new" class="btn"><app-icon name="add-circle-outline" [size]="16" /> New banner</a>
     }
   </div>
 
@@ -50,7 +50,7 @@
     <div class="skeleton" style="height: 300px"></div>
   } @else if (banners().length === 0) {
     <app-empty-state
-      emoji="🖼️"
+      icon="image-outline"
       title="No banners here"
       message="Featured banners are the large promotional slots at the top of the offers page."
     >
@@ -82,7 +82,7 @@
                     @if (banner.imageUrl || banner.desktopImageUrl) {
                       <img class="thumb" [src]="banner.desktopImageUrl || banner.imageUrl" [alt]="banner.title" />
                     } @else {
-                      <span class="thumb placeholder">🖼️</span>
+                      <span class="thumb placeholder"><app-icon name="image-outline" [size]="18" /></span>
                     }
                     <span class="body">
                       <strong class="truncate">{{ banner.title }}</strong>

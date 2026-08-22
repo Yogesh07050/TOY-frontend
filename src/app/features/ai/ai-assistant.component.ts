@@ -16,18 +16,20 @@ import {
   AssistantResult,
   BusinessGoal,
 } from '../../core/ai.models';
+import { IconComponent } from '../../shared/icon.component';
+import { IconName } from '../../shared/icons';
 
 /** §6's goal list, in the order the document gives them. */
-const GOALS: { value: BusinessGoal; label: string; icon: string }[] = [
-  { value: 'increase_sales', label: 'Increase sales', icon: '📈' },
-  { value: 'clear_inventory', label: 'Clear old inventory', icon: '📦' },
-  { value: 'attract_new_customers', label: 'Attract new customers', icon: '✨' },
-  { value: 'win_back_customers', label: 'Bring back existing customers', icon: '🔁' },
-  { value: 'promote_new_product', label: 'Promote a new product', icon: '🆕' },
-  { value: 'weekend_traffic', label: 'Increase weekend traffic', icon: '📅' },
-  { value: 'store_visits', label: 'Increase store visits', icon: '🏬' },
-  { value: 'promote_category', label: 'Promote a category', icon: '🏷️' },
-  { value: 'other', label: 'Other', icon: '💬' },
+const GOALS: { value: BusinessGoal; label: string; icon: IconName }[] = [
+  { value: 'increase_sales', label: 'Increase sales', icon: 'trending-up-outline' },
+  { value: 'clear_inventory', label: 'Clear old inventory', icon: 'cube-outline' },
+  { value: 'attract_new_customers', label: 'Attract new customers', icon: 'sparkles-outline' },
+  { value: 'win_back_customers', label: 'Bring back existing customers', icon: 'repeat-outline' },
+  { value: 'promote_new_product', label: 'Promote a new product', icon: 'rocket-outline' },
+  { value: 'weekend_traffic', label: 'Increase weekend traffic', icon: 'calendar-outline' },
+  { value: 'store_visits', label: 'Increase store visits', icon: 'storefront-outline' },
+  { value: 'promote_category', label: 'Promote a category', icon: 'pricetags-outline' },
+  { value: 'other', label: 'Other', icon: 'chatbubble-ellipses-outline' },
 ];
 
 /** §37 - progress wording while the model works. Never a technical message. */
@@ -47,7 +49,7 @@ const LOADING_STEPS = [
 @Component({
   selector: 'app-ai-assistant',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, EmptyStateComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, EmptyStateComponent, IconComponent],
   templateUrl: './ai-assistant.component.html',
   styleUrl: './ai-assistant.component.scss',
 })

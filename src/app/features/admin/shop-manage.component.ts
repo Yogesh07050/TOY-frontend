@@ -9,12 +9,13 @@ import { ToastService } from '../../core/toast.service';
 import { PageMeta, Shop } from '../../core/models';
 import { PERMISSIONS } from '../../core/permissions';
 import { ConfirmComponent, EmptyStateComponent, PaginationComponent } from '../../shared/ui.components';
+import { IconComponent } from '../../shared/icon.component';
 
 /** Shop administration list (§16, §17, §18 entry point). */
 @Component({
   selector: 'app-shop-manage',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, PaginationComponent, EmptyStateComponent, ConfirmComponent],
+  imports: [CommonModule, FormsModule, RouterLink, PaginationComponent, EmptyStateComponent, ConfirmComponent, IconComponent],
   template: `
     <div class="container page">
       <div class="page-header">
@@ -29,7 +30,7 @@ import { ConfirmComponent, EmptyStateComponent, PaginationComponent } from '../.
           </p>
         </div>
         @if (canCreate) {
-          <a routerLink="/admin/shops/new" class="btn">➕ Create a shop</a>
+          <a routerLink="/admin/shops/new" class="btn"><app-icon name="add-circle-outline" [size]="15" /> Create a shop</a>
         }
       </div>
 
@@ -57,7 +58,7 @@ import { ConfirmComponent, EmptyStateComponent, PaginationComponent } from '../.
       @if (loading()) {
         <div class="skeleton" style="height: 260px"></div>
       } @else if (shops().length === 0) {
-        <app-empty-state emoji="🏬" title="No shops yet" message="Create a shop to start publishing offers.">
+        <app-empty-state icon="storefront-outline" title="No shops yet" message="Create a shop to start publishing offers.">
           @if (canCreate) {
             <a routerLink="/admin/shops/new" class="btn mt-2">Create a shop</a>
           }

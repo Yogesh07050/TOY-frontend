@@ -65,7 +65,7 @@ import { ShopAccessComponent } from './shop-access.component';
       @if (loading()) {
         <div class="skeleton" style="height: 300px"></div>
       } @else if (users().length === 0) {
-        <app-empty-state emoji="👥" title="No users found" message="Try a different search." />
+        <app-empty-state icon="people-outline" title="No users found" message="Try a different search." />
       } @else {
         <div class="card">
           <div class="table-wrap">

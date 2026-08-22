@@ -8,6 +8,7 @@ import { SubscriptionService } from '../../../core/subscription.service';
 import { ToastService } from '../../../core/toast.service';
 import { Entitlements } from '../../../core/models';
 import { PERMISSIONS } from '../../../core/permissions';
+import { IconComponent } from '../../../shared/icon.component';
 
 /**
  * §32 Subscription → Current plan.
@@ -19,7 +20,7 @@ import { PERMISSIONS } from '../../../core/permissions';
 @Component({
   selector: 'app-subscription-plan',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, IconComponent],
   template: `
     <div class="container page">
       <div class="page-header">
@@ -160,7 +161,7 @@ import { PERMISSIONS } from '../../../core/permissions';
                 <ul class="features small">
                   @for (feature of plan.features; track feature) {
                     <li>
-                      <span aria-hidden="true">✓</span>
+                      <app-icon name="checkmark-outline" [size]="16" />
                       {{ subscriptions.labelFor(feature) }}
                       @if (subscriptions.accessSourceFor(feature) === 'override') {
                         <span class="badge badge-brand tiny">Super Admin grant</span>
@@ -190,7 +191,7 @@ import { PERMISSIONS } from '../../../core/permissions';
               <ul class="grants small">
                 @for (grant of specialAccess(); track grant.featureKey) {
                   <li>
-                    <span class="tick" aria-hidden="true">✓</span>
+                    <app-icon name="checkmark-outline" [size]="16" />
                     <div>
                       <p class="strong">{{ grant.featureName }}</p>
                       <p class="subtle">

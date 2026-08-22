@@ -70,7 +70,7 @@ import { PremiumDashboard } from './premium-dashboard.base';
         >
           @if (!insights.locations.length) {
             <app-analytics-empty
-              icon="📍"
+              icon="location-outline"
               title="No location data yet."
               message="Location appears once customers browse your offers with a location set."
             />
@@ -110,7 +110,7 @@ import { PremiumDashboard } from './premium-dashboard.base';
             subtitle="Share of views by area"
           >
             @if (!densityRows().length) {
-              <app-analytics-empty icon="🗺️" title="No density data yet." message="" />
+              <app-analytics-empty icon="map-outline" title="No density data yet." message="" />
             } @else {
               <app-share-bars [rows]="densityRows()" suffix="" />
             }
@@ -123,7 +123,7 @@ import { PremiumDashboard } from './premium-dashboard.base';
           >
             @if (!insights.radius?.length) {
               <app-analytics-empty
-                icon="🎯"
+                icon="locate-outline"
                 title="No positioned events yet."
                 message="Radius bands appear once customers browse with location sharing enabled."
               />

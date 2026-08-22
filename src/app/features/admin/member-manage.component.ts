@@ -33,7 +33,7 @@ import { ConfirmComponent, EmptyStateComponent } from '../../shared/ui.component
           @if (loading()) {
             <div class="skeleton" style="height: 220px"></div>
           } @else if (members().length === 0) {
-            <app-empty-state emoji="👥" title="No members yet" message="Add the first team member." />
+            <app-empty-state icon="people-outline" title="No members yet" message="Add the first team member." />
           } @else {
             <div class="card">
               <div class="table-wrap">

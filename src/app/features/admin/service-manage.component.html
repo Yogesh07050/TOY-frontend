@@ -11,7 +11,7 @@
       </p>
     </div>
     @if (canCreate) {
-      <a routerLink="/admin/services/new" class="btn">➕ Add a service</a>
+      <a routerLink="/admin/services/new" class="btn"><app-icon name="add-circle-outline" [size]="16" /> Add a service</a>
     }
   </div>
 
@@ -55,7 +55,7 @@
     <div class="skeleton" style="height: 320px"></div>
   } @else if (services().length === 0) {
     <app-empty-state
-      emoji="🧰"
+      icon="briefcase-outline"
       title="No services here"
       message="Nothing matches this filter yet."
     >
@@ -92,7 +92,7 @@
                       <a [routerLink]="['/services', service.id]" class="truncate">{{ service.name }}</a>
                       <span class="small muted truncate">
                         {{ service.category?.name }}
-                        @if (offerChip(service); as chip) { · 🔥 {{ chip }} }
+                        @if (offerChip(service); as chip) { · <app-icon name="flame-outline" [size]="13" /> {{ chip }} }
                       </span>
                     </span>
                   </div>

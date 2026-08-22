@@ -9,11 +9,12 @@ import { AuthService } from '../../core/auth.service';
 import { ToastService } from '../../core/toast.service';
 import { AuthShellComponent, applyServerErrors, errorFor } from './auth-shell';
 import { passwordStrength, passwordsMatch, strengthScore } from './password.validators';
+import { IconComponent } from '../../shared/icon.component';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, AuthShellComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, AuthShellComponent, IconComponent],
   template: `
     <app-auth-shell
       heading="Browse freely. Make it personal when you're ready."
@@ -30,7 +31,7 @@ import { passwordStrength, passwordsMatch, strengthScore } from './password.vali
 
       @if (pendingCopy(); as pending) {
         <p class="pending" role="status">
-          <span aria-hidden="true">{{ pending.icon }}</span> {{ pending.title }} — we&rsquo;ll finish this
+          <app-icon [name]="pending.icon" [size]="15" /> {{ pending.title }} — we&rsquo;ll finish this
           for you as soon as your account is ready.
         </p>
       }

@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 
 import { AuthPromptService } from '../core/auth-prompt.service';
+import { IconComponent } from './icon.component';
 
 /**
  * The login overlay from Guest Browsing §7.
@@ -14,7 +15,7 @@ import { AuthPromptService } from '../core/auth-prompt.service';
 @Component({
   selector: 'app-auth-prompt',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, IconComponent],
   template: `
     @if (prompt.current(); as intent) {
       <div class="backdrop" (click)="prompt.dismiss()">
@@ -26,9 +27,9 @@ import { AuthPromptService } from '../core/auth-prompt.service';
           (click)="$event.stopPropagation()"
         >
           <div class="card-body">
-            <button type="button" class="close" (click)="prompt.dismiss()" aria-label="Close">×</button>
+            <button type="button" class="close" (click)="prompt.dismiss()" aria-label="Close"><app-icon name="close-outline" [size]="16" /></button>
 
-            <p class="icon" aria-hidden="true">{{ copy(intent).icon }}</p>
+            <span class="icon"><app-icon [name]="copy(intent).icon" [size]="26" /></span>
             <h3>{{ copy(intent).title }}</h3>
             <p class="muted">{{ copy(intent).message }}</p>
 
@@ -76,9 +77,18 @@ import { AuthPromptService } from '../core/auth-prompt.service';
         text-align: center;
       }
 
+      /* A tinted disc behind the glyph, so the sheet opens on something with
+         presence rather than a lone hairline drawing. */
       .icon {
-        font-size: 2rem;
-        margin: 0 0 0.25rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 52px;
+        height: 52px;
+        margin-bottom: 0.6rem;
+        border-radius: 50%;
+        background: var(--brand-tint, var(--surface-alt));
+        color: var(--brand);
       }
 
       h3 {

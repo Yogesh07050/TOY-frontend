@@ -1,7 +1,7 @@
 <div class="container page">
   <div class="page-header">
     <div>
-      <h1><span aria-hidden="true">✨</span> AI Offer Assistant</h1>
+      <h1><app-icon name="sparkles-outline" [size]="16" /> AI Offer Assistant</h1>
       <p class="subtitle">Tell us your goal. We'll help you create the right offer.</p>
     </div>
     <a routerLink="/admin/offers" class="btn btn-ghost">← Back to offers</a>
@@ -11,7 +11,7 @@
     <div class="skeleton" style="height: 320px"></div>
   } @else if (shops().length === 0) {
     <app-empty-state
-      emoji="🏬"
+      icon="storefront-outline"
       title="You are not assigned to a shop yet"
       message="The assistant needs a shop to look at. Ask a Super Admin to assign you to one."
     />
@@ -70,7 +70,7 @@
                     [class.selected]="form.controls.goal.value === goal.value"
                     (click)="selectGoal(goal.value)"
                   >
-                    <span class="glyph" aria-hidden="true">{{ goal.icon }}</span>
+                    <app-icon class="glyph" [name]="goal.icon" [size]="18" />
                     <span>{{ goal.label }}</span>
                   </button>
                 }
@@ -152,7 +152,8 @@
           <section class="card sticky">
             <div class="card-body">
               <button type="submit" class="btn btn-block" [disabled]="loading() || !canGenerate()">
-                {{ loading() ? 'Working…' : '✨ Get recommendations' }}
+                <app-icon name="sparkles-outline" [size]="16" />
+                {{ loading() ? 'Working…' : 'Get recommendations' }}
               </button>
 
               @if (assistantStatus(); as status) {
@@ -181,7 +182,7 @@
         <div class="card-body">
           <span class="spinner" aria-hidden="true"></span>
           <div>
-            <strong>✨ Creating your recommendation…</strong>
+            <strong><app-icon name="sparkles-outline" [size]="16" /> Creating your recommendation…</strong>
             <p class="small muted mb-0">{{ loadingStep() }}</p>
           </div>
         </div>
@@ -204,7 +205,7 @@
     @if (result(); as data) {
       <div class="results">
         <div class="results-head">
-          <h2>✨ AI Recommendations</h2>
+          <h2><app-icon name="sparkles-outline" [size]="16" /> AI Recommendations</h2>
           <div class="row">
             <button type="button" class="btn btn-secondary btn-sm" [disabled]="loading()" (click)="generate(true)">
               Try another recommendation
@@ -233,13 +234,13 @@
           <div class="insights">
             @if (data.locationInsight) {
               <div class="insight">
-                <span class="label">📍 Location insight</span>
+                <span class="label"><app-icon name="location-outline" [size]="16" /> Location insight</span>
                 <p class="mb-0">{{ data.locationInsight }}</p>
               </div>
             }
             @if (data.timingInsight) {
               <div class="insight">
-                <span class="label">🕒 Timing insight</span>
+                <span class="label"><app-icon name="time-outline" [size]="16" /> Timing insight</span>
                 <p class="mb-0">{{ data.timingInsight }}</p>
               </div>
             }
@@ -284,7 +285,7 @@
                     <ul>
                       @for (reason of recommendation.reasoning; track reason.text) {
                         <li>
-                          <span class="tick" aria-hidden="true">✓</span>
+                          <app-icon name="checkmark-outline" [size]="16" />
                           <span>
                             {{ reason.text }}
                             <!-- §11: observed data and general advice must stay

@@ -2,6 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { AuthService } from './auth.service';
+import { IconName } from '../shared/icons';
 
 /**
  * Guest-to-customer conversion (Guest Browsing §5, §7, §28, §29).
@@ -54,7 +55,7 @@ export interface AuthIntent {
 }
 
 interface PromptCopy {
-  icon: string;
+  icon: IconName;
   title: string;
   message: string;
 }
@@ -65,57 +66,57 @@ interface PromptCopy {
  */
 const COPY: Record<AuthIntentKind, PromptCopy> = {
   'save-offer': {
-    icon: '✨',
+    icon: 'heart-outline',
     title: 'Save this offer',
     message: 'Login or create a free account to save offers and get expiry reminders.',
   },
   'save-service': {
-    icon: '✨',
+    icon: 'bookmark-outline',
     title: 'Save this service',
     message: 'Login or create a free account to save services and hear when they go on offer.',
   },
   'follow-shop': {
-    icon: '🏬',
+    icon: 'storefront-outline',
     title: 'Follow this shop',
     message: 'Login to follow shops and be first to see their new offers.',
   },
   'follow-category': {
-    icon: '🏷️',
+    icon: 'pricetags-outline',
     title: 'Follow this category',
     message: 'Login to follow categories and get offers that match what you like.',
   },
   'claim-offer': {
-    icon: '🎟️',
+    icon: 'ticket-outline',
     title: 'Claim this deal',
     message: 'Login to save and claim the offer, and to track your redemptions.',
   },
   'book-service': {
-    icon: '📅',
+    icon: 'calendar-outline',
     title: 'Book this service',
     message: 'Login to book, then manage your bookings from your profile.',
   },
   'enquire-service': {
-    icon: '💬',
+    icon: 'chatbubble-ellipses-outline',
     title: 'Send an enquiry',
     message: 'Login so the shop can reply to you and you can track your enquiry.',
   },
   review: {
-    icon: '⭐',
+    icon: 'star-outline',
     title: 'Leave a review',
     message: 'Login to rate this offer and help other customers decide.',
   },
   notifications: {
-    icon: '🔔',
+    icon: 'notifications-outline',
     title: 'Turn on notifications',
     message: 'Login to get expiry reminders for the offers you save.',
   },
   profile: {
-    icon: '👤',
+    icon: 'person-circle-outline',
     title: 'Welcome to OffersOffer',
     message: 'Login or create a free account to see your profile, saved offers and rewards.',
   },
   generic: {
-    icon: '✨',
+    icon: 'sparkles-outline',
     title: 'Make OffersOffer personal',
     message: 'Login or create a free account to save offers, follow shops and get expiry alerts.',
   },

@@ -13,12 +13,13 @@ import { ToastService } from '../../core/toast.service';
 import { Category, PageMeta, Shop } from '../../core/models';
 import { DistancePipe } from '../../shared/offer-badge.pipe';
 import { EmptyStateComponent, PaginationComponent } from '../../shared/ui.components';
+import { IconComponent } from '../../shared/icon.component';
 
 /** Shop directory (§42 - customer navigation). */
 @Component({
   selector: 'app-shop-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, DistancePipe, EmptyStateComponent, PaginationComponent],
+  imports: [CommonModule, FormsModule, RouterLink, DistancePipe, EmptyStateComponent, PaginationComponent, IconComponent],
   template: `
     <div class="container page">
       <div class="page-header">
@@ -68,7 +69,7 @@ import { EmptyStateComponent, PaginationComponent } from '../../shared/ui.compon
           }
         </div>
       } @else if (shops().length === 0) {
-        <app-empty-state emoji="🏬" title="No shops found" message="Try a different search or category." />
+        <app-empty-state icon="storefront-outline" title="No shops found" message="Try a different search or category." />
       } @else {
         <div class="grid grid-cards stagger">
           @for (shop of shops(); track shop.id) {
@@ -83,7 +84,7 @@ import { EmptyStateComponent, PaginationComponent } from '../../shared/ui.compon
                   <div class="min-w-0">
                     <h2 class="truncate">{{ shop.name }}</h2>
                     <p class="small muted mb-0 truncate">
-                      @if (shop.city) { 📍 {{ shop.city }} }
+                      @if (shop.city) { <app-icon name="location-outline" [size]="15" /> {{ shop.city }} }
                       @if (shop.distanceKm !== null) { · {{ shop.distanceKm | distance }} }
                     </p>
                   </div>
@@ -114,7 +115,11 @@ import { EmptyStateComponent, PaginationComponent } from '../../shared/ui.compon
                   [class.btn-secondary]="shop.isFollowing"
                   (click)="toggleFollow(shop)"
                 >
-                  {{ shop.isFollowing ? '✓ Following' : '+ Follow' }}
+                  <app-icon
+                    [name]="shop.isFollowing ? 'checkmark-outline' : 'add-outline'"
+                    [size]="14"
+                  />
+                  {{ shop.isFollowing ? 'Following' : 'Follow' }}
                 </button>
                 <a class="btn btn-ghost btn-sm" [routerLink]="['/offers']" [queryParams]="{ shopId: shop.id }">
                   See offers

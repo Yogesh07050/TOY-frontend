@@ -1,7 +1,7 @@
 <section class="card ai-panel" [class.open]="open()">
   <button type="button" class="panel-toggle" (click)="toggle()" [attr.aria-expanded]="open()">
     <span class="title">
-      <span aria-hidden="true">✨</span>
+      <app-icon name="sparkles-outline" [size]="16" />
       Generate offer content
     </span>
     <span class="chevron" aria-hidden="true">{{ open() ? '▴' : '▾' }}</span>
@@ -120,7 +120,8 @@
         </div>
 
         <button type="button" class="btn btn-block mt-2" [disabled]="loading() || !canGenerate" (click)="generate()">
-          {{ loading() ? '✨ Writing your offer content…' : '✨ Generate content' }}
+          <app-icon name="sparkles-outline" [size]="16" />
+          {{ loading() ? 'Writing your offer content…' : 'Generate content' }}
         </button>
 
         @if (loading()) {

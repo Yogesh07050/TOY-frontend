@@ -13,7 +13,7 @@
     <div class="row">
       @if (!isEdit() && auth.hasAny('USE_AI_ASSISTANT')) {
         <a routerLink="/admin/ai/assistant" class="btn btn-secondary">
-          ✨ Need help creating an offer?
+          <app-icon name="sparkles-outline" [size]="16" /> Need help creating an offer?
         </a>
       }
       <a routerLink="/admin/offers" class="btn btn-ghost">← Back to offers</a>
@@ -24,7 +24,7 @@
        saying that nothing is saved yet, is what makes §10's review step real. -->
   @if (fromAi()) {
     <div class="ai-prefill-banner">
-      <span aria-hidden="true">✨</span>
+      <app-icon name="sparkles-outline" [size]="16" />
       <div>
         <strong>Pre-filled from your AI recommendation.</strong>
         <span class="small">
@@ -392,7 +392,7 @@
                       <span class="image-actions">
                         <button type="button" class="icon-btn" [disabled]="i === 0" (click)="moveImage(i, -1)" title="Move up">↑</button>
                         <button type="button" class="icon-btn" [disabled]="i === images().length - 1" (click)="moveImage(i, 1)" title="Move down">↓</button>
-                        <button type="button" class="icon-btn" (click)="removeImage(i)" title="Remove">×</button>
+                        <button type="button" class="icon-btn" (click)="removeImage(i)" title="Remove"><app-icon name="close-outline" [size]="16" /></button>
                       </span>
                     </li>
                   }

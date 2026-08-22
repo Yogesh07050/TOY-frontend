@@ -8,6 +8,7 @@ import { ApiService } from '../../core/api.service';
 import { ToastService } from '../../core/toast.service';
 import { Offer, OfferPayload } from '../../core/models';
 import { ImproveResult } from '../../core/ai.models';
+import { IconComponent } from '../../shared/icon.component';
 
 /**
  * ✨ Improve this offer (§14).
@@ -22,12 +23,12 @@ import { ImproveResult } from '../../core/ai.models';
 @Component({
   selector: 'app-ai-improve',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, IconComponent],
   template: `
     <div class="container page narrow">
       <div class="page-header">
         <div>
-          <h1><span aria-hidden="true">✨</span> Improve this offer</h1>
+          <h1><app-icon name="sparkles-outline" [size]="16" /> Improve this offer</h1>
           <p class="subtitle">Better wording for the same offer. The deal itself never changes.</p>
         </div>
         <a routerLink="/admin/offers" class="btn btn-ghost">← Back to offers</a>
@@ -61,7 +62,8 @@ import { ImproveResult } from '../../core/ai.models';
               />
             </div>
             <button type="button" class="btn" [disabled]="loading()" (click)="run()">
-              {{ loading() ? '✨ Reviewing your offer…' : '✨ Suggest improvements' }}
+              <app-icon name="sparkles-outline" [size]="16" />
+              {{ loading() ? 'Reviewing your offer…' : 'Suggest improvements' }}
             </button>
           </div>
         </section>

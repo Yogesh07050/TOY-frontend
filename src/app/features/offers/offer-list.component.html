@@ -19,7 +19,7 @@
 
   @if (auth.unassignedShopRoles().length) {
     <div class="pending-role" role="status">
-      <span aria-hidden="true">🔑</span>
+      <app-icon name="key-outline" [size]="16" />
       <span>
         You have been given the <strong>{{ auth.unassignedShopRoles().join(' and ') }}</strong> role,
         but it is not linked to a shop yet — so you still see the customer view. A Super Admin needs
@@ -31,7 +31,7 @@
   <!-- Global search bar (§7) -->
   <div class="search-bar card">
     <div class="search-field">
-      <span aria-hidden="true">🔎</span>
+      <app-icon name="search-outline" [size]="16" />
       <input
         type="search"
         placeholder="Search offers, products, shops, categories or cities"
@@ -51,7 +51,7 @@
   <!-- Location strip (§8.1) -->
   <div class="location-strip">
     @if (locations.hasPosition()) {
-      <span class="badge badge-brand">📍 {{ locations.location().label }}</span>
+      <span class="badge badge-brand"><app-icon name="location-outline" [size]="15" /> {{ locations.location().label }}</span>
       <span class="label">Within</span>
       @for (km of radiusOptions; track km) {
         <button type="button" class="chip" [class.active]="radius === km" (click)="setRadius(km)">
@@ -67,7 +67,7 @@
         @if (locations.requesting()) {
           <span class="spinner dark"></span> Locating…
         } @else {
-          🎯 Use my location
+          <app-icon name="locate-outline" [size]="15" /> Use my location
         }
       </button>
       @for (city of cities.slice(0, 4); track city.city) {
@@ -106,7 +106,7 @@
     <app-banner-carousel [banners]="banners()" />
 
     <app-offer-rail
-      icon="⏰"
+      icon="time-outline"
       title="Ending soon"
       subtitle="Grab these before they go"
       [offers]="endingSoon()"
@@ -119,7 +119,7 @@
     />
 
     <app-offer-rail
-      icon="📍"
+      icon="location-outline"
       title="Near you"
       [subtitle]="'Within ' + (radius || 10) + ' km of ' + locations.location().label"
       [offers]="nearby()"
@@ -133,7 +133,7 @@
          location, trending and freshness, so calling it "Recommended for you"
          would promise a personalisation there is no account to base it on. -->
     <app-offer-rail
-      [icon]="auth.isAuthenticated() ? '✨' : '🔥'"
+      [icon]="auth.isAuthenticated() ? 'sparkles-outline' : 'flame-outline'"
       [title]="auth.isAuthenticated() ? 'Recommended for you' : 'Popular near you'"
       [subtitle]="auth.isAuthenticated() ? '' : 'Trending with shoppers in your area'"
       [offers]="recommended()"
@@ -147,7 +147,7 @@
     @if (!auth.isAuthenticated()) {
       <section class="personalise card">
         <div class="card-body">
-          <h2>✨ Make OffersOffer personal</h2>
+          <h2><app-icon name="sparkles-outline" [size]="16" /> Make OffersOffer personal</h2>
           <p class="muted mb-0">
             Get recommendations based on what you like, save offers and hear before they expire.
           </p>
@@ -274,7 +274,7 @@
     <app-card-skeletons [count]="8" />
   } @else if (offers().length === 0) {
     <app-empty-state
-      emoji="🏷️"
+      icon="pricetags-outline"
       title="No offers match your search"
       message="Try removing a filter, widening the distance, or searching for something else."
     >

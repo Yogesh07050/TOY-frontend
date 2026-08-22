@@ -27,7 +27,7 @@ import { ConfirmComponent, EmptyStateComponent } from '../../shared/ui.component
           @if (loading()) {
             <div class="skeleton" style="height: 260px"></div>
           } @else if (categories().length === 0) {
-            <app-empty-state emoji="📚" title="No categories" message="Add the first one." />
+            <app-empty-state icon="albums-outline" title="No categories" message="Add the first one." />
           } @else {
             <div class="card">
               <div class="table-wrap">
@@ -108,8 +108,11 @@ import { ConfirmComponent, EmptyStateComponent } from '../../shared/ui.component
 
                 <div class="field">
                   <label for="icon">Icon</label>
-                  <input id="icon" type="text" formControlName="icon" maxlength="4" placeholder="e.g. 👟" />
-                  <span class="hint">A single emoji works well.</span>
+                  <input id="icon" type="text" formControlName="icon" maxlength="4" />
+                  <span class="hint">
+                    Optional label. The customer site picks its category icons from the
+                    category name, so this is not shown there.
+                  </span>
                 </div>
 
                 <div class="field">

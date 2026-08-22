@@ -20,6 +20,7 @@ import {
   ServiceStatusClassPipe,
 } from '../../shared/service-badge.pipe';
 import { EmptyStateComponent } from '../../shared/ui.components';
+import { IconComponent } from '../../shared/icon.component';
 
 interface Countdown {
   days: number;
@@ -43,6 +44,7 @@ interface Countdown {
     ServicePriceLabelPipe,
     ServiceStatusClassPipe,
     EmptyStateComponent,
+    IconComponent,
   ],
   templateUrl: './service-detail.component.html',
   styleUrl: './service-detail.component.scss',

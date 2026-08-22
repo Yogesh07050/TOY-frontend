@@ -7,7 +7,7 @@
 } @else if (notFound()) {
   <div class="container page">
     <app-empty-state
-      emoji="🏷️"
+      icon="pricetags-outline"
       title="Offer not available"
       message="This offer may have expired, been withdrawn, or never existed."
     >
@@ -127,31 +127,36 @@
         </p>
 
         @if (o.distanceKm !== null) {
-          <p class="small"><strong>📍 {{ o.distanceKm | distance }}</strong> from {{ locations.location().label }}</p>
+          <p class="small"><strong><app-icon name="location-outline" [size]="15" /> {{ o.distanceKm | distance }}</strong> from {{ locations.location().label }}</p>
         }
 
         <div class="actions">
           <button type="button" class="btn" [class.btn-secondary]="o.isFavorite" (click)="toggleFavorite()">
-            {{ o.isFavorite ? '♥ Saved' : '♡ Save offer' }}
+            <app-icon [name]="o.isFavorite ? 'heart' : 'heart-outline'" [size]="16" />
+            {{ o.isFavorite ? 'Saved' : 'Save offer' }}
           </button>
 
           <div class="share-wrap">
             <button type="button" class="btn btn-secondary" (click)="shareOpen.set(!shareOpen())">
-              ↗ Share
+              <app-icon name="share-social-outline" [size]="16" /> Share
             </button>
             @if (shareOpen()) {
               <div class="share-menu card">
                 @if (canUseNativeShare) {
-                  <button type="button" (click)="share('native')">📲 Share…</button>
+                  <button type="button" (click)="share('native')"><app-icon name="share-social-outline" [size]="16" /> Share…</button>
                 }
-                <button type="button" (click)="share('whatsapp')">💬 WhatsApp</button>
-                <button type="button" (click)="share('email')">✉️ Email</button>
-                <button type="button" (click)="share('copy')">🔗 Copy link</button>
+                <button type="button" (click)="share('whatsapp')"><app-icon name="chatbubble-ellipses-outline" [size]="16" /> WhatsApp</button>
+                <button type="button" (click)="share('email')">
+                  <app-icon name="mail-outline" [size]="16" /> Email
+                </button>
+                <button type="button" (click)="share('copy')"><app-icon name="link-outline" [size]="16" /> Copy link</button>
               </div>
             }
           </div>
 
-          <button type="button" class="btn btn-secondary" (click)="followShop()">+ Follow shop</button>
+          <button type="button" class="btn btn-secondary" (click)="followShop()">
+            <app-icon name="add-outline" [size]="16" /> Follow shop
+          </button>
 
           @if (canEdit()) {
             <a class="btn btn-ghost" [routerLink]="['/admin/offers', o.id, 'edit']">Edit offer</a>
@@ -235,10 +240,10 @@
                         @if (branch.pincode) { – {{ branch.pincode }} }
                       </p>
                       @if (branch.contactNumber) {
-                        <p class="small mb-0">☎ <a [href]="'tel:' + branch.contactNumber">{{ branch.contactNumber }}</a></p>
+                        <p class="small mb-0"><app-icon name="call-outline" [size]="15" /> <a [href]="'tel:' + branch.contactNumber">{{ branch.contactNumber }}</a></p>
                       }
                       @if (branch.distanceKm !== null) {
-                        <p class="small strong mb-0">📍 {{ branch.distanceKm | distance }}</p>
+                        <p class="small strong mb-0"><app-icon name="location-outline" [size]="15" /> {{ branch.distanceKm | distance }}</p>
                       }
                       <a
                         class="btn btn-secondary btn-sm mt-1"
@@ -247,7 +252,7 @@
                         rel="noopener"
                         (click)="trackClick(branch)"
                       >
-                        Get directions ↗
+                        Get directions <app-icon name="navigate-outline" [size]="13" />
                       </a>
                     </div>
 
@@ -337,7 +342,7 @@
               <p class="small">{{ o.shop.description }}</p>
             }
             @if (o.shop.contactNumber) {
-              <p class="small mb-1">☎ <a [href]="'tel:' + o.shop.contactNumber">{{ o.shop.contactNumber }}</a></p>
+              <p class="small mb-1"><app-icon name="call-outline" [size]="15" /> <a [href]="'tel:' + o.shop.contactNumber">{{ o.shop.contactNumber }}</a></p>
             }
             <a class="btn btn-secondary btn-block btn-sm" [routerLink]="['/shops', o.shop.slug]">
               View shop and all offers

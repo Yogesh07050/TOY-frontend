@@ -32,7 +32,7 @@ import { ConfirmComponent, EmptyStateComponent } from '../../shared/ui.component
             <div class="skeleton" style="height: 240px"></div>
           } @else if (branches().length === 0) {
             <app-empty-state
-              emoji="📍"
+              icon="location-outline"
               title="No branches yet"
               message="Add the first location using the form."
             />

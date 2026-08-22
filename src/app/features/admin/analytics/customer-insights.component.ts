@@ -94,7 +94,7 @@ interface CustomerBundle {
       @if (!hasCustomers()) {
         <app-analytics-section heading="Customer insights">
           <app-analytics-empty
-            icon="👥"
+            icon="people-outline"
             title="Not enough data yet."
             message="Publish and promote more offers to unlock meaningful customer insights."
           />
@@ -117,7 +117,7 @@ interface CustomerBundle {
             hint="Aggregated across all customers — individual browsing history is never shown."
           >
             @if (!interestRows().length) {
-              <app-analytics-empty icon="🏷️" title="No category interest yet." message="" />
+              <app-analytics-empty icon="pricetags-outline" title="No category interest yet." message="" />
             } @else {
               <app-share-bars [rows]="interestRows()" />
             }

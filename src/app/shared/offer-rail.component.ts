@@ -4,6 +4,8 @@ import { RouterLink } from '@angular/router';
 
 import { Offer } from '../core/models';
 import { OfferCardComponent } from './offer-card.component';
+import { IconComponent } from '../shared/icon.component';
+import { IconName } from '../shared/icons';
 
 /**
  * A titled, horizontally scrolling row of offer cards - the shape the V2
@@ -15,12 +17,17 @@ import { OfferCardComponent } from './offer-card.component';
 @Component({
   selector: 'app-offer-rail',
   standalone: true,
-  imports: [CommonModule, RouterLink, OfferCardComponent],
+  imports: [CommonModule, RouterLink, OfferCardComponent, IconComponent],
   template: `
     @if (loading) {
       <section class="rail-section">
         <div class="rail-head">
-          <h2>{{ icon }} {{ title }}</h2>
+          <h2>
+            @if (icon) {
+              <app-icon [name]="icon" [size]="18" />
+            }
+            {{ title }}
+          </h2>
         </div>
         <div class="rail">
           @for (item of [1, 2, 3, 4]; track item) {
@@ -32,7 +39,12 @@ import { OfferCardComponent } from './offer-card.component';
       <section class="rail-section">
         <div class="rail-head">
           <div>
-            <h2>{{ icon }} {{ title }}</h2>
+            <h2>
+            @if (icon) {
+              <app-icon [name]="icon" [size]="18" />
+            }
+            {{ title }}
+          </h2>
             @if (subtitle) {
               <p class="small muted mb-0">{{ subtitle }}</p>
             }
@@ -66,7 +78,7 @@ import { OfferCardComponent } from './offer-card.component';
 })
 export class OfferRailComponent {
   @Input({ required: true }) title!: string;
-  @Input() icon = '';
+  @Input() icon: IconName | '' = '';
   @Input() subtitle = '';
   @Input() offers: Offer[] = [];
   @Input() loading = false;

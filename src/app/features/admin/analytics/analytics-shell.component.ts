@@ -6,6 +6,7 @@ import { AuthService } from '../../../core/auth.service';
 import { SubscriptionService } from '../../../core/subscription.service';
 import { FeatureName } from '../../../core/models';
 import { AnalyticsFiltersService } from './analytics-filters.service';
+import { IconComponent } from '../../../shared/icon.component';
 
 interface AnalyticsTab {
   label: string;
@@ -25,7 +26,7 @@ interface AnalyticsTab {
 @Component({
   selector: 'app-analytics-shell',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, IconComponent],
   template: `
     <div class="container page analytics-shell">
       <div class="page-header">
@@ -55,7 +56,12 @@ interface AnalyticsTab {
           >
             {{ tab.label }}
             @if (isLocked(tab)) {
-              <span class="lock" aria-label="Requires an upgrade" title="Requires an upgrade">🔒</span>
+              <app-icon
+                class="lock"
+                name="lock-closed-outline"
+                [size]="13"
+                label="Requires an upgrade"
+              />
             }
           </a>
         }

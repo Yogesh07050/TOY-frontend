@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 
 import { ApiService } from '../../core/api.service';
+import { IconComponent } from '../../shared/icon.component';
+import { IconName } from '../../shared/icons';
 import { AuthPromptService } from '../../core/auth-prompt.service';
 import { AuthService } from '../../core/auth.service';
 import { ToastService } from '../../core/toast.service';
@@ -13,7 +15,7 @@ import { EmptyStateComponent } from '../../shared/ui.components';
 @Component({
   selector: 'app-category-browse',
   standalone: true,
-  imports: [CommonModule, RouterLink, EmptyStateComponent],
+  imports: [CommonModule, RouterLink, EmptyStateComponent, IconComponent],
   template: `
     <div class="container page">
       <div class="page-header">
@@ -30,13 +32,13 @@ import { EmptyStateComponent } from '../../shared/ui.components';
           }
         </div>
       } @else if (categories().length === 0) {
-        <app-empty-state emoji="📦" title="No categories yet" message="Check back soon." />
+        <app-empty-state icon="cube-outline" title="No categories yet" message="Check back soon." />
       } @else {
         <div class="grid grid-cards stagger">
           @for (category of categories(); track category.id) {
             <div class="cat-card card">
               <a class="cat-main" [routerLink]="['/offers']" [queryParams]="{ categoryId: category.id }">
-                <span class="cat-icon" aria-hidden="true">{{ category.icon || iconFor(category.name) }}</span>
+                <app-icon class="cat-icon" [name]="iconFor(category.name)" [size]="22" />
                 <h2>{{ category.name }}</h2>
                 @if (category.description) {
                   <p class="small muted clamp-2">{{ category.description }}</p>
@@ -56,7 +58,11 @@ import { EmptyStateComponent } from '../../shared/ui.components';
                   [class.btn-secondary]="category.isFollowing"
                   (click)="toggleFollow(category)"
                 >
-                  {{ category.isFollowing ? '✓ Following' : '+ Follow' }}
+                  <app-icon
+                    [name]="category.isFollowing ? 'checkmark-outline' : 'add-outline'"
+                    [size]="14"
+                  />
+                  {{ category.isFollowing ? 'Following' : 'Follow' }}
                 </button>
               </div>
             </div>
@@ -154,18 +160,48 @@ export class CategoryBrowseComponent {
   readonly loading = signal(true);
 
   /** Fallback glyph when a category has no icon configured. */
-  private readonly icons: Record<string, string> = {
-    food: '🍔',
-    clothing: '👕',
-    footwear: '👟',
-    'makeup & beauty': '💄',
-    electronics: '📱',
-    grocery: '🛒',
-    restaurants: '🍽️',
-    travel: '✈️',
-    'home & furniture': '🛋️',
-    sports: '🏅',
-    accessories: '👜',
+  /**
+   * Category name -> icon.
+   *
+   * `categories.icon` in the database is free text and currently unset, so it is
+   * deliberately not read here: a stray emoji or URL in that column would not be
+   * a valid icon name, and this component would have no sensible way to draw it.
+   * Names come from the database, so this is a
+   * best-effort lookup: anything unrecognised falls back to the generic
+   * pricetag rather than showing nothing.
+   */
+  private readonly icons: Record<string, IconName> = {
+    food: 'fast-food-outline',
+    clothing: 'shirt-outline',
+    footwear: 'footsteps-outline',
+    'makeup & beauty': 'cut-outline',
+    electronics: 'phone-portrait-outline',
+    grocery: 'basket-outline',
+    restaurants: 'restaurant-outline',
+    travel: 'airplane-outline',
+    'home & furniture': 'bed-outline',
+    sports: 'barbell-outline',
+    accessories: 'bag-handle-outline',
+    automotive: 'car-outline',
+    cleaning: 'sparkles-outline',
+    education: 'school-outline',
+    events: 'calendar-outline',
+    fitness: 'barbell-outline',
+    jewellery: 'diamond-outline',
+    books: 'book-outline',
+    pets: 'paw-outline',
+    music: 'musical-notes-outline',
+    gaming: 'game-controller-outline',
+    health: 'medkit-outline',
+    salon: 'cut-outline',
+    'beauty & salon': 'cut-outline',
+    'health & wellness': 'medkit-outline',
+    'home services': 'hammer-outline',
+    'repair & maintenance': 'construct-outline',
+    'professional services': 'briefcase-outline',
+    photography: 'camera-outline',
+    technology: 'laptop-outline',
+    other: 'ellipsis-horizontal-outline',
   };
 
   constructor() {
@@ -178,8 +214,8 @@ export class CategoryBrowseComponent {
     });
   }
 
-  iconFor(name: string): string {
-    return this.icons[name.toLowerCase()] ?? '🏷️';
+  iconFor(name: string): IconName {
+    return this.icons[name.toLowerCase()] ?? 'pricetag-outline';
   }
 
   toggleFollow(category: Category): void {

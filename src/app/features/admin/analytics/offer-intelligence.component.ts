@@ -20,6 +20,8 @@ import {
 } from '../../../shared/analytics-ui.components';
 import { AnalyticsFilterBarComponent } from './analytics-filter-bar.component';
 import { PremiumDashboard } from './premium-dashboard.base';
+import { toIconName } from '../../../shared/icons';
+import { IconComponent } from '../../../shared/icon.component';
 
 interface IntelligenceBundle {
   intelligence: OfferIntelligence;
@@ -50,6 +52,7 @@ interface IntelligenceBundle {
     AnalyticsSectionComponent,
     AnalyticsSkeletonComponent,
     UpgradePromptComponent,
+    IconComponent,
   ],
   template: `
     <app-analytics-filter-bar [showBranch]="true" [showCategory]="true" />
@@ -68,7 +71,7 @@ interface IntelligenceBundle {
       >
         @if (!bundle.intelligence.recommendations.items.length) {
           <app-analytics-empty
-            icon="💡"
+            icon="bulb-outline"
             title="No recommendations yet."
             message="Publish a few more offers so there is enough history to compare against."
           />
@@ -77,7 +80,7 @@ interface IntelligenceBundle {
             @for (item of bundle.intelligence.recommendations.items; track item.key) {
               <article class="tip">
                 <header>
-                  <span aria-hidden="true">{{ item.icon }}</span>
+                  <app-icon [name]="toIcon(item.icon)" [size]="16" />
                   <span class="kind small">{{ item.kind }}</span>
                 </header>
                 <h3>{{ item.title }}</h3>
@@ -103,7 +106,7 @@ interface IntelligenceBundle {
           hint="The score weighs views, saves, claims, redemption rate, discount, freshness and time remaining. Every score lists the factors behind it."
         >
           @if (!bundle.intelligence.health.offers.length) {
-            <app-analytics-empty icon="❤️" title="No live offers to score." message="" />
+            <app-analytics-empty icon="heart-outline" title="No live offers to score." message="" />
           } @else {
             <ul class="health">
               @for (offer of bundle.intelligence.health.offers; track offer.id) {
@@ -123,7 +126,10 @@ interface IntelligenceBundle {
                   <ul class="reasons small">
                     @for (reason of offer.reasons; track reason.label) {
                       <li [class.good]="reason.good">
-                        <span aria-hidden="true">{{ reason.good ? '✓' : '⚠' }}</span>
+                        <app-icon
+                          [name]="reason.good ? 'checkmark-circle-outline' : 'warning-outline'"
+                          [size]="15"
+                        />
                         {{ reason.detail }}
                       </li>
                     }
@@ -142,7 +148,7 @@ interface IntelligenceBundle {
           >
             @if (!bundle.intelligence.endingSoon.offers.length) {
               <app-analytics-empty
-                icon="⏰"
+                icon="time-outline"
                 title="Nothing ending in the next few days."
                 message=""
               />
@@ -175,7 +181,7 @@ interface IntelligenceBundle {
           >
             @if (!bundle.intelligence.bestTime.hasEnoughData) {
               <app-analytics-empty
-                icon="🗓️"
+                icon="calendar-outline"
                 title="Not enough historical data yet."
                 [message]="bundle.intelligence.bestTime.message ?? ''"
               />
@@ -211,7 +217,7 @@ interface IntelligenceBundle {
       >
         @if (!bundle.intelligence.discountEffectiveness.hasEnoughData) {
           <app-analytics-empty
-            icon="🏷️"
+            icon="pricetags-outline"
             title="Not enough offers to compare discounts yet."
             message="Publish offers across a few different discount levels to see how they compare."
           />
@@ -316,7 +322,7 @@ interface IntelligenceBundle {
           <app-upgrade-prompt feature="CATEGORY_INSIGHTS" heading="Category insights" />
         } @else if (!bundle.categories.hasEnoughData) {
           <app-analytics-empty
-            icon="📈"
+            icon="bar-chart-outline"
             title="Not enough category data yet."
             message="Category demand appears once your categories see enough customer activity."
           />
@@ -610,6 +616,9 @@ interface IntelligenceBundle {
   ],
 })
 export class OfferIntelligenceComponent extends PremiumDashboard<IntelligenceBundle> {
+  /** Analytics payloads carry their own glyph; map it into the icon set. */
+  protected readonly toIcon = toIconName;
+
   protected readonly feature: FeatureName = 'OFFER_INTELLIGENCE';
 
   readonly selected = signal<number[]>([]);
@@ -695,7 +704,7 @@ export class OfferIntelligenceComponent extends PremiumDashboard<IntelligenceBun
   }
 
   stars(rating: number): string {
-    return '★'.repeat(rating) + '☆'.repeat(Math.max(0, 5 - rating));
+    return '\u2605'.repeat(rating) + '\u2606'.repeat(Math.max(0, 5 - rating));
   }
 
   hour(value: number): string {

@@ -14,6 +14,7 @@ import { Branch, Offer, Review } from '../../core/models';
 import { PERMISSIONS } from '../../core/permissions';
 import { DiscountChipPipe, DistancePipe, OfferHeadlinePipe, StatusClassPipe } from '../../shared/offer-badge.pipe';
 import { EmptyStateComponent, StarsComponent } from '../../shared/ui.components';
+import { IconComponent } from '../../shared/icon.component';
 
 interface Countdown {
   days: number;
@@ -37,6 +38,7 @@ interface Countdown {
     StatusClassPipe,
     StarsComponent,
     EmptyStateComponent,
+    IconComponent,
   ],
   templateUrl: './offer-detail.component.html',
   styleUrl: './offer-detail.component.scss',

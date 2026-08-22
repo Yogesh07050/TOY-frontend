@@ -11,6 +11,7 @@ import {
   StatusClassPipe,
   ValidityPipe,
 } from './offer-badge.pipe';
+import { IconComponent } from '../shared/icon.component';
 
 /**
  * The offer card from §40. Shows shop, headline, category, location, distance,
@@ -26,6 +27,7 @@ import {
     ValidityPipe,
     DistancePipe,
     StatusClassPipe,
+    IconComponent,
   ],
   template: `
     <article class="offer-card" [class.dimmed]="offer.status !== 'active'">
@@ -74,8 +76,7 @@ import {
         <div class="meta">
           @if (offer.locationLabel || offer.distanceKm !== null) {
             <span class="meta-item">
-              📍
-              <span class="truncate">
+              <app-icon name="location-outline" [size]="15" /> <span class="truncate">
                 {{ offer.locationLabel || 'Multiple locations' }}
                 @if (offer.distanceKm !== null) {
                   · {{ offer.distanceKm | distance }}
@@ -83,7 +84,7 @@ import {
               </span>
             </span>
           }
-          <span class="meta-item" [class.urgent]="isEndingSoon">🗓 {{ offer | validity }}</span>
+          <span class="meta-item" [class.urgent]="isEndingSoon"><app-icon name="calendar-outline" [size]="15" /> {{ offer | validity }}</span>
         </div>
 
         <div class="actions">
@@ -101,7 +102,7 @@ import {
             [attr.aria-pressed]="offer.isFavorite"
             [attr.aria-label]="offer.isFavorite ? 'Remove from favourites' : 'Save offer'"
           >
-            <span class="heart" aria-hidden="true">{{ offer.isFavorite ? '♥' : '♡' }}</span>
+            <app-icon class="heart" [name]="offer.isFavorite ? 'heart' : 'heart-outline'" [size]="15" />
             <span class="save-label">{{ offer.isFavorite ? 'Saved' : 'Save' }}</span>
           </button>
         </div>

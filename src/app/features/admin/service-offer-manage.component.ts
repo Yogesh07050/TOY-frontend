@@ -33,7 +33,7 @@ import { ConfirmComponent, EmptyStateComponent } from '../../shared/ui.component
           @if (loading()) {
             <div class="skeleton" style="height: 260px"></div>
           } @else if (offers().length === 0) {
-            <app-empty-state emoji="🔥" title="No offers yet" message="Add the first promotional offer for this service." />
+            <app-empty-state icon="flame-outline" title="No offers yet" message="Add the first promotional offer for this service." />
           } @else {
             <div class="card">
               <div class="table-wrap">

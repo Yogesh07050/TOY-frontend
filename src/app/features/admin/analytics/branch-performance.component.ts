@@ -12,6 +12,8 @@ import {
 } from '../../../shared/analytics-ui.components';
 import { AnalyticsFilterBarComponent } from './analytics-filter-bar.component';
 import { PremiumDashboard } from './premium-dashboard.base';
+import { IconComponent } from '../../../shared/icon.component';
+import { IconName } from '../../../shared/icons';
 
 /** §12 — branch comparison for Premium merchants with multiple locations. */
 @Component({
@@ -25,6 +27,7 @@ import { PremiumDashboard } from './premium-dashboard.base';
     AnalyticsSkeletonComponent,
     BarChartComponent,
     UpgradePromptComponent,
+    IconComponent,
   ],
   template: `
     <app-analytics-filter-bar [showCategory]="true" />
@@ -39,7 +42,7 @@ import { PremiumDashboard } from './premium-dashboard.base';
       @if (report.branches.length < 2) {
         <app-analytics-section heading="Branch performance">
           <app-analytics-empty
-            icon="🏬"
+            icon="storefront-outline"
             title="Branch comparison needs more than one branch."
             message="Add a second branch to compare how each location performs."
           />
@@ -48,7 +51,9 @@ import { PremiumDashboard } from './premium-dashboard.base';
         <div class="grid grid-stats mb-2">
           @for (award of awards(); track award.label) {
             <div class="stat card">
-              <span class="stat-label">{{ award.icon }} {{ award.label }}</span>
+              <span class="stat-label">
+                <app-icon [name]="award.icon" [size]="14" /> {{ award.label }}
+              </span>
               <span class="stat-value">{{ award.branch }}</span>
               <span class="small subtle">{{ award.detail }}</span>
             </div>
@@ -172,32 +177,32 @@ export class BranchPerformanceComponent extends PremiumDashboard<BranchPerforman
     })),
   );
 
-  /** The four "🏆" cards from §12, skipping any the data cannot support. */
+  /** The four highlight cards from §12, skipping any the data cannot support. */
   readonly awards = computed(() => {
     const winners = this.data()?.winners;
     if (!winners) return [];
 
-    const cards = [
+    const cards: { icon: IconName; label: string; branch?: string; detail: string }[] = [
       {
-        icon: '🏆',
+        icon: 'trophy-outline',
         label: 'Best performing',
         branch: winners.bestPerforming?.branchName,
         detail: this.plural(winners.bestPerforming?.views, 'view'),
       },
       {
-        icon: '🏆',
+        icon: 'trophy-outline',
         label: 'Highest conversion',
         branch: winners.highestConversion?.branchName,
         detail: this.percent(winners.highestConversion?.conversion),
       },
       {
-        icon: '🏆',
+        icon: 'trophy-outline',
         label: 'Most viewed',
         branch: winners.mostViewed?.branchName,
         detail: this.plural(winners.mostViewed?.views, 'view'),
       },
       {
-        icon: '🏆',
+        icon: 'trophy-outline',
         label: 'Most redemptions',
         branch: winners.mostRedemptions?.branchName,
         detail: this.plural(winners.mostRedemptions?.redemptions, 'redemption'),

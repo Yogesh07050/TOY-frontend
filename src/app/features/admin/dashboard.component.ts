@@ -14,12 +14,13 @@ import {
   ShopStat,
 } from '../../core/models';
 import { PERMISSIONS } from '../../core/permissions';
+import { IconComponent } from '../../shared/icon.component';
 
 /** Super Admin and Admin dashboards (§41). The API scopes the data itself. */
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, IconComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
 })

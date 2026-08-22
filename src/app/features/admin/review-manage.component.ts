@@ -40,7 +40,7 @@ import { ConfirmComponent, EmptyStateComponent, PaginationComponent, StarsCompon
       @if (loading()) {
         <div class="skeleton" style="height: 260px"></div>
       } @else if (reviews().length === 0) {
-        <app-empty-state emoji="⭐" title="Nothing to moderate" message="No reviews match this filter." />
+        <app-empty-state icon="star-outline" title="Nothing to moderate" message="No reviews match this filter." />
       } @else {
         <div class="stack">
           @for (review of reviews(); track review.id) {

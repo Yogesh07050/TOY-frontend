@@ -11,6 +11,7 @@ import { Offer, OfferStatus, PageMeta, Shop } from '../../core/models';
 import { PERMISSIONS } from '../../core/permissions';
 import { DiscountChipPipe, StatusClassPipe, ValidityPipe } from '../../shared/offer-badge.pipe';
 import { ConfirmComponent, EmptyStateComponent, PaginationComponent } from '../../shared/ui.components';
+import { IconComponent } from '../../shared/icon.component';
 
 const STATUS_TABS: { value: OfferStatus | 'all'; label: string }[] = [
   { value: 'all', label: 'All' },
@@ -35,6 +36,7 @@ const STATUS_TABS: { value: OfferStatus | 'all'; label: string }[] = [
     PaginationComponent,
     EmptyStateComponent,
     ConfirmComponent,
+    IconComponent,
   ],
   templateUrl: './offer-manage.component.html',
   styles: [

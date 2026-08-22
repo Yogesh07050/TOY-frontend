@@ -60,7 +60,7 @@ import { EmptyStateComponent, PaginationComponent } from '../../shared/ui.compon
       @if (loading()) {
         <div class="skeleton" style="height: 320px"></div>
       } @else if (logs().length === 0) {
-        <app-empty-state emoji="📜" title="No entries" message="Nothing matches these filters." />
+        <app-empty-state icon="receipt-outline" title="No entries" message="Nothing matches these filters." />
       } @else {
         <div class="card">
           <div class="table-wrap">

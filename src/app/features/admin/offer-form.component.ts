@@ -12,6 +12,7 @@ import { Branch, Category, Offer, OfferPayload, Shop } from '../../core/models';
 import { PERMISSIONS } from '../../core/permissions';
 import { applyServerErrors, errorFor } from '../auth/auth-shell';
 import { AiContentPanelComponent } from '../ai/ai-content-panel.component';
+import { IconComponent } from '../../shared/icon.component';
 
 interface UploadedImage {
   url: string;
@@ -31,7 +32,7 @@ const HEADLINE_PRESETS = [
 @Component({
   selector: 'app-offer-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, AiContentPanelComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, AiContentPanelComponent, IconComponent],
   templateUrl: './offer-form.component.html',
   styleUrl: './offer-form.component.scss',
 })
