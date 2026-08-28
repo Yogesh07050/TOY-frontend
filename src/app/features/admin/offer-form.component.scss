@@ -269,3 +269,16 @@ fieldset {
   flex-wrap: wrap;
   align-items: center;
 }
+
+/* §36's restore notice. Informational rather than a failure, so it borrows the
+   alert layout but not its alarming colour. */
+.alert.draft-note {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  background: var(--info-bg);
+  border-left: 3px solid var(--info);
+  color: var(--text);
+}

@@ -39,6 +39,21 @@
     <div class="skeleton" style="height: 400px"></div>
   } @else {
     <form [formGroup]="form" (ngSubmit)="save('active')" novalidate>
+      <!-- §36. Says what came back and, just as importantly, what did not:
+           images cannot be stored locally, and a merchant who assumes they
+           were would publish an offer with no picture. -->
+      @if (draft.restored()) {
+        <div class="alert draft-note" role="status">
+          <span>
+            <strong>We brought back your unsaved changes.</strong>
+            Images aren’t included — please add them again before publishing.
+          </span>
+          <button type="button" class="btn btn-secondary btn-sm" (click)="discardDraft()">
+            Start fresh
+          </button>
+        </div>
+      }
+
       @if (formError()) {
         <div class="alert" role="alert">{{ formError() }}</div>
       }

@@ -14,6 +14,7 @@ import { applyServerErrors, errorFor } from '../auth/auth-shell';
 import { AiContentPanelComponent } from '../ai/ai-content-panel.component';
 import { IconComponent } from '../../shared/icon.component';
 import { ImageUploader } from '../../shared/image-upload';
+import { FormDraft } from '../../shared/form-draft';
 
 /** Suggested headlines, matching the promotion examples in §13. */
 const HEADLINE_PRESETS = [
@@ -59,6 +60,13 @@ export class OfferFormComponent {
   readonly selectedBranchIds = signal<number[]>([]);
 
   readonly offerId = signal<number | null>(null);
+  /**
+   * §36. Autosaves the fields so a dropped connection, a reload or a closed
+   * tab does not cost the merchant a twenty-field offer. Images are not part
+   * of it - a File cannot be serialised - which the restore note says out loud
+   * rather than leaving the merchant to discover.
+   */
+  readonly draft = new FormDraft<Record<string, unknown>>('offer-new');
   readonly shopsLoaded = signal(false);
   readonly loading = signal(false);
   readonly saving = signal(false);
@@ -150,7 +158,30 @@ export class OfferFormComponent {
         endDate: this.toLocalInput(new Date(Date.now() + 14 * 86400000)),
       });
       this.applyAiPrefill();
+
+      // §36. Restored *after* the defaults and the AI pre-fill, so a real
+      // draft wins over both - the merchant's own half-finished work is the
+      // most recent intent on the screen. Watching starts afterwards so this
+      // restore does not immediately overwrite what it just read.
+      this.draft.restoreInto(this.form);
+      this.draft.watch(this.form);
     }
+  }
+
+  /** §36's discard: the merchant would rather start clean. */
+  discardDraft(): void {
+    this.draft.clear();
+    this.form.reset({
+      startDate: this.toLocalInput(new Date()),
+      endDate: this.toLocalInput(new Date(Date.now() + 14 * 86400000)),
+      claimLimitPerCustomer: 1,
+      maxRedemptionsPerClaim: 1,
+      offerType: 'percentage',
+      discountType: 'percentage',
+      applicabilityType: 'shop_wide',
+      status: 'draft',
+      shopId: this.shops().length ? this.shops()[0].id : null,
+    });
   }
 
   /**
@@ -482,6 +513,10 @@ export class OfferFormComponent {
           });
           this.aiHistoryId = null;
         }
+        // The work is on the server now, so the local copy must go - a draft
+        // that outlives its save is a stale version waiting to be restored
+        // over a newer one.
+        this.draft.clear();
         this.toast.success(
           id ? 'Offer updated.' : `Offer created and saved as ${offer.status}.`,
         );
