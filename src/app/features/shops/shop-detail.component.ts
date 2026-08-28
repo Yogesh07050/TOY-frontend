@@ -9,12 +9,20 @@ import { SeoService } from '../../core/seo.service';
 import { AuthService } from '../../core/auth.service';
 import { LocationService } from '../../core/location.service';
 import { ToastService } from '../../core/toast.service';
-import { Branch, Offer, Shop } from '../../core/models';
+import { Branch, Offer, OpeningHours, Shop } from '../../core/models';
 import { PERMISSIONS } from '../../core/permissions';
 import { DistancePipe } from '../../shared/offer-badge.pipe';
 import { OfferCardComponent } from '../../shared/offer-card.component';
 import { EmptyStateComponent, StarsComponent } from '../../shared/ui.components';
 import { IconComponent } from '../../shared/icon.component';
+
+/** One row of the opening-hours table. */
+interface DayHours {
+  key: string;
+  label: string;
+  hours: string;
+  isToday: boolean;
+}
 
 /** Shop details page (§12): profile, branches, map, and the shop's offers. */
 @Component({
@@ -192,6 +200,61 @@ export class ShopDetailComponent {
     }
     const query = [branch.branchName, branch.address, branch.city].filter(Boolean).join(', ');
     return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+  }
+
+  /**
+   * The branch address on one line (§11).
+   *
+   * `area` is dropped when the street address already names it - merchants
+   * routinely write "123 Avinashi Road, Peelamedu" and then pick Peelamedu
+   * from the map as well, and printing both reads as a stutter.
+   */
+  addressLine(branch: Branch): string {
+    const parts = [branch.address, branch.addressLine2, branch.area, branch.city];
+    const seen: string[] = [];
+    for (const part of parts) {
+      const value = part?.trim();
+      if (!value) continue;
+      const lower = value.toLowerCase();
+      if (seen.some((existing) => existing.toLowerCase().includes(lower))) continue;
+      seen.push(value);
+    }
+    return seen.join(', ');
+  }
+
+  /**
+   * The week as a customer reads it (§3, §11).
+   *
+   * Days the merchant never filled in are left out rather than shown as
+   * closed - an unanswered question is not a "no", and printing "Closed"
+   * against a day the shop actually opens is worse than saying nothing.
+   */
+  openingHours(hours: OpeningHours | null): DayHours[] | null {
+    if (!hours) return null;
+
+    const days: { key: keyof OpeningHours; label: string }[] = [
+      { key: 'mon', label: 'Monday' },
+      { key: 'tue', label: 'Tuesday' },
+      { key: 'wed', label: 'Wednesday' },
+      { key: 'thu', label: 'Thursday' },
+      { key: 'fri', label: 'Friday' },
+      { key: 'sat', label: 'Saturday' },
+      { key: 'sun', label: 'Sunday' },
+    ];
+    // JavaScript starts its week on Sunday; the list above starts on Monday.
+    const todayKey = days[(new Date().getDay() + 6) % 7].key;
+
+    const rows = days.flatMap(({ key, label }) => {
+      const value = hours[key];
+      if (value === undefined) return [];
+      const text =
+        value === 'closed'
+          ? 'Closed'
+          : value.map((window) => `${window.open}–${window.close}`).join(', ');
+      return [{ key, label, hours: text, isToday: key === todayKey }];
+    });
+
+    return rows.length ? rows : null;
   }
 
   websiteLabel(url: string): string {

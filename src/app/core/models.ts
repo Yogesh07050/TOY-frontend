@@ -158,22 +158,69 @@ export interface Category {
   followedAt?: string;
 }
 
+/** Where a shop's map pin came from (V3 §24). */
+export type LocationSource = 'ADDRESS_SEARCH' | 'MAP_PIN' | 'CURRENT_LOCATION' | 'MANUAL';
+
+/** A day is either shut or a list of open/close windows (V3 §3). */
+export type OpeningHours = Partial<
+  Record<'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun', 'closed' | { open: string; close: string }[]>
+>;
+
 export interface Branch {
   id: number;
   shopId: number;
   branchName: string;
   address: string | null;
+  addressLine2: string | null;
+  area: string | null;
   city: string | null;
   state: string | null;
   country: string | null;
   pincode: string | null;
   latitude: number | null;
   longitude: number | null;
+  locationSource: LocationSource | null;
+  locationAccuracy: number | null;
+  locationConfirmedAt: string | null;
+  placeId: string | null;
+  openingHours: OpeningHours | null;
   contactNumber: string | null;
   isPrimary: boolean;
   status: 'active' | 'inactive';
   offerCount?: number;
   distanceKm: number | null;
+}
+
+/** A geocoder answer, as returned by `/geo/search` and `/geo/reverse`. */
+export interface GeoPlace {
+  latitude: number;
+  longitude: number;
+  label: string | null;
+  placeId: string | null;
+  address: {
+    addressLine1: string | null;
+    area: string | null;
+    city: string | null;
+    state: string | null;
+    country: string | null;
+    pincode: string | null;
+  };
+}
+
+/** One row of the §17 profile-completion checklist. */
+export interface ProfileChecklistItem {
+  key: string;
+  label: string;
+  required: boolean;
+  done: boolean;
+}
+
+/** §17 progress bar plus the §18 publish verdict. Owners and staff only. */
+export interface ShopProfileStatus {
+  percent: number;
+  canPublish: boolean;
+  missingRequired: string[];
+  items: ProfileChecklistItem[];
 }
 
 export interface Shop {
@@ -187,6 +234,7 @@ export interface Shop {
   email: string | null;
   websiteUrl: string | null;
   socialLinks: Record<string, string> | null;
+  openingHours: OpeningHours | null;
   status: 'active' | 'inactive';
   branchCount?: number;
   activeOfferCount?: number;
@@ -197,6 +245,8 @@ export interface Shop {
   categories: { id: number; name: string; slug: string }[];
   branches?: Branch[];
   rating?: RatingSummary;
+  /** Present only for someone who can edit the shop. */
+  profile?: ShopProfileStatus;
 }
 
 export interface ShopMember {

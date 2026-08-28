@@ -23,6 +23,7 @@ import {
   AppNotification,
   AuditLog,
   Branch,
+  GeoPlace,
   Category,
   CategoryStat,
   LocationStat,
@@ -211,6 +212,30 @@ export class ApiService {
 
   deactivateBranch(shopId: number, branchId: number): Observable<void> {
     return this.http.delete<void>(`${this.base}/shops/${shopId}/branches/${branchId}`);
+  }
+
+  // ---- Geocoding for the map picker (§5, §26) -----------------------------
+
+  /**
+   * Address -> candidate places. Routed through our API rather than straight
+   * at the geocoder so the whole application shares one rate-limit budget and
+   * sends the identifying User-Agent its usage policy requires.
+   */
+  searchPlaces(query: string, limit = 5): Observable<GeoPlace[]> {
+    return this.data(
+      this.http.get<ApiEnvelope<GeoPlace[]>>(`${this.base}/geo/search`, {
+        params: toParams({ q: query, limit }),
+      }),
+    );
+  }
+
+  /** Coordinates -> address, for when the merchant has moved the pin (§10). */
+  reverseGeocode(latitude: number, longitude: number): Observable<GeoPlace | null> {
+    return this.data(
+      this.http.get<ApiEnvelope<GeoPlace | null>>(`${this.base}/geo/reverse`, {
+        params: toParams({ latitude, longitude }),
+      }),
+    );
   }
 
   listMembers(shopId: number): Observable<ShopMember[]> {

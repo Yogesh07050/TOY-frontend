@@ -54,6 +54,11 @@
               </div>
 
               <div class="field">
+                <label for="whatsapp">WhatsApp</label>
+                <input id="whatsapp" type="tel" formControlName="whatsapp" placeholder="e.g. +91 98765 43210" />
+              </div>
+
+              <div class="field">
                 <label for="websiteUrl">Website</label>
                 <input id="websiteUrl" type="url" formControlName="websiteUrl" placeholder="https://" />
               </div>
@@ -79,8 +84,23 @@
           </fieldset>
 
           <fieldset>
+            <legend>Opening hours</legend>
+            <p class="hint mb-2">
+              Optional on every plan. Days left as "Not set" are simply not shown to customers —
+              only a day marked Closed says the shop is shut.
+            </p>
+            <app-opening-hours [value]="openingHours()" (valueChange)="openingHours.set($event)" />
+          </fieldset>
+
+          <fieldset>
             <legend>Categories</legend>
-            <p class="hint mb-2">A shop can belong to several categories.</p>
+            <p class="hint mb-2">
+              A shop can belong to several categories.
+              @if (!isEdit()) {
+                A new shop starts on the Free plan, which limits how many it may list — pick the
+                closest one for now and add the rest once the shop is upgraded.
+              }
+            </p>
             <div class="cat-picker">
               @for (category of categories(); track category.id) {
                 <label class="cat-option" [class.selected]="isCategorySelected(category.id)">
@@ -95,54 +115,111 @@
             </div>
           </fieldset>
 
-          @if (!isEdit()) {
-            <fieldset>
-              <legend>First branch (optional)</legend>
-              <p class="hint mb-2">
-                Add the main location now, or skip it and manage branches afterwards. Latitude and
-                longitude power distance-based search.
-              </p>
+          <!--
+            V3 §4: every shop needs a location, Free plan included, and §19 puts
+            editing it here rather than behind the branch screen - a merchant
+            who moves shop should not have to work out that "branches" is where
+            their own address lives.
+          -->
+          <fieldset>
+            <legend>Shop location{{ locationRequired() ? ' *' : '' }}</legend>
+            <p class="hint mb-2">
+              @if (locationRequired()) {
+                A live shop needs an address and a confirmed pin on the map — this is what puts it
+                in "near me", distance and map search.
+              } @else {
+                The shop is saved as inactive, so the location can wait. It will be needed before
+                the shop can go live.
+              }
+            </p>
 
-              <div class="form-grid">
-                <div class="field">
-                  <label for="branchName">Branch name</label>
-                  <input id="branchName" type="text" formControlName="branchName" placeholder="e.g. Zara – Avinashi Road" />
-                </div>
+            <div class="field">
+              <label for="address">Address {{ locationRequired() ? '*' : '' }}</label>
+              <textarea
+                id="address"
+                formControlName="address"
+                rows="2"
+                placeholder="e.g. 5/283 Maninagar, Achampathu"
+                [class.invalid]="error('address', 'Address')"
+              ></textarea>
+              @if (error('address', 'Address'); as message) {
+                <span class="error-text">{{ message }}</span>
+              }
+            </div>
 
-                <div class="field">
-                  <label for="city">City</label>
-                  <input id="city" type="text" formControlName="city" />
-                </div>
-
-                <div class="field">
-                  <label for="state">State</label>
-                  <input id="state" type="text" formControlName="state" />
-                </div>
-
-                <div class="field">
-                  <label for="country">Country</label>
-                  <input id="country" type="text" formControlName="country" />
-                </div>
-
-                <div class="field">
-                  <label for="pincode">Pincode</label>
-                  <input id="pincode" type="text" formControlName="pincode" />
-                </div>
-
-                <div class="field">
-                  <label for="latitude">Latitude</label>
-                  <input id="latitude" type="number" step="0.0000001" min="-90" max="90" formControlName="latitude" />
-                </div>
-
-                <div class="field">
-                  <label for="longitude">Longitude</label>
-                  <input id="longitude" type="number" step="0.0000001" min="-180" max="180" formControlName="longitude" />
-                </div>
+            <div class="form-grid">
+              <div class="field">
+                <label for="addressLine2">Address line 2</label>
+                <input id="addressLine2" type="text" formControlName="addressLine2" />
               </div>
 
               <div class="field">
-                <label for="address">Address</label>
-                <textarea id="address" formControlName="address" rows="2"></textarea>
+                <label for="area">Area / locality</label>
+                <input id="area" type="text" formControlName="area" placeholder="e.g. RS Puram" />
+              </div>
+
+              <div class="field">
+                <label for="city">City {{ locationRequired() ? '*' : '' }}</label>
+                <input id="city" type="text" formControlName="city" [class.invalid]="error('city', 'City')" />
+                @if (error('city', 'City'); as message) {
+                  <span class="error-text">{{ message }}</span>
+                }
+              </div>
+
+              <div class="field">
+                <label for="pincode">Pincode {{ locationRequired() ? '*' : '' }}</label>
+                <input id="pincode" type="text" formControlName="pincode" [class.invalid]="error('pincode', 'Pincode')" />
+                @if (error('pincode', 'Pincode'); as message) {
+                  <span class="error-text">{{ message }}</span>
+                }
+              </div>
+
+              <div class="field">
+                <label for="state">State</label>
+                <input id="state" type="text" formControlName="state" />
+              </div>
+
+              <div class="field">
+                <label for="country">Country</label>
+                <input id="country" type="text" formControlName="country" />
+              </div>
+            </div>
+
+            <div class="field">
+              <label>Location on the map {{ locationRequired() ? '*' : '' }}</label>
+              <app-map-picker
+                [latitude]="form.controls.latitude.value"
+                [longitude]="form.controls.longitude.value"
+                [addressHint]="addressHint()"
+                (picked)="onLocationPicked($event)"
+              />
+              @if (form.controls.latitude.value !== null) {
+                <p class="confirmed">
+                  <app-icon name="checkmark-circle-outline" [size]="15" />
+                  Location set — {{ form.controls.latitude.value }}, {{ form.controls.longitude.value }}
+                </p>
+              } @else {
+                <span class="hint">
+                  Search for the address, drag the map, or use your current location, then press
+                  Confirm location.
+                </span>
+              }
+              @if (locationError()) {
+                <span class="error-text">{{ locationError() }}</span>
+              }
+            </div>
+          </fieldset>
+
+          @if (!isEdit()) {
+            <fieldset>
+              <legend>Branch name</legend>
+              <div class="field">
+                <label for="branchName">Name for this location</label>
+                <input id="branchName" type="text" formControlName="branchName" placeholder="e.g. Zara – Avinashi Road" />
+                <span class="hint">
+                  Leave empty to use the shop name. Extra branches are added from the branches
+                  screen once the shop exists.
+                </span>
               </div>
             </fieldset>
           }
@@ -169,6 +246,33 @@
               }
             </div>
           </section>
+
+          @if (profile(); as status) {
+            <!-- §17: what is still missing, and whether the shop may go live. -->
+            <section class="card">
+              <div class="card-header"><h3>Profile completeness</h3></div>
+              <div class="card-body">
+                <div class="progress" role="img" [attr.aria-label]="status.percent + '% complete'">
+                  <span [style.width.%]="status.percent"></span>
+                </div>
+                <p class="small strong mt-1">{{ status.percent }}% complete</p>
+                <ul class="checklist">
+                  @for (item of status.items; track item.key) {
+                    <li [class.done]="item.done">
+                      <app-icon
+                        [name]="item.done ? 'checkmark-circle-outline' : 'ellipse-outline'"
+                        [size]="15"
+                      />
+                      <span>{{ item.label }}</span>
+                      @if (item.required && !item.done) {
+                        <span class="badge badge-warning">Required</span>
+                      }
+                    </li>
+                  }
+                </ul>
+              </div>
+            </section>
+          }
 
           <section class="card">
             <div class="card-header"><h3>Save</h3></div>

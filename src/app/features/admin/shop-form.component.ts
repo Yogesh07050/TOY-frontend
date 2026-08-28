@@ -6,14 +6,24 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { ToastService } from '../../core/toast.service';
 import { AuthService } from '../../core/auth.service';
-import { Category } from '../../core/models';
+import { Branch, Category, LocationSource, OpeningHours, ShopProfileStatus } from '../../core/models';
+import { IconComponent } from '../../shared/icon.component';
+import { MapPickerComponent, PickedLocation } from '../../shared/map-picker.component';
+import { OpeningHoursComponent } from '../../shared/opening-hours.component';
 import { applyServerErrors, errorFor } from '../auth/auth-shell';
 
 /** Shop creation and editing (§16). Creation can seed the first branch. */
 @Component({
   selector: 'app-shop-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    RouterLink,
+    IconComponent,
+    MapPickerComponent,
+    OpeningHoursComponent,
+  ],
   templateUrl: './shop-form.component.html',
   styles: [
     `
@@ -77,6 +87,49 @@ import { applyServerErrors, errorFor } from '../auth/auth-shell';
         font-size: 0.85rem;
       }
 
+      .confirmed {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        margin: 0.4rem 0 0;
+        font-size: 0.85rem;
+        color: var(--success, var(--brand));
+      }
+
+      .progress {
+        height: 8px;
+        border-radius: 99px;
+        background: var(--surface-alt);
+        overflow: hidden;
+      }
+
+      .progress span {
+        display: block;
+        height: 100%;
+        background: var(--brand);
+        transition: width 0.25s ease-out;
+      }
+
+      .checklist {
+        list-style: none;
+        margin: 0.75rem 0 0;
+        padding: 0;
+        display: grid;
+        gap: 0.3rem;
+        font-size: 0.85rem;
+      }
+
+      .checklist li {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        color: var(--text-subtle);
+      }
+
+      .checklist li.done {
+        color: var(--text);
+      }
+
       @media (max-width: 960px) {
         .form-layout {
           grid-template-columns: minmax(0, 1fr);
@@ -101,22 +154,35 @@ export class ShopFormComponent {
   readonly uploading = signal(false);
   readonly logoUrl = signal<string | null>(null);
   readonly formError = signal<string | null>(null);
+  readonly locationError = signal<string | null>(null);
+  /** §17's checklist, as the server last computed it. */
+  readonly profile = signal<ShopProfileStatus | null>(null);
+  readonly openingHours = signal<OpeningHours | null>(null);
 
   readonly isEdit = computed(() => this.shopId() !== null);
+
+  /** How the current pin was chosen, so §24 can record it (default: typed in). */
+  private locationSource: LocationSource = 'MANUAL';
+  private locationAccuracy: number | null = null;
+  private placeId: string | null = null;
+  private locationConfirmed = false;
 
   readonly form = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(160)]],
     description: [''],
     contactNumber: [''],
     email: ['', [Validators.email]],
+    whatsapp: [''],
     websiteUrl: [''],
     instagram: [''],
     facebook: [''],
     status: ['active' as 'active' | 'inactive'],
 
-    // Only used when creating: the shop's first branch (§16 + §17).
+    // The shop's own location - its primary branch (§4 + §19).
     branchName: [''],
     address: [''],
+    addressLine2: [''],
+    area: [''],
     city: [''],
     state: [''],
     country: ['India'],
@@ -125,8 +191,20 @@ export class ShopFormComponent {
     longitude: [null as number | null],
   });
 
+  /**
+   * §18: a shop may only go live with a full location, so the required marks
+   * follow the status field. Saving an unfinished shop as inactive stays open,
+   * which is how a merchant parks the work half-done.
+   */
+  readonly locationRequired = signal(true);
+
+  /** Seeds the picker's search box when a shop has an address but no pin. */
+  readonly addressHint = signal('');
+
   constructor() {
     this.api.listCategories({ status: 'all' }).subscribe((categories) => this.categories.set(categories));
+    this.syncLocationValidators();
+    this.form.controls.status.valueChanges.subscribe(() => this.syncLocationValidators());
 
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
@@ -139,18 +217,33 @@ export class ShopFormComponent {
     this.loading.set(true);
     this.api.getShop(id).subscribe({
       next: (shop) => {
+        const branch =
+          shop.branches?.find((entry) => entry.isPrimary) ?? shop.branches?.[0] ?? null;
+
         this.form.patchValue({
           name: shop.name,
           description: shop.description ?? '',
           contactNumber: shop.contactNumber ?? '',
           email: shop.email ?? '',
+          whatsapp: shop.socialLinks?.['whatsapp'] ?? '',
           websiteUrl: shop.websiteUrl ?? '',
           instagram: shop.socialLinks?.['instagram'] ?? '',
           facebook: shop.socialLinks?.['facebook'] ?? '',
           status: shop.status,
+          ...this.branchPatch(branch),
         });
+        this.locationSource = branch?.locationSource ?? 'MANUAL';
+        this.locationAccuracy = branch?.locationAccuracy ?? null;
+        this.placeId = branch?.placeId ?? null;
+        // Coordinates that are already stored were confirmed when they were
+        // saved; §8's confirmation is only owed again once the pin moves.
+        this.locationConfirmed = branch?.latitude !== null && branch?.latitude !== undefined;
+        this.addressHint.set(this.hintFrom(branch));
+
         this.logoUrl.set(shop.logoUrl);
+        this.openingHours.set(shop.openingHours);
         this.selectedCategories.set(shop.categories.map((category) => category.id));
+        this.profile.set(shop.profile ?? null);
         this.loading.set(false);
       },
       error: () => {
@@ -159,6 +252,80 @@ export class ShopFormComponent {
         void this.router.navigateByUrl('/admin/shops');
       },
     });
+  }
+
+  private branchPatch(branch: Branch | null) {
+    return {
+      branchName: branch?.branchName ?? '',
+      address: branch?.address ?? '',
+      addressLine2: branch?.addressLine2 ?? '',
+      area: branch?.area ?? '',
+      city: branch?.city ?? '',
+      state: branch?.state ?? '',
+      country: branch?.country ?? 'India',
+      pincode: branch?.pincode ?? '',
+      latitude: branch?.latitude ?? null,
+      longitude: branch?.longitude ?? null,
+    };
+  }
+
+  /** What to type into the picker's search box for a shop with no pin yet. */
+  private hintFrom(branch: Branch | null): string {
+    if (!branch || branch.latitude !== null) return '';
+    return [branch.address, branch.area, branch.city, branch.state, branch.pincode]
+      .filter(Boolean)
+      .join(', ');
+  }
+
+  /**
+   * §18's required list, mirrored client side so the merchant is told before
+   * the request rather than by it. The server enforces the same rule; this
+   * only saves a round trip.
+   */
+  private syncLocationValidators(): void {
+    const required = this.form.controls.status.value === 'active';
+    if (required === this.locationRequired() && this.form.controls.city.validator) return;
+
+    this.locationRequired.set(required);
+    for (const name of ['address', 'city', 'pincode'] as const) {
+      const control = this.form.controls[name];
+      if (required) control.addValidators(Validators.required);
+      else control.removeValidators(Validators.required);
+      control.updateValueAndValidity({ emitEvent: false });
+    }
+  }
+
+  /**
+   * §8: the merchant pressed Confirm on the map.
+   *
+   * Address fields the geocoder can name are filled in only where they are
+   * still empty - what the merchant typed is what they meant, and having the
+   * map quietly rewrite their own address is how a correct pin ends up
+   * attached to a wrong address.
+   */
+  onLocationPicked(location: PickedLocation): void {
+    this.locationError.set(null);
+    this.locationSource = location.source;
+    this.locationAccuracy = location.accuracy;
+    this.placeId = location.placeId;
+    this.locationConfirmed = true;
+
+    const patch: Record<string, unknown> = {
+      latitude: location.latitude,
+      longitude: location.longitude,
+    };
+    const fill = (control: 'address' | 'area' | 'city' | 'state' | 'country' | 'pincode', value: string | null) => {
+      if (value && !this.form.controls[control].value.trim()) patch[control] = value;
+    };
+    fill('address', location.address?.addressLine1 ?? null);
+    fill('area', location.address?.area ?? null);
+    fill('city', location.address?.city ?? null);
+    fill('state', location.address?.state ?? null);
+    fill('country', location.address?.country ?? null);
+    fill('pincode', location.address?.pincode ?? null);
+
+    this.form.patchValue(patch);
+    this.toast.success('Location confirmed.');
   }
 
   error(control: string, label: string): string | null {
@@ -193,15 +360,28 @@ export class ShopFormComponent {
 
   save(): void {
     this.formError.set(null);
+    this.locationError.set(null);
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
 
     const value = this.form.getRawValue();
+
+    // §18 and §8 together: a shop going live needs a pin, and one the merchant
+    // has actually looked at. The server checks the first; only the form knows
+    // whether the second happened in this session.
+    if (this.locationRequired() && value.latitude === null) {
+      this.locationError.set(
+        'Confirm the shop location on the map before making the shop live, or set the status to inactive for now.',
+      );
+      return;
+    }
+
     const socialLinks: Record<string, string> = {};
     if (value.instagram) socialLinks['instagram'] = value.instagram;
     if (value.facebook) socialLinks['facebook'] = value.facebook;
+    if (value.whatsapp) socialLinks['whatsapp'] = value.whatsapp;
 
     const payload: Record<string, unknown> = {
       name: value.name,
@@ -211,20 +391,34 @@ export class ShopFormComponent {
       email: value.email || null,
       websiteUrl: value.websiteUrl || null,
       socialLinks: Object.keys(socialLinks).length ? socialLinks : null,
+      openingHours: this.openingHours(),
       status: value.status,
       categoryIds: this.selectedCategories(),
     };
 
-    if (!this.isEdit() && value.branchName && value.city) {
+    // Sent on create and edit alike: on edit the API treats it as the shop's
+    // primary branch, which is what makes §19's "edit location" one form.
+    const hasLocation = Boolean(
+      value.address.trim() || value.city.trim() || value.pincode.trim() || value.latitude !== null,
+    );
+    if (hasLocation) {
       payload['primaryBranch'] = {
-        branchName: value.branchName,
+        // A single-location shop has no meaningful branch name of its own, so
+        // it borrows the shop's rather than making it another required field.
+        branchName: value.branchName.trim() || value.name.trim(),
         address: value.address || null,
+        addressLine2: value.addressLine2 || null,
+        area: value.area || null,
         city: value.city,
         state: value.state || null,
         country: value.country || null,
         pincode: value.pincode || null,
         latitude: value.latitude,
         longitude: value.longitude,
+        locationSource: value.latitude === null ? null : this.locationSource,
+        locationAccuracy: this.locationAccuracy,
+        placeId: this.placeId,
+        locationConfirmed: this.locationConfirmed,
         isPrimary: true,
       };
     }

@@ -15,7 +15,7 @@ import { HttpErrorResponse } from '@angular/common/http';
       <div class="auth-card card">
         <div class="card-body">
           <a class="brand" routerLink="/offers">
-            <img class="brand-mark" src="logo.svg" alt="" aria-hidden="true" width="36" height="24" />
+            <img class="brand-mark" src="logo.svg" alt="" aria-hidden="true" width="40" height="23" />
             <span>Offers<span class="accent">Offer</span></span>
           </a>
           <h1>{{ heading }}</h1>
@@ -89,7 +89,12 @@ export function applyServerErrors(form: FormGroup, error: unknown): string | nul
   if (!(error instanceof HttpErrorResponse)) return 'Something went wrong. Please try again.';
 
   const body = error.error?.error;
-  const details: { field: string; message: string }[] = body?.details ?? [];
+  // Only validation errors send `details` as a list of fields. Other errors -
+  // a plan gate, for one - put an arbitrary object there, and iterating that
+  // throws inside the very handler meant to display the failure.
+  const details: { field: string; message: string }[] = Array.isArray(body?.details)
+    ? body.details
+    : [];
 
   let unmatched: string | null = null;
   for (const detail of details) {

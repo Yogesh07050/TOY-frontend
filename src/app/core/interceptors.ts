@@ -35,8 +35,12 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
 
 // A single refresh is shared by every request that 401s while it is in flight,
 // so a burst of parallel calls does not trigger a burst of refreshes.
+//
+// `null` means "still waiting"; `false` means the refresh failed. Waiters need
+// that second signal - without it a failed refresh leaves every queued request
+// hanging on a token that will never arrive.
 let refreshInFlight = false;
-const refreshed$ = new BehaviorSubject<string | null>(null);
+const refreshed$ = new BehaviorSubject<string | false | null>(null);
 
 /** Transparently refreshes an expired access token and replays the request. */
 export const refreshInterceptor: HttpInterceptorFn = (request, next) => {
@@ -62,10 +66,12 @@ export const refreshInterceptor: HttpInterceptorFn = (request, next) => {
 
       if (refreshInFlight) {
         return refreshed$.pipe(
-          filter((token): token is string => token !== null),
+          filter((token): token is string | false => token !== null),
           take(1),
           switchMap((token) =>
-            next(request.clone({ setHeaders: { Authorization: `Bearer ${token}` } })),
+            token === false
+              ? throwError(() => error)
+              : next(request.clone({ setHeaders: { Authorization: `Bearer ${token}` } })),
           ),
         );
       }
@@ -74,19 +80,25 @@ export const refreshInterceptor: HttpInterceptorFn = (request, next) => {
       refreshed$.next(null);
 
       return auth.refreshSession().pipe(
-        switchMap((session) => {
-          refreshInFlight = false;
-          refreshed$.next(session.accessToken);
-          return next(request.clone({ setHeaders: { Authorization: `Bearer ${session.accessToken}` } }));
-        }),
+        // This catch sits on the refresh itself, deliberately *above* the
+        // switchMap that replays the request. Below it, every failure of the
+        // replayed call - a plan gate, a validation error, a 500 - would be
+        // read as "the session is dead" and log the user out, throwing away
+        // the real error before the page that asked could show it.
         catchError((refreshError: unknown) => {
           refreshInFlight = false;
+          refreshed$.next(false);
           // The refresh token is gone or revoked - start over.
           auth.logout();
           void router.navigate(['/auth/login'], {
             queryParams: { returnUrl: router.url },
           });
           return throwError(() => refreshError);
+        }),
+        switchMap((session) => {
+          refreshInFlight = false;
+          refreshed$.next(session.accessToken);
+          return next(request.clone({ setHeaders: { Authorization: `Bearer ${session.accessToken}` } }));
         }),
       ) as Observable<never>;
     }),
