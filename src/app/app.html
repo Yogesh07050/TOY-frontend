@@ -141,6 +141,12 @@
   </div>
 </header>
 
+<!-- §36. Between the header and the content: high enough to be seen on any
+     page, low enough that the header's own controls stay reachable. The
+     merchant sentence is added inside the admin area, where there is unsaved
+     work to warn about. -->
+<app-offline-banner [merchant]="isAdminArea()" />
+
 <main [class.admin-main]="isAdminArea()">
   <router-outlet />
 </main>

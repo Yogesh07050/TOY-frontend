@@ -1824,3 +1824,349 @@ export interface ServiceComparisonRow {
   redemptions: number;
   conversion: number | null;
 }
+
+// ---------------------------------------------------------------------------
+// V5 — Business Dashboard (Super Admin only)
+//
+// These mirror `modules/business` on the API. They are kept apart from the
+// premium analytics types above for the same reason the routers are: those
+// describe one merchant's shop, these describe the whole business, and a type
+// shared between them would invite a merchant dashboard to render a figure it
+// has no right to (Business §1, §55).
+// ---------------------------------------------------------------------------
+
+export type ListingTypeFilter = 'all' | 'offer' | 'service';
+
+/** The filter contract from §32. */
+export interface BusinessFilters {
+  preset: DatePreset;
+  from?: string;
+  to?: string;
+  city?: string | null;
+  area?: string | null;
+  categoryId?: number | null;
+  listingType?: ListingTypeFilter;
+  plan?: string | null;
+  shopId?: number | null;
+  branchId?: number | null;
+  acquisitionChannel?: string | null;
+  limit?: number;
+  sort?: string;
+  cohortMonths?: number;
+}
+
+export interface BusinessRange {
+  from: string;
+  to: string;
+  previousFrom: string;
+  previousTo: string;
+  preset: DatePreset;
+}
+
+export interface DayPoint {
+  day: string;
+  value: number;
+}
+
+export interface HealthAlert {
+  key: string;
+  severity: 'critical' | 'warning';
+  title: string;
+  message: string;
+  action: { label: string; route: string } | null;
+  raisedAt: string;
+}
+
+export interface BusinessOverview {
+  range: BusinessRange;
+  kpis: Kpi[];
+  activity: DayPoint[];
+  health: { overall: HealthStatus; alerts: HealthAlert[] };
+}
+
+export interface EngagementTotals {
+  impressions: number;
+  views: number;
+  clicks: number;
+  shares: number;
+  saves: number;
+  claims: number;
+  eligibleClaims: number;
+  pendingClaims: number;
+  redemptions: number;
+  redemptionRate: number | null;
+}
+
+export interface CustomerMetrics {
+  range: BusinessRange;
+  kpis: Kpi[];
+  activity: {
+    dau: number;
+    mau: number;
+    averageDau: number;
+    stickiness: number | null;
+    series: DayPoint[];
+  };
+  engagement: EngagementTotals;
+  signups: DayPoint[];
+  definitions: {
+    activeUserEvents: string[];
+    excludedEvents: string[];
+    claimEligibility: string;
+  };
+}
+
+export interface MerchantActivityRow {
+  key: string;
+  label: string;
+  merchants: number;
+}
+
+export interface DistributionBand {
+  key: string;
+  label: string;
+  merchants: number;
+  views: number;
+  share: number | null;
+}
+
+export interface MerchantMetrics {
+  range: BusinessRange;
+  kpis: Kpi[];
+  activeMerchants: number;
+  totals: {
+    totalOffers: number;
+    activeOffers: number;
+    totalServices: number;
+    activeServices: number;
+    views: number;
+    claims: number;
+    redemptions: number;
+  };
+  perShop: {
+    offers: number | null;
+    medianOffers: number | null;
+    maxOffers: number;
+    views: number | null;
+    claims: number | null;
+    redemptions: number | null;
+  };
+  activityBreakdown: MerchantActivityRow[];
+  distribution: { merchants: number; totalViews: number; bands: DistributionBand[] };
+  definitions: { activities: { key: string; label: string }[]; note: string };
+}
+
+export interface BusinessOfferRow {
+  id: number;
+  title: string;
+  status: string;
+  shopId: number;
+  shopName: string;
+  category: string;
+  views: number;
+  claims: number;
+  redemptions: number;
+  claimRate: number | null;
+  redemptionRate: number | null;
+}
+
+export interface FunnelStage {
+  key: string;
+  label: string;
+  value: number;
+  previous: number;
+  conversionFromPrevious: number | null;
+}
+
+export interface BusinessFunnel {
+  range: BusinessRange;
+  stages: FunnelStage[];
+  overallConversion: number | null;
+  redemptionRate: number | null;
+  eligibleClaims: number;
+  pendingClaims: number;
+  definitions: { claimEligibility: string };
+}
+
+export interface RetentionOffset {
+  key: string;
+  label: string;
+  days: number;
+  retained: number | null;
+  rate: number | null;
+  /** False where the cohort is too young to have reached this offset. */
+  reached: boolean;
+}
+
+export interface RetentionCohort {
+  cohort: string;
+  merchants: number;
+  offsets: RetentionOffset[];
+}
+
+export interface CohortCurvePoint {
+  month: number;
+  label: string;
+  rate: number | null;
+  cohorts: number;
+}
+
+export interface MerchantRetention {
+  cohorts: RetentionCohort[];
+  curve: CohortCurvePoint[];
+  definitions: {
+    windowDays: number;
+    offsets: { key: string; label: string; days: number }[];
+    rule: string;
+    activities: string[];
+  };
+}
+
+export interface PlanDistributionRow {
+  plan: string;
+  name: string;
+  price: number;
+  merchants: number;
+  mrr: number;
+  atRiskMerchants: number;
+  atRiskMrr: number;
+  share: number | null;
+}
+
+export interface ConversionStep {
+  key: string;
+  label: string;
+  eligible: number;
+  converted: number;
+  rate: number | null;
+}
+
+export interface BusinessSubscriptions {
+  range: BusinessRange;
+  distribution: PlanDistributionRow[];
+  totalMerchants: number;
+  payingMerchants: number;
+  funnel: { steps: ConversionStep[]; directToPremium: number; definitions: { eligibility: string } };
+  history: { day: string; action: string; count: number }[];
+}
+
+export interface ArpmBasis {
+  key: string;
+  label: string;
+  hint: string;
+  value: number;
+  denominator: number;
+}
+
+export interface RevenueLine {
+  plan: string;
+  label: string;
+  payments: number;
+  gross: number;
+  refunded: number;
+  net: number;
+}
+
+export interface BusinessRevenue {
+  range: BusinessRange;
+  kpis: Kpi[];
+  mrr: {
+    current: number;
+    previous: number;
+    growth: number | null;
+    atRisk: number;
+    new: number;
+    expansion: number;
+    contraction: number;
+    churned: number;
+    reactivation: number;
+    net: number;
+  };
+  churn: {
+    startingPayingMerchants: number;
+    endingPayingMerchants: number;
+    churnedMerchants: number;
+    merchantChurnRate: number | null;
+    startingMrr: number;
+    churnedMrr: number;
+    mrrChurnRate: number | null;
+  };
+  arpm: ArpmBasis[];
+  breakdown: {
+    lines: RevenueLine[];
+    total: number;
+    refunded: number;
+    failedPayments: number;
+    failedAmount: number;
+    note: string;
+  };
+  previousBreakdownTotal: number;
+  distribution: PlanDistributionRow[];
+}
+
+export interface CityRow {
+  city: string;
+  merchants: number;
+  activeMerchants: number;
+  customers: number;
+  offers: number;
+  views: number;
+  claims: number;
+  redemptions: number;
+  redemptionRate: number | null;
+  mrr: number;
+}
+
+export interface CategoryRow {
+  categoryId: number | null;
+  category: string;
+  merchants: number;
+  offers: number;
+  views: number;
+  claims: number;
+  redemptions: number;
+  redemptionRate: number | null;
+}
+
+// ---- §34, §55 Platform health --------------------------------------------
+
+export type HealthStatus = 'healthy' | 'degraded' | 'down' | 'not_configured';
+
+export interface HealthComponent {
+  key: string;
+  label: string;
+  status: HealthStatus;
+  detail: string;
+  latencyMs?: number;
+  failures?: number;
+  attempts?: number;
+  failureRate?: number;
+  queued?: number;
+  uptimeSeconds?: number;
+}
+
+export interface PlatformHealth {
+  overall: HealthStatus;
+  checkedAt: string;
+  components: HealthComponent[];
+  email: HealthStatus;
+}
+
+export interface FailingEndpoint {
+  endpoint: string;
+  method: string;
+  dependency: string;
+  failures: number;
+  lastSeen: string;
+}
+
+export interface BusinessFilterOptions {
+  datePresets: DatePreset[];
+  cities: string[];
+  areas: string[];
+  categories: { id: number; name: string }[];
+  plans: { key: string; name: string; price: number }[];
+  listingTypes: { key: ListingTypeFilter; label: string }[];
+  acquisitionChannels: string[];
+  shops: { id: number; name: string }[];
+}

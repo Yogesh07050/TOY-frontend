@@ -104,9 +104,25 @@ import { IconName } from '../shared/icons';
 export class KpiCardComponent {
   readonly kpi = input.required<Kpi>();
 
+  /**
+   * The payload names its own format, so a card never has to infer one from the
+   * key. `decimal` exists because the Business Dashboard's per-user and
+   * per-shop ratios (§8, §9, §12-§15) are meaningless rounded to whole
+   * numbers - "0 claims per user" and "0.20 claims per user" are different
+   * findings.
+   */
   readonly display = computed(() => {
-    const value = this.kpi().value;
-    return this.kpi().format === 'percent' ? `${value}%` : value.toLocaleString('en-IN');
+    const { value, format } = this.kpi();
+    switch (format) {
+      case 'percent':
+        return `${value}%`;
+      case 'currency':
+        return `₹${value.toLocaleString('en-IN')}`;
+      case 'decimal':
+        return value.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      default:
+        return value.toLocaleString('en-IN');
+    }
   });
 
   readonly arrow = computed(() => ({ up: '↑', down: '↓', flat: '→' })[this.kpi().trend]);

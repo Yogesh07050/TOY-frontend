@@ -427,6 +427,103 @@ export const routes: Routes = [
         ],
       },
 
+      // ---- V5: Business Dashboard ----
+      // Super Admin only, and the guard says so in one place rather than on
+      // each of the ten child routes. Every endpoint behind these screens
+      // re-checks the role independently (Business §1, §55) - this guard only
+      // saves a merchant from navigating to a page that would refuse them.
+      {
+        path: 'business',
+        canActivate: [superAdminGuard],
+        loadComponent: () =>
+          import('./features/admin/business/business-shell.component').then(
+            (m) => m.BusinessShellComponent,
+          ),
+        children: [
+          { path: '', pathMatch: 'full', redirectTo: 'overview' },
+          {
+            path: 'overview',
+            title: 'Business overview · OffersOffer',
+            loadComponent: () =>
+              import('./features/admin/business/overview.component').then(
+                (m) => m.BusinessOverviewComponent,
+              ),
+          },
+          {
+            path: 'customers',
+            title: 'Customer metrics · OffersOffer',
+            loadComponent: () =>
+              import('./features/admin/business/customers.component').then(
+                (m) => m.BusinessCustomersComponent,
+              ),
+          },
+          {
+            path: 'merchants',
+            title: 'Merchant metrics · OffersOffer',
+            loadComponent: () =>
+              import('./features/admin/business/merchants.component').then(
+                (m) => m.BusinessMerchantsComponent,
+              ),
+          },
+          {
+            path: 'offers',
+            title: 'Offer performance · OffersOffer',
+            loadComponent: () =>
+              import('./features/admin/business/offers.component').then(
+                (m) => m.BusinessOffersComponent,
+              ),
+          },
+          {
+            path: 'funnel',
+            title: 'Conversion funnel · OffersOffer',
+            loadComponent: () =>
+              import('./features/admin/business/funnel.component').then(
+                (m) => m.BusinessFunnelComponent,
+              ),
+          },
+          {
+            path: 'retention',
+            title: 'Merchant retention · OffersOffer',
+            loadComponent: () =>
+              import('./features/admin/business/retention.component').then(
+                (m) => m.BusinessRetentionComponent,
+              ),
+          },
+          {
+            path: 'subscriptions',
+            title: 'Subscriptions · OffersOffer',
+            loadComponent: () =>
+              import('./features/admin/business/subscriptions.component').then(
+                (m) => m.BusinessSubscriptionsComponent,
+              ),
+          },
+          {
+            path: 'revenue',
+            title: 'Revenue · OffersOffer',
+            loadComponent: () =>
+              import('./features/admin/business/revenue.component').then(
+                (m) => m.BusinessRevenueComponent,
+              ),
+          },
+          {
+            path: 'segments',
+            title: 'Cities & categories · OffersOffer',
+            loadComponent: () =>
+              import('./features/admin/business/segments.component').then(
+                (m) => m.BusinessSegmentsComponent,
+              ),
+          },
+          {
+            path: 'health',
+            title: 'Platform health · OffersOffer',
+            loadComponent: () =>
+              import('./features/admin/business/health.component').then(
+                (m) => m.PlatformHealthComponent,
+              ),
+          },
+        ],
+      },
+
       // V3 §32 Subscription
       {
         path: 'subscription',

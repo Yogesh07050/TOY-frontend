@@ -1,10 +1,25 @@
-import { HttpErrorResponse, HttpInterceptorFn, HttpRequest } from '@angular/common/http';
+import {
+  HttpErrorResponse,
+  HttpInterceptorFn,
+  HttpRequest,
+  HttpResponse,
+} from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { BehaviorSubject, Observable, catchError, filter, switchMap, take, throwError } from 'rxjs';
+import {
+  BehaviorSubject,
+  Observable,
+  catchError,
+  filter,
+  switchMap,
+  take,
+  tap,
+  throwError,
+} from 'rxjs';
 
 import { environment } from '../../environments/environment';
 import { AuthService } from './auth.service';
+import { NetworkStatusService } from './network-status.service';
 import { ToastService } from './toast.service';
 
 const isApiRequest = (request: HttpRequest<unknown>) => request.url.startsWith(environment.apiUrl);
@@ -106,35 +121,73 @@ export const refreshInterceptor: HttpInterceptorFn = (request, next) => {
 };
 
 /**
- * Surfaces server errors as toasts. Validation errors (422) are left to the
- * form that raised them, which shows them field by field.
+ * Surfaces server errors as toasts, and keeps the offline state honest (§36).
+ *
+ * Validation errors (422) are left to the form that raised them, which shows
+ * them field by field.
  *
  * Plan gates (403 PLAN_UPGRADE_REQUIRED) are also left alone: they are an
  * expected answer rather than a failure, and the page that asked already
  * renders the contextual upgrade prompt from §31. Toasting them as well just
  * repeats the same sentence over the top of it.
+ *
+ * Two additions for the graceful-failure work:
+ *
+ * A status of 0 means the request never left the device, so the network
+ * service is told - `navigator.onLine` is often still true when Wi-Fi has
+ * dropped its association, and a failed request is the better evidence. No
+ * toast is raised for it: the offline banner is already saying it, at the top
+ * of every page, and a toast on top would say it twice per failed request.
+ *
+ * A 5xx carrying a request id gets it appended (§57), so the reference reaches
+ * the person who would have to quote it even when the failure happened on a
+ * screen with no error panel of its own.
  */
 export const errorInterceptor: HttpInterceptorFn = (request, next) => {
   const toast = inject(ToastService);
+  const network = inject(NetworkStatusService);
 
   return next(request).pipe(
+    tap((event) => {
+      // Any answer at all - including an error status - proves the network is
+      // working, so success here is about reachability, not about the result.
+      if (event instanceof HttpResponse && isApiRequest(request)) network.reportRequestSuccess();
+    }),
     catchError((error: unknown) => {
       if (error instanceof HttpErrorResponse && isApiRequest(request)) {
         const message = error.error?.error?.message;
         const code = error.error?.error?.code;
+        const requestId = error.error?.error?.requestId;
+
+        if (error.status === 0) {
+          network.reportRequestFailure();
+          return throwError(() => error);
+        }
+
+        network.reportRequestSuccess();
 
         if (code === 'PLAN_UPGRADE_REQUIRED') {
           return throwError(() => error);
         }
 
-        if (error.status === 0) {
-          toast.error('Cannot reach the server. Check your connection and try again.');
-        } else if (error.status === 403) {
+        if (error.status === 403) {
           toast.error(message ?? 'You do not have permission to do that.');
         } else if (error.status === 429) {
           toast.error(message ?? 'Too many requests. Please slow down.');
         } else if (error.status >= 500) {
-          toast.error(message ?? 'Something went wrong on our side. Please try again.');
+          // §37 and §38 are two different apologies. 502/503/504 with nothing
+          // in the body means we never reached the API - a dead process, a
+          // proxy with no upstream - which is §37's wording. A 500 that
+          // answered with a message is the API itself failing, and it has
+          // already chosen §38's words; repeating our own over the top would
+          // replace a specific explanation with a vaguer one.
+          const unreachable = error.status === 502 || error.status === 503 || error.status === 504;
+          const base =
+            message ??
+            (unreachable
+              ? 'We’re having trouble connecting to Offers App. Please try again.'
+              : 'Something went wrong on our side. Please try again.');
+          toast.error(requestId ? `${base} (Reference: ${requestId})` : base);
         } else if (error.status !== 422 && error.status !== 401 && message) {
           toast.error(message);
         }

@@ -79,6 +79,21 @@ import {
   ServiceBranchRow,
   ServiceCategoryInsightRow,
   ServiceComparisonRow,
+  BusinessFilters,
+  BusinessOverview,
+  CustomerMetrics,
+  MerchantMetrics,
+  BusinessOfferRow,
+  BusinessFunnel,
+  MerchantRetention,
+  BusinessSubscriptions,
+  BusinessRevenue,
+  CityRow,
+  CategoryRow,
+  PlatformHealth,
+  HealthAlert,
+  FailingEndpoint,
+  BusinessFilterOptions,
   ServiceCustomerInsights,
   ServiceFunnelStage,
   ServiceLocationRow,
@@ -1249,5 +1264,80 @@ export class ApiService {
     return this.serviceAnalytics<ServiceComparisonRow[]>('comparison', filters, {
       serviceIds: serviceIds.join(','),
     });
+  }
+
+  // -------------------------------------------------------------------------
+  // V5 — Business Dashboard (Super Admin only)
+  //
+  // Every call here answers 403 for anyone who is not a Super Admin. The
+  // route guard in front of these screens is a courtesy; this is the boundary
+  // (Business §1, §55).
+  // -------------------------------------------------------------------------
+
+  private business<T>(path: string, filters: BusinessFilters = { preset: 'last30' }): Observable<T> {
+    return this.data(
+      this.http.get<ApiEnvelope<T>>(`${this.base}/business/${path}`, { params: toParams({ ...filters }) }),
+    );
+  }
+
+  businessOverview(filters: BusinessFilters): Observable<BusinessOverview> {
+    return this.business<BusinessOverview>('overview', filters);
+  }
+
+  businessCustomers(filters: BusinessFilters): Observable<CustomerMetrics> {
+    return this.business<CustomerMetrics>('customers', filters);
+  }
+
+  businessMerchants(filters: BusinessFilters): Observable<MerchantMetrics> {
+    return this.business<MerchantMetrics>('merchants', filters);
+  }
+
+  businessOffers(filters: BusinessFilters): Observable<BusinessOfferRow[]> {
+    return this.business<BusinessOfferRow[]>('offers', filters);
+  }
+
+  businessFunnel(filters: BusinessFilters): Observable<BusinessFunnel> {
+    return this.business<BusinessFunnel>('funnel', filters);
+  }
+
+  businessRetention(filters: BusinessFilters): Observable<MerchantRetention> {
+    return this.business<MerchantRetention>('retention', filters);
+  }
+
+  businessSubscriptions(filters: BusinessFilters): Observable<BusinessSubscriptions> {
+    return this.business<BusinessSubscriptions>('subscriptions', filters);
+  }
+
+  businessRevenue(filters: BusinessFilters): Observable<BusinessRevenue> {
+    return this.business<BusinessRevenue>('revenue', filters);
+  }
+
+  businessCities(filters: BusinessFilters): Observable<CityRow[]> {
+    return this.business<CityRow[]>('cities', filters);
+  }
+
+  businessCategories(filters: BusinessFilters): Observable<CategoryRow[]> {
+    return this.business<CategoryRow[]>('categories', filters);
+  }
+
+  platformHealth(): Observable<PlatformHealth> {
+    return this.business<PlatformHealth>('health');
+  }
+
+  platformAlerts(): Observable<{ checkedAt: string; overall: string; alerts: HealthAlert[] }> {
+    return this.business<{ checkedAt: string; overall: string; alerts: HealthAlert[] }>('alerts');
+  }
+
+  platformIncidents(windowMinutes = 60): Observable<{ windowMinutes: number; endpoints: FailingEndpoint[] }> {
+    return this.data(
+      this.http.get<ApiEnvelope<{ windowMinutes: number; endpoints: FailingEndpoint[] }>>(
+        `${this.base}/business/incidents`,
+        { params: toParams({ windowMinutes }) },
+      ),
+    );
+  }
+
+  businessFilterOptions(): Observable<BusinessFilterOptions> {
+    return this.business<BusinessFilterOptions>('filters');
   }
 }

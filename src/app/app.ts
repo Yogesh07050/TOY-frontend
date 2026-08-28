@@ -10,6 +10,7 @@ import { AuthPromptService } from './core/auth-prompt.service';
 import { SeoService } from './core/seo.service';
 import { AuthPromptComponent } from './shared/auth-prompt.component';
 import { IconComponent } from './shared/icon.component';
+import { OfflineBannerComponent } from './shared/state.components';
 import { ToastsComponent } from './shared/ui.components';
 
 /** Signed-in areas, and the title each should carry in the browser tab. */
@@ -39,6 +40,7 @@ const PUBLIC_PAGES: ReadonlyArray<readonly [string, string, string]> = [
     RouterLinkActive,
     AuthPromptComponent,
     IconComponent,
+    OfflineBannerComponent,
     ToastsComponent,
   ],
   templateUrl: './app.html',
