@@ -124,6 +124,16 @@ export const routes: Routes = [
     title: 'My claim · OffersOffer',
     loadComponent: () => import('./features/account/claims.component').then((m) => m.ClaimsComponent),
   },
+  // The service-offer twin (§22). Same component, same screen - `kind` is what
+  // tells it which endpoint the id belongs to, since the two claim tables have
+  // their own id sequences and 17 is a valid id in both.
+  {
+    path: 'service-claims/:claimId',
+    canActivate: [authGuard],
+    title: 'My claim · OffersOffer',
+    data: { kind: 'service_offer' },
+    loadComponent: () => import('./features/account/claims.component').then((m) => m.ClaimsComponent),
+  },
   {
     path: 'notifications',
     canActivate: [authGuard],

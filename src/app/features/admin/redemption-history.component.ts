@@ -6,7 +6,7 @@ import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { ToastService } from '../../core/toast.service';
-import { Claim, ClaimAudit, PageMeta } from '../../core/models';
+import { Claim, ClaimAudit, ClaimKind, PageMeta } from '../../core/models';
 import { PERMISSIONS } from '../../core/permissions';
 import { EmptyStateComponent, PaginationComponent } from '../../shared/ui.components';
 import { IconComponent } from '../../shared/icon.component';
@@ -49,6 +49,14 @@ export class RedemptionHistoryComponent {
   readonly loading = signal(true);
   readonly tab = signal<HistoryTab>('redeemed');
 
+  /**
+   * Which listing type is being reported on (§22). One at a time rather than a
+   * merged list: the two have different column headings, and a merged table
+   * would blank half of every row. The verify screen is the opposite - there
+   * the shopkeeper must never have to choose.
+   */
+  readonly kind = signal<ClaimKind>('offer');
+
   readonly audit = signal<ClaimAudit | null>(null);
   readonly auditLoading = signal(false);
   readonly exporting = signal(false);
@@ -61,6 +69,11 @@ export class RedemptionHistoryComponent {
   to = '';
 
   private page = 1;
+
+  readonly kinds: { key: ClaimKind; label: string }[] = [
+    { key: 'offer', label: 'Offers' },
+    { key: 'service_offer', label: 'Services' },
+  ];
 
   readonly statuses = [
     { value: 'all', label: 'Any status' },
@@ -95,6 +108,7 @@ export class RedemptionHistoryComponent {
     // someone typing 31 March into a date box invariably intends.
     if (this.to) query['to'] = new Date(`${this.to}T23:59:59`).toISOString();
     if (this.isClaimsTab && this.status !== 'all') query['status'] = this.status;
+    query['kind'] = this.kind();
     return query;
   }
 
@@ -116,6 +130,13 @@ export class RedemptionHistoryComponent {
   selectTab(tab: HistoryTab): void {
     if (this.tab() === tab) return;
     this.tab.set(tab);
+    this.page = 1;
+    this.load();
+  }
+
+  selectKind(kind: ClaimKind): void {
+    if (this.kind() === kind) return;
+    this.kind.set(kind);
     this.page = 1;
     this.load();
   }
@@ -143,7 +164,7 @@ export class RedemptionHistoryComponent {
   openAudit(claim: Claim): void {
     this.auditLoading.set(true);
     this.audit.set(null);
-    this.api.claimAudit(claim.id).subscribe({
+    this.api.claimAudit(claim.id, claim.kind).subscribe({
       next: (result) => {
         this.audit.set(result);
         this.auditLoading.set(false);
@@ -166,7 +187,7 @@ export class RedemptionHistoryComponent {
     if (!reason?.trim()) return;
 
     this.revoking.set(true);
-    this.api.revokeClaim(claim.id, reason.trim()).subscribe({
+    this.api.revokeClaim(claim.id, reason.trim(), claim.kind).subscribe({
       next: () => {
         this.revoking.set(false);
         this.toast.success('Claim revoked.');

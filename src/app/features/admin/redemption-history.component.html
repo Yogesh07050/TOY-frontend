@@ -33,6 +33,20 @@
   </header>
 
   <div class="tabs">
+    @for (option of kinds; track option.key) {
+      <button
+        type="button"
+        class="btn btn-sm"
+        [class.btn-secondary]="kind() === option.key"
+        [class.btn-ghost]="kind() !== option.key"
+        (click)="selectKind(option.key)"
+      >
+        {{ option.label }}
+      </button>
+    }
+  </div>
+
+  <div class="tabs">
     <button
       type="button"
       class="btn btn-sm"
@@ -115,7 +129,7 @@
         <thead>
           <tr>
             <th>Code</th>
-            <th>Offer</th>
+            <th>{{ kind() === 'service_offer' ? 'Service' : 'Offer' }}</th>
             <th>Customer</th>
             <th>Branch</th>
             <th>{{ isClaimsTab ? 'Claimed' : 'Redeemed' }}</th>
@@ -128,7 +142,14 @@
             <tr>
               <td class="mono">{{ row.code }}</td>
               <td>
-                <a [routerLink]="['/offers', row.offer.id]">{{ row.offer.offerText || row.offer.title }}</a>
+                @if (kind() === 'service_offer') {
+                  <span>{{ row.offer.title }}</span>
+                  @if (row.offer.offerText) {
+                    <span class="small muted block">{{ row.offer.offerText }}</span>
+                  }
+                } @else {
+                  <a [routerLink]="['/offers', row.offer.id]">{{ row.offer.offerText || row.offer.title }}</a>
+                }
               </td>
               <td>{{ row.customer?.name ?? '—' }}</td>
               <td>{{ row.branch?.name ?? '—' }}</td>
@@ -174,8 +195,11 @@
       } @else if (audit(); as detail) {
         <p class="mono code">{{ detail.claim.code }}</p>
         <p class="muted small">
-          {{ detail.claim.offer.offerText || detail.claim.offer.title }} ·
-          {{ detail.claim.shop.name }}
+          {{ detail.claim.offer.title }}
+          @if (detail.claim.offer.offerText && detail.claim.offer.offerText !== detail.claim.offer.title) {
+            · {{ detail.claim.offer.offerText }}
+          }
+          · {{ detail.claim.shop.name }}
         </p>
 
         @if (detail.claim.revokeReason) {

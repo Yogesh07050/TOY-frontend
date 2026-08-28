@@ -506,8 +506,16 @@ export interface RecommendedOffer extends Offer {
 
 export type ClaimStatus = 'claimed' | 'redeemed' | 'expired' | 'cancelled' | 'revoked';
 
+/**
+ * What a claim is for. A product offer and a service offer are the same
+ * workflow end to end — same code, same QR, same verify screen — so they share
+ * one type and this says which table the record came from.
+ */
+export type ClaimKind = 'offer' | 'service_offer';
+
 export interface Claim {
   id: number;
+  kind: ClaimKind;
   code: string;
   status: ClaimStatus;
   claimedAt: string;
@@ -517,6 +525,11 @@ export interface Claim {
   redemptionCount: number;
   maxRedemptions: number;
   verificationMethod: 'QR_SCAN' | 'CODE_ENTRY' | null;
+  /**
+   * The listing the claim is against. For a service claim `title` is the
+   * service's name — "AC Deep Cleaning" is what a customer recognises, and the
+   * service offer is only ever a price attached to it.
+   */
   offer: { id: number; title: string; offerText: string | null; endDate: string; imageUrl: string | null };
   shop: { id: number; name: string };
   branch: { id: number; name: string } | null;
@@ -1563,6 +1576,12 @@ export interface Service {
   locationLabel: string | null;
   isSaved: boolean;
   activeOffer?: ServiceActiveOffer | null;
+  /**
+   * The signed-in customer's own claim on the live offer, when they hold one,
+   * so the page can show the code rather than the Claim button. Absent for
+   * guests and when the service has no offer running.
+   */
+  myClaim?: { id: number; code: string; status: ClaimStatus; expiresAt: string } | null;
   createdAt: string;
   updatedAt: string;
   shop: {
@@ -1652,11 +1671,20 @@ export interface ServiceOffer {
   status: ServiceOfferStatus;
   viewCount: number;
   claimCount: number;
+  /** Claim rules, identical in meaning to the ones on a product offer. */
+  claimLimitPerCustomer: number;
+  totalClaimLimit: number | null;
+  claimValidityHours: number | null;
+  maxRedemptionsPerClaim: number;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface ServiceOfferPayload {
+  claimLimitPerCustomer: number;
+  totalClaimLimit?: number | null;
+  claimValidityHours?: number | null;
+  maxRedemptionsPerClaim: number;
   offerText?: string | null;
   offerType: ServiceOfferType;
   discountType: DiscountType;
@@ -1671,18 +1699,12 @@ export interface ServiceOfferPayload {
   status: 'draft' | 'scheduled' | 'active';
 }
 
-export interface ServiceOfferClaim {
-  id: number;
-  code: string;
-  status: 'claimed' | 'redeemed' | 'expired' | 'cancelled';
-  claimedAt: string;
-  redeemedAt: string | null;
-  serviceOffer: { id: number; offerText: string | null; endDate: string };
-  service: { id: number; name: string };
-  shop: { id: number; name: string };
-  branch: { id: number; name: string } | null;
-  customer?: { id: number; name: string };
-}
+/**
+ * Service-offer claims are `Claim` with `kind: 'service_offer'` — the API
+ * returns one shape for both. Kept as a name because call sites read better
+ * saying what they expect.
+ */
+export type ServiceOfferClaim = Claim;
 
 export interface ServiceBooking {
   id: number;

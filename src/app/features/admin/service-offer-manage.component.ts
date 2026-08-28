@@ -265,6 +265,12 @@ export class ServiceOfferManageComponent {
     recurrenceType: [''],
     startDate: ['', [Validators.required]],
     endDate: ['', [Validators.required]],
+    // Claim rules, the same four a product offer carries. The defaults give an
+    // untouched service offer one code per customer, used once.
+    claimLimitPerCustomer: [1, [Validators.required, Validators.min(1), Validators.max(100)]],
+    totalClaimLimit: [null as number | null, [Validators.min(1)]],
+    claimValidityHours: [null as number | null, [Validators.min(1), Validators.max(8760)]],
+    maxRedemptionsPerClaim: [1, [Validators.required, Validators.min(1), Validators.max(100)]],
   });
 
   constructor() {
@@ -301,6 +307,10 @@ export class ServiceOfferManageComponent {
       recurrenceType: offer.recurrenceType ?? '',
       startDate: this.toLocalInput(new Date(offer.startDate)),
       endDate: this.toLocalInput(new Date(offer.endDate)),
+      claimLimitPerCustomer: offer.claimLimitPerCustomer ?? 1,
+      totalClaimLimit: offer.totalClaimLimit,
+      claimValidityHours: offer.claimValidityHours,
+      maxRedemptionsPerClaim: offer.maxRedemptionsPerClaim ?? 1,
     });
   }
 
@@ -319,6 +329,10 @@ export class ServiceOfferManageComponent {
 
     const value = this.form.getRawValue();
     const payload: ServiceOfferPayload = {
+      claimLimitPerCustomer: value.claimLimitPerCustomer ?? 1,
+      totalClaimLimit: value.totalClaimLimit,
+      claimValidityHours: value.claimValidityHours,
+      maxRedemptionsPerClaim: value.maxRedemptionsPerClaim ?? 1,
       offerText: value.offerText || null,
       offerType: value.offerType,
       discountType: value.discountType,

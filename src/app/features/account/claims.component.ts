@@ -4,12 +4,13 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { ApiService } from '../../core/api.service';
 import { ToastService } from '../../core/toast.service';
-import { Claim, PageMeta } from '../../core/models';
+import { Claim, ClaimKind, PageMeta } from '../../core/models';
 import { EmptyStateComponent, PaginationComponent } from '../../shared/ui.components';
 import { IconComponent } from '../../shared/icon.component';
 import { QrCodeComponent } from '../../shared/qr-code.component';
 
 type ClaimTab = 'active' | 'redeemed' | 'all';
+type ClaimType = 'offers' | 'services';
 
 /**
  * My Claims (Claim/Redemption §5, §34) and Redeemed Offers (§36).
@@ -47,6 +48,14 @@ export class ClaimsComponent {
   readonly loading = signal(true);
   readonly activeTab = signal<ClaimTab>('active');
 
+  /**
+   * Product offers and service offers are listed separately, the same way
+   * Saved already splits them. One merged list would have to paginate two
+   * sources at once, and a customer looking for a coupon already knows whether
+   * they booked a service or bought a shirt.
+   */
+  readonly claimType = signal<ClaimType>('offers');
+
   /** The claim shown in the code panel; null when the list is showing. */
   readonly selected = signal<Claim | null>(null);
   readonly cancelling = signal(false);
@@ -59,17 +68,37 @@ export class ClaimsComponent {
     { key: 'all', label: 'All' },
   ];
 
+  readonly types: { key: ClaimType; label: string }[] = [
+    { key: 'offers', label: 'Offers' },
+    { key: 'services', label: 'Services' },
+  ];
+
+  private get isServices(): boolean {
+    return this.claimType() === 'services';
+  }
+
   constructor() {
+    // Which kind this route is for. `/claims/:id` and `/service-claims/:id` are
+    // the same component; the route data is what says which endpoint to ask.
+    const routeKind: ClaimKind = this.route.snapshot.data['kind'] === 'service_offer'
+      ? 'service_offer'
+      : 'offer';
+
     // A claim id in the url opens straight into the code panel, which is where
     // the "Offer claimed" notification (§37) and the QR deep link both land.
     this.route.paramMap.subscribe((params) => {
       const id = Number(params.get('claimId'));
-      if (Number.isFinite(id) && id > 0) this.openById(id);
+      if (Number.isFinite(id) && id > 0) this.openById(id, routeKind);
       else this.selected.set(null);
     });
 
     const tab = this.route.snapshot.queryParamMap.get('tab') as ClaimTab | null;
     if (tab && this.tabs.some((entry) => entry.key === tab)) this.activeTab.set(tab);
+
+    const type = this.route.snapshot.queryParamMap.get('type') as ClaimType | null;
+    if (type && this.types.some((entry) => entry.key === type)) this.claimType.set(type);
+    else if (routeKind === 'service_offer') this.claimType.set('services');
+
     this.load();
   }
 
@@ -77,7 +106,9 @@ export class ClaimsComponent {
 
   load(): void {
     this.loading.set(true);
-    this.api.listClaims({ page: this.page, limit: 12, status: this.activeTab() }).subscribe({
+    const query = { page: this.page, limit: 12, status: this.activeTab() };
+    const request = this.isServices ? this.api.listServiceClaims(query) : this.api.listClaims(query);
+    request.subscribe({
       next: (result) => {
         this.claims.set(result.items);
         this.meta.set(result.meta);
@@ -91,7 +122,21 @@ export class ClaimsComponent {
     if (this.activeTab() === tab) return;
     this.activeTab.set(tab);
     this.page = 1;
-    void this.router.navigate([], { relativeTo: this.route, queryParams: { tab } });
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { tab, type: this.claimType() },
+    });
+    this.load();
+  }
+
+  selectType(type: ClaimType): void {
+    if (this.claimType() === type) return;
+    this.claimType.set(type);
+    this.page = 1;
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { tab: this.activeTab(), type },
+    });
     this.load();
   }
 
@@ -105,12 +150,13 @@ export class ClaimsComponent {
 
   open(claim: Claim): void {
     this.selected.set(claim);
-    void this.router.navigate(['/claims', claim.id]);
+    void this.router.navigate([claim.kind === 'service_offer' ? '/service-claims' : '/claims', claim.id]);
     this.trackViews(claim);
   }
 
-  private openById(id: number): void {
-    this.api.getClaim(id).subscribe({
+  private openById(id: number, kind: ClaimKind): void {
+    const request = kind === 'service_offer' ? this.api.getServiceClaim(id) : this.api.getClaim(id);
+    request.subscribe({
       next: (claim) => {
         this.selected.set(claim);
         this.trackViews(claim);
@@ -124,7 +170,9 @@ export class ClaimsComponent {
 
   close(): void {
     this.selected.set(null);
-    void this.router.navigate(['/claims'], { queryParams: { tab: this.activeTab() } });
+    void this.router.navigate(['/claims'], {
+      queryParams: { tab: this.activeTab(), type: this.claimType() },
+    });
   }
 
   /** §32: whether customers can find their codes again is worth knowing. */
@@ -148,7 +196,11 @@ export class ClaimsComponent {
 
   cancel(claim: Claim): void {
     this.cancelling.set(true);
-    this.api.cancelClaim(claim.id).subscribe({
+    const request =
+      claim.kind === 'service_offer'
+        ? this.api.cancelServiceClaim(claim.id)
+        : this.api.cancelClaim(claim.id);
+    request.subscribe({
       next: (updated) => {
         this.cancelling.set(false);
         this.selected.set(updated);

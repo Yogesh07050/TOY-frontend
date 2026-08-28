@@ -311,3 +311,42 @@ dl.facts dd {
     font-size: 1.4rem;
   }
 }
+
+// Claim call to action (Claim/Redemption §3). The primary action on a live
+// offer, so it sits above the save/share row rather than inside it.
+.claim-cta {
+  margin: 1.1rem 0 0.25rem;
+
+  .btn-lg {
+    width: 100%;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: 1.02rem;
+    padding: 0.8rem 1.2rem;
+  }
+}
+
+.claim-note {
+  margin: 0.5rem 0 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-align: center;
+
+  // The code repeated under "View my code", so a customer who just wants to
+  // read it aloud does not have to open the claim screen at all.
+  &.mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 1rem;
+    font-weight: 640;
+    letter-spacing: 0.1em;
+    color: var(--text);
+  }
+
+  &.done {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    color: var(--success);
+  }
+}

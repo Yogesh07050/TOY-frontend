@@ -150,6 +150,50 @@ export class ServiceDetailComponent implements OnDestroy {
 
   // ---- Actions ------------------------------------------------------------
 
+  // ---- Claiming the live offer (Claim/Redemption §3, §22) -------------------
+
+  readonly claiming = signal(false);
+
+  /**
+   * Only a service with a live offer and a counter to walk into can be claimed.
+   * An online-only service has nowhere to present a code, so offering one would
+   * hand the customer something §16 guarantees no branch will accept.
+   */
+  claimable(service: Service): boolean {
+    if (!service.activeOffer) return false;
+    return (
+      service.applicabilityType !== 'online' &&
+      new Date(service.activeOffer.endDate) >= new Date()
+    );
+  }
+
+  claimOffer(): void {
+    const service = this.service();
+    if (!service?.activeOffer) return;
+    if (!this.prompt.require('claim-offer', () => this.claimOffer())) return;
+
+    this.claiming.set(true);
+    this.api.claimServiceOffer(service.activeOffer.id).subscribe({
+      next: (claim) => {
+        this.claiming.set(false);
+        this.service.set({
+          ...service,
+          myClaim: {
+            id: claim.id,
+            code: claim.code,
+            status: claim.status,
+            expiresAt: claim.expiresAt,
+          },
+        });
+        void this.router.navigate(['/service-claims', claim.id]);
+      },
+      error: (error) => {
+        this.claiming.set(false);
+        this.toast.error(error?.error?.error?.message ?? 'This offer could not be claimed.');
+      },
+    });
+  }
+
   toggleSave(): void {
     const service = this.service();
     if (!service) return;

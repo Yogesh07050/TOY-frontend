@@ -129,6 +129,36 @@
           <p class="small"><strong><app-icon name="location-outline" [size]="15" /> {{ s.distanceKm | distance }}</strong> from {{ locations.location().label }}</p>
         }
 
+        <!-- Claim/Redemption §22: the same claim flow as a product offer, on
+             the service's live offer. -->
+        @if (claimable(s)) {
+          <div class="claim-cta">
+            @if (s.myClaim && s.myClaim.status === 'claimed') {
+              <a class="btn btn-primary btn-lg" [routerLink]="['/service-claims', s.myClaim.id]">
+                <app-icon name="ticket-outline" [size]="18" />
+                View my code
+              </a>
+              <p class="claim-note mono">{{ s.myClaim.code }}</p>
+            } @else if (s.myClaim && s.myClaim.status === 'redeemed') {
+              <p class="claim-note done">
+                <app-icon name="checkmark-circle-outline" [size]="16" />
+                You have already redeemed this offer.
+              </p>
+            } @else {
+              <button
+                type="button"
+                class="btn btn-primary btn-lg"
+                [disabled]="claiming()"
+                (click)="claimOffer()"
+              >
+                <app-icon name="ticket-outline" [size]="18" />
+                {{ claiming() ? 'Claiming…' : 'Claim offer' }}
+              </button>
+              <p class="claim-note">Show the code when the service is provided.</p>
+            }
+          </div>
+        }
+
         <div class="actions">
           <button type="button" class="btn" [class.btn-secondary]="s.isSaved" (click)="toggleSave()">
             <app-icon [name]="s.isSaved ? 'heart' : 'heart-outline'" [size]="16" />

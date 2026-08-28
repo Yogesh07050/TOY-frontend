@@ -9,6 +9,12 @@
     <div class="claim-card" [class]="statusClass(claim)">
       <p class="eyebrow">Your offer</p>
       <h1>{{ claim.offer.offerText || claim.offer.title }}</h1>
+      <!-- "30% OFF" alone does not say what is 30% off. When the headline and
+           the listing name differ - which for a service claim they always do -
+           the name goes underneath. -->
+      @if (claim.offer.offerText && claim.offer.title !== claim.offer.offerText) {
+        <p class="listing">{{ claim.offer.title }}</p>
+      }
       <p class="shop">
         <app-icon name="storefront-outline" [size]="16" />
         {{ claim.shop.name }}
@@ -81,6 +87,20 @@
     </header>
 
     <div class="tabs">
+      @for (type of types; track type.key) {
+        <button
+          type="button"
+          class="btn btn-sm"
+          [class.btn-secondary]="claimType() === type.key"
+          [class.btn-ghost]="claimType() !== type.key"
+          (click)="selectType(type.key)"
+        >
+          {{ type.label }}
+        </button>
+      }
+    </div>
+
+    <div class="tabs">
       @for (tab of tabs; track tab.key) {
         <button
           type="button"
@@ -128,7 +148,12 @@
 
             <span class="row-body">
               <strong>{{ claim.offer.offerText || claim.offer.title }}</strong>
-              <span class="small muted">{{ claim.shop.name }}</span>
+              <span class="small muted">
+                @if (claim.offer.offerText && claim.offer.title !== claim.offer.offerText) {
+                  {{ claim.offer.title }} ·
+                }
+                {{ claim.shop.name }}
+              </span>
               <span class="code-inline">{{ claim.code }}</span>
             </span>
 

@@ -10,6 +10,7 @@ import {
   BannerStat,
   Claim,
   ClaimAudit,
+  ClaimKind,
   ClaimVerification,
   RedemptionSummary,
   VerificationBudget,
@@ -687,17 +688,21 @@ export class ApiService {
     );
   }
 
-  claimAudit(claimId: number): Observable<ClaimAudit> {
+  claimAudit(claimId: number, kind: ClaimKind = 'offer'): Observable<ClaimAudit> {
     return this.data(
-      this.http.get<ApiEnvelope<ClaimAudit>>(`${this.base}/redemptions/claims/${claimId}/audit`),
+      this.http.get<ApiEnvelope<ClaimAudit>>(`${this.base}/redemptions/claims/${claimId}/audit`, {
+        params: toParams({ kind }),
+      }),
     );
   }
 
-  revokeClaim(claimId: number, reason: string): Observable<Claim> {
+  revokeClaim(claimId: number, reason: string, kind: ClaimKind = 'offer'): Observable<Claim> {
     return this.data(
-      this.http.post<ApiEnvelope<Claim>>(`${this.base}/redemptions/claims/${claimId}/revoke`, {
-        reason,
-      }),
+      this.http.post<ApiEnvelope<Claim>>(
+        `${this.base}/redemptions/claims/${claimId}/revoke`,
+        { reason },
+        { params: toParams({ kind }) },
+      ),
     );
   }
 
@@ -1138,29 +1143,38 @@ export class ApiService {
     return this.http.delete<void>(`${this.base}/services/${serviceId}/offers/${offerId}`);
   }
 
-  // ---- V4: Service offer claims (API only — no UI this phase) -----------------
+  // ---- Service offer claims: the customer's side ------------------------------
+  //
+  // Deliberately no lookup or redeem here. Verifying and redeeming are the
+  // merchant's business and go through `/redemptions`, which resolves either
+  // kind from the code alone - a shopkeeper never picks a tab before scanning.
 
-  listServiceOfferClaims(query: Record<string, unknown> = {}): Observable<Page<ServiceOfferClaim>> {
-    return this.page<ServiceOfferClaim>(`${this.base}/service-offer-claims`, query);
+  listServiceClaims(query: Record<string, unknown> = {}): Observable<Page<Claim>> {
+    return this.page<Claim>(`${this.base}/service-offer-claims`, query);
   }
 
-  claimServiceOffer(serviceOfferId: number): Observable<ServiceOfferClaim> {
+  getServiceClaim(claimId: number): Observable<Claim> {
     return this.data(
-      this.http.post<ApiEnvelope<ServiceOfferClaim>>(`${this.base}/service-offer-claims/${serviceOfferId}`, {}),
+      this.http.get<ApiEnvelope<Claim>>(`${this.base}/service-offer-claims/${claimId}`),
     );
   }
 
-  lookupServiceOfferClaim(code: string): Observable<ServiceOfferClaim> {
+  claimServiceOffer(serviceOfferId: number): Observable<Claim> {
     return this.data(
-      this.http.get<ApiEnvelope<ServiceOfferClaim>>(`${this.base}/service-offer-claims/lookup/${code}`),
+      this.http.post<ApiEnvelope<Claim>>(`${this.base}/service-offer-claims/${serviceOfferId}`, {}),
     );
   }
 
-  redeemServiceOfferClaim(code: string): Observable<ServiceOfferClaim> {
+  cancelServiceClaim(claimId: number): Observable<Claim> {
     return this.data(
-      this.http.post<ApiEnvelope<ServiceOfferClaim>>(
-        `${this.base}/service-offer-claims/lookup/${code}/redeem`,
-        {},
+      this.http.post<ApiEnvelope<Claim>>(`${this.base}/service-offer-claims/${claimId}/cancel`, {}),
+    );
+  }
+
+  resolveServiceClaimQr(token: string): Observable<Claim> {
+    return this.data(
+      this.http.get<ApiEnvelope<Claim>>(
+        `${this.base}/service-offer-claims/scan/${encodeURIComponent(token)}`,
       ),
     );
   }
