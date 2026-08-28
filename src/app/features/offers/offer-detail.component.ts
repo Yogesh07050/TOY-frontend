@@ -179,6 +179,59 @@ export class OfferDetailComponent implements OnDestroy {
     });
   }
 
+  // ---- Claiming (Claim/Redemption §3) --------------------------------------
+
+  readonly claiming = signal(false);
+
+  /**
+   * Whether the Claim button belongs on screen at all.
+   *
+   * Only a live offer can produce a usable code, and an online-only offer has
+   * no counter to walk into - showing a Claim button there would hand the
+   * customer a code that §16 guarantees no branch will accept.
+   */
+  claimable(offer: Offer): boolean {
+    return (
+      offer.status === 'active' &&
+      offer.applicabilityType !== 'online' &&
+      new Date(offer.endDate) >= new Date()
+    );
+  }
+
+  /**
+   * §3: a guest who clicks Claim is asked to sign in, and the claim then
+   * completes on its own - they do not have to find the offer again and press
+   * the button a second time.
+   */
+  claimOffer(): void {
+    const offer = this.offer();
+    if (!offer) return;
+    if (!this.prompt.require('claim-offer', () => this.claimOffer())) return;
+
+    this.claiming.set(true);
+    this.api.claimOffer(offer.id).subscribe({
+      next: (claim) => {
+        this.claiming.set(false);
+        this.offer.set({
+          ...offer,
+          myClaim: {
+            id: claim.id,
+            code: claim.code,
+            status: claim.status,
+            expiresAt: claim.expiresAt,
+          },
+        });
+        // Straight to the code: the customer claimed it because they intend to
+        // use it, and the next thing they need is the thing to show at the till.
+        void this.router.navigate(['/claims', claim.id]);
+      },
+      error: (error) => {
+        this.claiming.set(false);
+        this.toast.error(error?.error?.error?.message ?? 'This offer could not be claimed.');
+      },
+    });
+  }
+
   followShop(): void {
     const offer = this.offer();
     if (!offer) return;

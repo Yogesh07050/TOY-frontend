@@ -1,0 +1,199 @@
+<section class="verify">
+  <header class="page-head">
+    <div>
+      <h1>Verify claim</h1>
+      <p class="muted">
+        Scan the customer's QR or type their code. Nothing is redeemed until you confirm.
+      </p>
+    </div>
+    <a class="btn btn-ghost btn-sm" routerLink="/admin/redemptions">
+      <app-icon name="receipt-outline" [size]="16" />
+      Redemption history
+    </a>
+  </header>
+
+  <!-- Today's activity (§35), so the counter has its numbers to hand. -->
+  @if (summary(); as today) {
+    <div class="today">
+      <div><strong>{{ today.claimsToday }}</strong><span>Claims today</span></div>
+      <div><strong>{{ today.redemptionsToday }}</strong><span>Redeemed today</span></div>
+      <div><strong>{{ today.pending }}</strong><span>Outstanding</span></div>
+      @if (today.claimToRedemption !== null) {
+        <div><strong>{{ today.claimToRedemption }}%</strong><span>Claim → redemption</span></div>
+      }
+    </div>
+  }
+
+  @switch (stage()) {
+    <!-- ---------------------------------------------------------------- -->
+    @case ('idle') {
+      <div class="scan-card">
+        @if (scanSupported()) {
+          <div class="viewport" [class.live]="scanning()">
+            <video #preview playsinline muted class="preview"></video>
+            @if (!scanning()) {
+              <div class="viewport-idle">
+                <app-icon name="camera-outline" [size]="30" />
+                <p>Point the camera at the customer's QR code.</p>
+                <button type="button" class="btn btn-primary" (click)="startScan(preview)">
+                  Scan QR code
+                </button>
+              </div>
+            } @else {
+              <div class="reticle" aria-hidden="true"></div>
+              <button type="button" class="btn btn-ghost btn-sm stop" (click)="stopScan()">
+                Stop scanning
+              </button>
+            }
+          </div>
+
+          @if (cameraError()) {
+            <p class="camera-error">
+              <app-icon name="warning-outline" [size]="15" />
+              {{ cameraError() }}
+            </p>
+          }
+
+          <p class="or"><span>or</span></p>
+        } @else {
+          <p class="hint no-camera">
+            <app-icon name="information-circle-outline" [size]="15" />
+            This browser cannot use the camera to scan. Type the code from the customer's screen.
+          </p>
+        }
+
+        <!-- Always present, never behind a link: redemption must not depend on
+             a scan working (§6, §9). -->
+        <form class="code-form" (ngSubmit)="submitCode()">
+          <label for="claimCode">Enter claim code</label>
+          <div class="code-row">
+            <input
+              id="claimCode"
+              name="claimCode"
+              type="text"
+              autocomplete="off"
+              autocapitalize="characters"
+              spellcheck="false"
+              placeholder="OFR-8X72Q"
+              [(ngModel)]="code"
+              [disabled]="busy()"
+            />
+            <button type="submit" class="btn btn-primary" [disabled]="busy() || !code.trim()">
+              {{ busy() ? 'Checking…' : 'Verify' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    }
+
+    <!-- ---------------------------------------------------------------- -->
+    @case ('verified') {
+      @if (claim(); as found) {
+        <div class="result ok">
+          <p class="verdict">
+            <app-icon name="checkmark-circle-outline" [size]="20" />
+            Valid offer
+          </p>
+
+          <dl>
+            <div><dt>Shop</dt><dd>{{ found.shop.name }}</dd></div>
+            @if (found.branch) {
+              <div><dt>Branch</dt><dd>{{ found.branch.name }}</dd></div>
+            }
+            <div><dt>Offer</dt><dd>{{ found.offer.offerText || found.offer.title }}</dd></div>
+            @if (found.customer) {
+              <div><dt>Customer</dt><dd>{{ found.customer.name }}</dd></div>
+            }
+            <div><dt>Claimed</dt><dd>{{ found.claimedAt | date: 'd MMM y' }}</dd></div>
+            <div><dt>Expires</dt><dd>{{ found.expiresAt | date: 'd MMM y, h:mm a' }}</dd></div>
+            <div><dt>Code</dt><dd class="mono">{{ found.code }}</dd></div>
+            @if (found.maxRedemptions > 1) {
+              <div>
+                <dt>Uses</dt>
+                <dd>{{ found.redemptionCount }} of {{ found.maxRedemptions }}</dd>
+              </div>
+            }
+            <div><dt>Status</dt><dd class="ready">Ready to redeem</dd></div>
+          </dl>
+
+          <div class="actions">
+            @if (canRedeem && found.canRedeem) {
+              <button
+                type="button"
+                class="btn btn-primary btn-lg"
+                [disabled]="busy()"
+                (click)="confirmRedemption()"
+              >
+                {{ busy() ? 'Recording…' : 'Confirm redemption' }}
+              </button>
+              <button type="button" class="btn btn-ghost" (click)="declineRedemption()">
+                Not redeemed
+              </button>
+            } @else {
+              <p class="hint">
+                <app-icon name="lock-closed-outline" [size]="15" />
+                This code is valid, but you do not have permission to redeem it. Ask a shop admin.
+              </p>
+              <button type="button" class="btn btn-ghost" (click)="reset()">Done</button>
+            }
+          </div>
+        </div>
+      }
+    }
+
+    <!-- ---------------------------------------------------------------- -->
+    @case ('redeemed') {
+      @if (redeemed(); as done) {
+        <div class="result done">
+          <p class="verdict">
+            <app-icon name="checkmark-circle-outline" [size]="20" />
+            Redemption successful
+          </p>
+
+          <h2>{{ done.offer.offerText || done.offer.title }}</h2>
+          <p class="mono big">{{ done.code }}</p>
+
+          <dl>
+            <div><dt>Redeemed</dt><dd>{{ done.redeemedAt | date: 'd MMM y, h:mm a' }}</dd></div>
+            @if (done.branch) {
+              <div><dt>Branch</dt><dd>{{ done.branch.name }}</dd></div>
+            }
+            @if (done.customer) {
+              <div><dt>Customer</dt><dd>{{ done.customer.name }}</dd></div>
+            }
+          </dl>
+
+          <div class="actions">
+            <button type="button" class="btn btn-primary" (click)="reset()">
+              Verify another
+            </button>
+          </div>
+        </div>
+      }
+    }
+
+    <!-- ---------------------------------------------------------------- -->
+    @case ('rejected') {
+      @if (rejection(); as failure) {
+        <div class="result bad">
+          <p class="verdict">
+            <app-icon [name]="rejectionIcon(failure.reason)" [size]="20" />
+            {{ rejectionTitle(failure.reason) }}
+          </p>
+
+          <p class="reason">{{ failure.message }}</p>
+
+          @if (failure.redeemedAt) {
+            <p class="small muted">
+              Redeemed {{ failure.redeemedAt | date: 'd MMM y, h:mm a' }}
+            </p>
+          }
+
+          <div class="actions">
+            <button type="button" class="btn btn-primary" (click)="reset()">Try again</button>
+          </div>
+        </div>
+      }
+    }
+  }
+</section>

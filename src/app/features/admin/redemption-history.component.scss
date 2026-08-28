@@ -1,0 +1,254 @@
+.page-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+
+  h1 {
+    margin-bottom: 0.2rem;
+  }
+}
+
+.head-actions {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.tabs {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+}
+
+.filters {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  padding: 0.9rem;
+  margin-bottom: 1.1rem;
+  background: var(--surface-alt);
+  border-radius: var(--radius);
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+
+    &.grow {
+      flex: 1;
+      min-width: 180px;
+    }
+
+    label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+  }
+}
+
+.filter-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+// A horizontal scroller rather than a stacked card list: a merchant reading
+// this is comparing rows, and columns are what makes that possible. On a phone
+// the table scrolls sideways instead of collapsing into unreadable stacks.
+.table-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.rows-table {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+
+  th,
+  td {
+    padding: 0.7rem 0.85rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  th {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    background: var(--surface-alt);
+    white-space: nowrap;
+  }
+
+  tbody tr:last-child td {
+    border-bottom: 0;
+  }
+
+  tbody tr:hover {
+    background: var(--surface-alt);
+  }
+
+  .end {
+    text-align: right;
+  }
+
+  .nowrap {
+    white-space: nowrap;
+  }
+}
+
+.rows .row {
+  display: flex;
+  gap: 1rem;
+  padding: 0.8rem 0.85rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.06em;
+}
+
+.block {
+  display: block;
+}
+
+.chip {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 640;
+  text-transform: capitalize;
+  background: var(--surface-alt);
+  color: var(--text-muted);
+
+  &.s-redeemed {
+    background: var(--success-bg);
+    color: var(--success);
+  }
+
+  &.s-claimed {
+    background: var(--info-bg);
+    color: var(--info);
+  }
+
+  &.s-revoked,
+  &.s-cancelled {
+    background: var(--danger-bg);
+    color: var(--danger);
+  }
+
+  &.s-expired {
+    background: var(--warning-bg);
+    color: var(--warning);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Audit drawer
+// ---------------------------------------------------------------------------
+
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgb(0 0 0 / 0.35);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.drawer {
+  width: min(400px, 100%);
+  height: 100%;
+  overflow-y: auto;
+  padding: 1.25rem;
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.9rem;
+
+    h2 {
+      margin: 0;
+      font-size: 1.1rem;
+    }
+  }
+
+  .code {
+    font-size: 1.2rem;
+    font-weight: 680;
+    margin: 0 0 0.15rem;
+  }
+}
+
+.revoked-note {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.9rem 0 0;
+  padding: 0.55rem 0.7rem;
+  border-radius: var(--radius-sm);
+  background: var(--danger-bg);
+  color: var(--danger);
+  font-size: 0.85rem;
+}
+
+.trail {
+  list-style: none;
+  margin: 1.1rem 0 0;
+  padding: 0 0 0 1rem;
+  border-left: 2px solid var(--border);
+
+  li {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    padding: 0 0 1rem;
+
+    // The dot on the timeline, coloured by what happened.
+    &::before {
+      content: '';
+      position: absolute;
+      left: -1.36rem;
+      top: 0.35rem;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--text-subtle);
+    }
+
+    &.a-REDEEMED::before {
+      background: var(--success);
+    }
+
+    &.a-REJECTED::before {
+      background: var(--danger);
+    }
+
+    &.a-REVOKED::before {
+      background: var(--warning);
+    }
+  }
+
+  .action {
+    font-weight: 640;
+    font-size: 0.9rem;
+  }
+}
+
+.revoke {
+  margin-top: 1.25rem;
+  color: var(--danger);
+}

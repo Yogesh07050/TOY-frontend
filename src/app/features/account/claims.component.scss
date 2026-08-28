@@ -1,0 +1,250 @@
+.page-head {
+  margin-bottom: 1.25rem;
+
+  h1 {
+    margin-bottom: 0.25rem;
+  }
+}
+
+.tabs {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 1.25rem;
+}
+
+// ---------------------------------------------------------------------------
+// The list
+// ---------------------------------------------------------------------------
+
+.claim-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.claim-row {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  width: 100%;
+  padding: 0.85rem 1rem;
+  text-align: left;
+  font: inherit;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition:
+    border-color var(--fast) var(--ease),
+    transform var(--fast) var(--ease-spring),
+    box-shadow var(--fast) var(--ease);
+
+  &:hover {
+    border-color: var(--brand);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+  }
+
+  &.skeleton-row {
+    cursor: default;
+  }
+}
+
+.thumb {
+  display: grid;
+  place-items: center;
+  flex: 0 0 46px;
+  width: 46px;
+  height: 46px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--surface-alt);
+  color: var(--text-subtle);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.row-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+  flex: 1;
+
+  strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+// The code in the list is small but still monospaced and letter-spaced: it is
+// the thing a customer scans the page for.
+.code-inline {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.row-end {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.3rem;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.status-chip {
+  display: inline-block;
+  padding: 0.18rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 640;
+  background: var(--surface-alt);
+  color: var(--text-muted);
+
+  &.is-live {
+    background: var(--success-bg);
+    color: var(--success);
+  }
+
+  &.is-redeemed {
+    background: var(--info-bg);
+    color: var(--info);
+  }
+
+  &.is-dead {
+    background: var(--surface-alt);
+    color: var(--text-subtle);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// The code panel
+// ---------------------------------------------------------------------------
+
+.claim-panel {
+  max-width: 460px;
+}
+
+.back {
+  margin-bottom: 0.9rem;
+  gap: 0.35rem;
+}
+
+.claim-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 1.75rem 1.5rem 1.4rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+
+  .eyebrow {
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-subtle);
+    margin-bottom: 0.4rem;
+  }
+
+  h1 {
+    font-size: 1.6rem;
+    line-height: 1.2;
+    margin: 0 0 0.35rem;
+  }
+
+  .shop {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: var(--text-muted);
+    margin-bottom: 0.85rem;
+  }
+
+  // A spent claim is shown greyed rather than hidden: the customer still needs
+  // to be able to find the record of what they used and when.
+  &.is-dead .qr-plate,
+  &.is-redeemed .qr-plate {
+    opacity: 0.45;
+  }
+}
+
+.qr-plate {
+  padding: 12px;
+  margin: 0.9rem 0 1.1rem;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: var(--shadow-sm);
+}
+
+.code-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+  margin-bottom: 0.3rem;
+}
+
+// Big, monospaced and widely spaced, because this gets read aloud across a
+// counter and typed into someone else's phone.
+.code {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.7rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 1.55rem;
+  font-weight: 680;
+  letter-spacing: 0.12em;
+  color: var(--text);
+  background: none;
+  border: 0;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--fast) var(--ease);
+
+  &:hover {
+    background: var(--surface-alt);
+  }
+}
+
+.valid-until {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.6rem;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
+.instruction {
+  margin-top: 0.15rem;
+  color: var(--text-subtle);
+  font-size: 0.85rem;
+}
+
+.panel-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1.3rem;
+  padding-top: 1.1rem;
+  border-top: 1px solid var(--border);
+  width: 100%;
+  justify-content: center;
+  flex-wrap: wrap;
+
+  .danger {
+    color: var(--danger);
+  }
+}

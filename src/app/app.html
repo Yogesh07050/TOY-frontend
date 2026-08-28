@@ -101,6 +101,7 @@
               <div class="dropdown-divider"></div>
               <a class="dropdown-item" routerLink="/profile">My profile</a>
               <a class="dropdown-item" routerLink="/favorites">Saved offers</a>
+              <a class="dropdown-item" routerLink="/claims">My claims</a>
               <a class="dropdown-item" routerLink="/following">Following</a>
               @if (auth.canAccessAdmin()) {
                 <a class="dropdown-item" routerLink="/admin/dashboard">Admin dashboard</a>
@@ -165,6 +166,7 @@
           @if (auth.isAuthenticated()) {
             <a routerLink="/profile">My profile</a>
             <a routerLink="/favorites">Saved offers</a>
+            <a routerLink="/claims">My claims</a>
             <a routerLink="/notifications">Notifications</a>
           } @else {
             <a routerLink="/auth/login">Login</a>

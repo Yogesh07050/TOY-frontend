@@ -130,6 +130,43 @@
           <p class="small"><strong><app-icon name="location-outline" [size]="15" /> {{ o.distanceKm | distance }}</strong> from {{ locations.location().label }}</p>
         }
 
+        <!-- Claim/Redemption §3. The primary action on a live offer: saving it
+             is a bookmark, claiming it is what produces a code to walk in with.
+             Once claimed, the button becomes the way back to that code (§5). -->
+        @if (claimable(o)) {
+          <div class="claim-cta">
+            @if (o.myClaim && o.myClaim.status === 'claimed') {
+              <a class="btn btn-primary btn-lg" [routerLink]="['/claims', o.myClaim.id]">
+                <app-icon name="ticket-outline" [size]="18" />
+                View my code
+              </a>
+              <p class="claim-note mono">{{ o.myClaim.code }}</p>
+            } @else if (o.myClaim && o.myClaim.status === 'redeemed') {
+              <p class="claim-note done">
+                <app-icon name="checkmark-circle-outline" [size]="16" />
+                You have already redeemed this offer.
+              </p>
+            } @else {
+              <button
+                type="button"
+                class="btn btn-primary btn-lg"
+                [disabled]="claiming()"
+                (click)="claimOffer()"
+              >
+                <app-icon name="ticket-outline" [size]="18" />
+                {{ claiming() ? 'Claiming…' : 'Claim offer' }}
+              </button>
+              <p class="claim-note">
+                @if (o.claimLimitPerCustomer === 1) {
+                  One claim per customer. Show the code at the shop to redeem.
+                } @else {
+                  Up to {{ o.claimLimitPerCustomer }} claims per customer.
+                }
+              </p>
+            }
+          </div>
+        }
+
         <div class="actions">
           <button type="button" class="btn" [class.btn-secondary]="o.isFavorite" (click)="toggleFavorite()">
             <app-icon [name]="o.isFavorite ? 'heart' : 'heart-outline'" [size]="16" />

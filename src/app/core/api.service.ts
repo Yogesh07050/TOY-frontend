@@ -9,6 +9,10 @@ import {
   BannerPayload,
   BannerStat,
   Claim,
+  ClaimAudit,
+  ClaimVerification,
+  RedemptionSummary,
+  VerificationBudget,
   EndingSoonOffer,
   Funnel,
   GrowthPoint,
@@ -572,24 +576,121 @@ export class ApiService {
     );
   }
 
-  // ---- V2: claims ----------------------------------------------------------
+  // ---- Claims: the customer's side -----------------------------------------
 
   listClaims(query: Record<string, unknown> = {}): Observable<Page<Claim>> {
     return this.page<Claim>(`${this.base}/claims`, query);
   }
 
+  getClaim(claimId: number): Observable<Claim> {
+    return this.data(this.http.get<ApiEnvelope<Claim>>(`${this.base}/claims/${claimId}`));
+  }
+
+  /**
+   * Claims an offer. Safe to call twice: while the customer holds a live code
+   * for this offer the server returns that same code rather than a second one.
+   */
   claimOffer(offerId: number): Observable<Claim> {
     return this.data(this.http.post<ApiEnvelope<Claim>>(`${this.base}/claims/${offerId}`, {}));
   }
 
-  lookupClaim(code: string): Observable<Claim> {
-    return this.data(this.http.get<ApiEnvelope<Claim>>(`${this.base}/claims/lookup/${code}`));
+  cancelClaim(claimId: number): Observable<Claim> {
+    return this.data(
+      this.http.post<ApiEnvelope<Claim>>(`${this.base}/claims/${claimId}/cancel`, {}),
+    );
   }
 
-  redeemClaim(code: string): Observable<Claim> {
+  /** Resolves a QR the customer scanned off their own printed code. */
+  resolveClaimQr(token: string): Observable<Claim> {
     return this.data(
-      this.http.post<ApiEnvelope<Claim>>(`${this.base}/claims/lookup/${code}/redeem`, {}),
+      this.http.get<ApiEnvelope<Claim>>(`${this.base}/claims/scan/${encodeURIComponent(token)}`),
     );
+  }
+
+  // ---- Claims: the merchant's side -----------------------------------------
+
+  /**
+   * Verify Claim. Read-only — it answers "is this coupon good?" and writes
+   * nothing. Redeeming is the separate call below, which is what makes the
+   * merchant's confirmation an explicit act rather than a side effect of
+   * pointing a camera at something.
+   */
+  verifyClaim(payload: {
+    code?: string;
+    qrToken?: string;
+    method: 'QR_SCAN' | 'CODE_ENTRY';
+    branchId?: number | null;
+  }): Observable<ClaimVerification> {
+    return this.data(
+      this.http.post<ApiEnvelope<ClaimVerification>>(`${this.base}/redemptions/verify`, payload),
+    );
+  }
+
+  redeemClaim(payload: {
+    code?: string;
+    qrToken?: string;
+    method: 'QR_SCAN' | 'CODE_ENTRY';
+    branchId?: number | null;
+  }): Observable<Claim> {
+    return this.data(this.http.post<ApiEnvelope<Claim>>(`${this.base}/redemptions/redeem`, payload));
+  }
+
+  /** Records that a verified claim was not honoured, and why. */
+  rejectClaim(code: string, reason?: string): Observable<{ recorded: boolean }> {
+    return this.data(
+      this.http.post<ApiEnvelope<{ recorded: boolean }>>(`${this.base}/redemptions/reject`, {
+        code,
+        reason,
+        method: 'CODE_ENTRY',
+      }),
+    );
+  }
+
+  listRedemptions(query: Record<string, unknown> = {}): Observable<Page<Claim>> {
+    return this.page<Claim>(`${this.base}/redemptions`, query);
+  }
+
+  listAllClaims(query: Record<string, unknown> = {}): Observable<Page<Claim>> {
+    return this.page<Claim>(`${this.base}/redemptions/claims`, query);
+  }
+
+  redemptionSummary(shopId?: number): Observable<RedemptionSummary> {
+    return this.data(
+      this.http.get<ApiEnvelope<RedemptionSummary>>(`${this.base}/redemptions/summary`, {
+        params: toParams(shopId ? { shopId } : {}),
+      }),
+    );
+  }
+
+  claimAudit(claimId: number): Observable<ClaimAudit> {
+    return this.data(
+      this.http.get<ApiEnvelope<ClaimAudit>>(`${this.base}/redemptions/claims/${claimId}/audit`),
+    );
+  }
+
+  revokeClaim(claimId: number, reason: string): Observable<Claim> {
+    return this.data(
+      this.http.post<ApiEnvelope<Claim>>(`${this.base}/redemptions/claims/${claimId}/revoke`, {
+        reason,
+      }),
+    );
+  }
+
+  /** How many failed verifications this user has left before the lockout. */
+  verificationBudget(): Observable<VerificationBudget> {
+    return this.data(
+      this.http.get<ApiEnvelope<VerificationBudget>>(`${this.base}/redemptions/attempts`),
+    );
+  }
+
+  exportRedemptions(
+    format: 'csv' | 'xlsx',
+    query: Record<string, unknown> = {},
+  ): Observable<Blob> {
+    return this.http.get(`${this.base}/redemptions/export`, {
+      params: toParams({ ...query, format }),
+      responseType: 'blob',
+    });
   }
 
   // ---- V2: funnel & growth -------------------------------------------------

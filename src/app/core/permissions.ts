@@ -33,7 +33,15 @@ export const PERMISSIONS = {
   DELETE_BANNER: 'DELETE_BANNER',
   PUBLISH_BANNER: 'PUBLISH_BANNER',
 
-  REDEEM_CLAIM: 'REDEEM_CLAIM',
+  // Claim & redemption. Four grants rather than one: reading who claimed what,
+  // scanning a code, giving the benefit away and exporting the history are
+  // different amounts of trust. REVOKE_CLAIM is Super Admin by default.
+  VIEW_CLAIMS: 'VIEW_CLAIMS',
+  VERIFY_CLAIM: 'VERIFY_CLAIM',
+  REDEEM_OFFER: 'REDEEM_OFFER',
+  VIEW_REDEMPTION_HISTORY: 'VIEW_REDEMPTION_HISTORY',
+  EXPORT_REDEMPTION_REPORT: 'EXPORT_REDEMPTION_REPORT',
+  REVOKE_CLAIM: 'REVOKE_CLAIM',
 
   VIEW_ANALYTICS: 'VIEW_ANALYTICS',
   VIEW_AUDIT_LOGS: 'VIEW_AUDIT_LOGS',

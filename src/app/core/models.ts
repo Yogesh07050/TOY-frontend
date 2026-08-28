@@ -261,6 +261,12 @@ export interface Offer {
   endDate: string;
   status: OfferStatus;
   applicabilityType: ApplicabilityType;
+  /** Claim rules. Defaults are one code per customer, one use, no cap. */
+  claimLimitPerCustomer: number;
+  totalClaimLimit: number | null;
+  /** Hours a code lives once issued; null means "until the offer ends". */
+  claimValidityHours: number | null;
+  maxRedemptionsPerClaim: number;
   imageUrl: string | null;
   thumbnailUrl: string | null;
   viewCount: number;
@@ -287,6 +293,11 @@ export interface Offer {
   branches?: Branch[];
   branchIds?: number[];
   rating?: RatingSummary;
+  /**
+   * The signed-in customer's own claim on this offer, when they have one — so
+   * the page can show the code instead of the Claim button. Absent for guests.
+   */
+  myClaim?: { id: number; code: string; status: ClaimStatus; expiresAt: string } | null;
 }
 
 export interface OfferQuery {
@@ -350,6 +361,10 @@ export interface OfferPayload {
   applicabilityType: ApplicabilityType;
   branchIds: number[];
   images: { url: string; thumbnailUrl?: string | null }[];
+  claimLimitPerCustomer: number;
+  totalClaimLimit?: number | null;
+  claimValidityHours?: number | null;
+  maxRedemptionsPerClaim: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -439,16 +454,82 @@ export interface RecommendedOffer extends Offer {
   reason: string;
 }
 
+export type ClaimStatus = 'claimed' | 'redeemed' | 'expired' | 'cancelled' | 'revoked';
+
 export interface Claim {
   id: number;
   code: string;
-  status: 'claimed' | 'redeemed' | 'expired' | 'cancelled';
+  status: ClaimStatus;
   claimedAt: string;
+  /** When the code stops working — always set, and never later than the offer. */
+  expiresAt: string;
   redeemedAt: string | null;
+  redemptionCount: number;
+  maxRedemptions: number;
+  verificationMethod: 'QR_SCAN' | 'CODE_ENTRY' | null;
   offer: { id: number; title: string; offerText: string | null; endDate: string; imageUrl: string | null };
   shop: { id: number; name: string };
   branch: { id: number; name: string } | null;
-  customer?: { id: number; name: string };
+  /**
+   * The signed deep link the QR encodes. Present only on the customer's own
+   * claim — the merchant and admin views deliberately never carry it.
+   */
+  qrValue?: string;
+  customer?: { id: number; name: string; phone?: string | null };
+  redeemedBy?: { id: number; name: string } | null;
+  revokedAt?: string | null;
+  revokeReason?: string | null;
+}
+
+/** What `POST /redemptions/verify` answers with when the coupon is good. */
+export interface ClaimVerification extends Claim {
+  verdict: 'READY_TO_REDEEM';
+  /** False when the member of staff may scan but not redeem. */
+  canRedeem: boolean;
+  branchId: number | null;
+}
+
+/**
+ * Why a verification failed. The server sends the same generic sentence for a
+ * bad code and for another shop's code; these are the ones it will name.
+ */
+export type ClaimRejectionReason =
+  | 'NOT_FOUND'
+  | 'WRONG_BRANCH'
+  | 'EXPIRED'
+  | 'ALREADY_REDEEMED'
+  | 'CANCELLED'
+  | 'REVOKED';
+
+export interface RedemptionSummary {
+  claimsToday: number;
+  redemptionsToday: number;
+  pending: number;
+  claimsTotal: number;
+  redemptionsTotal: number;
+  /** Percentage, or null when nothing has been claimed yet. */
+  claimToRedemption: number | null;
+}
+
+export interface ClaimAuditEvent {
+  id: number;
+  action: 'VERIFIED' | 'REDEEMED' | 'REJECTED' | 'REVOKED';
+  reason: string | null;
+  method: 'QR_SCAN' | 'CODE_ENTRY';
+  at: string;
+  branch: { id: number; name: string } | null;
+  actor: { id: number; name: string } | null;
+}
+
+export interface ClaimAudit {
+  claim: Claim;
+  events: ClaimAuditEvent[];
+}
+
+export interface VerificationBudget {
+  remaining: number;
+  limit: number;
+  windowMinutes: number;
 }
 
 export interface FunnelStage {

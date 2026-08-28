@@ -219,6 +219,21 @@ export class AdminShellComponent {
     { label: 'Dashboard', route: '/admin/dashboard', icon: 'grid-outline' },
     { label: 'Offers', route: '/admin/offers', icon: 'pricetags-outline', permissions: [PERMISSIONS.VIEW_OFFERS] },
     { label: 'Post an offer', route: '/admin/offers/new', icon: 'add-circle-outline', permissions: [PERMISSIONS.CREATE_OFFER] },
+    // Claim/Redemption §35: verifying is what a shopkeeper reaches for with a
+    // customer in front of them, so it sits above the management screens
+    // rather than under analytics with the rest of the reporting.
+    {
+      label: 'Verify claim',
+      route: '/admin/verify-claim',
+      icon: 'camera-outline',
+      permissions: [PERMISSIONS.VERIFY_CLAIM],
+    },
+    {
+      label: 'Redemptions',
+      route: '/admin/redemptions',
+      icon: 'ticket-outline',
+      permissions: [PERMISSIONS.VIEW_REDEMPTION_HISTORY, PERMISSIONS.VIEW_CLAIMS],
+    },
     { label: 'Services', route: '/admin/services', icon: 'briefcase-outline', permissions: [PERMISSIONS.VIEW_SERVICE] },
     { label: 'Add a service', route: '/admin/services/new', icon: 'add-circle-outline', permissions: [PERMISSIONS.CREATE_SERVICE] },
     {

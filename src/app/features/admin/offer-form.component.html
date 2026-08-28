@@ -317,6 +317,62 @@
             }
           </fieldset>
 
+          <!-- Claim rules (Claim/Redemption §17) -->
+          <fieldset>
+            <legend>Claim &amp; redemption rules</legend>
+            <p class="hint mb-1">
+              These are enforced by the server on every claim and every redemption, so a customer
+              cannot get round them by retrying, switching device or reinstalling the app.
+            </p>
+
+            <div class="form-grid">
+              <div class="field">
+                <label for="claimLimitPerCustomer">Claims per customer</label>
+                <input
+                  id="claimLimitPerCustomer"
+                  type="number"
+                  min="1"
+                  max="100"
+                  formControlName="claimLimitPerCustomer"
+                />
+                <span class="hint">How many codes one customer may take out. Usually 1.</span>
+              </div>
+
+              <div class="field">
+                <label for="maxRedemptionsPerClaim">Uses per code</label>
+                <input
+                  id="maxRedemptionsPerClaim"
+                  type="number"
+                  min="1"
+                  max="100"
+                  formControlName="maxRedemptionsPerClaim"
+                />
+                <span class="hint">Leave at 1 unless the offer is genuinely reusable.</span>
+              </div>
+
+              <div class="field">
+                <label for="totalClaimLimit">Total claims (optional)</label>
+                <input id="totalClaimLimit" type="number" min="1" formControlName="totalClaimLimit" />
+                <span class="hint">A hard ceiling across all customers. Blank means no cap.</span>
+              </div>
+
+              <div class="field">
+                <label for="claimValidityHours">Code valid for (hours, optional)</label>
+                <input
+                  id="claimValidityHours"
+                  type="number"
+                  min="1"
+                  max="8760"
+                  formControlName="claimValidityHours"
+                />
+                <span class="hint">
+                  Counted from the moment the customer claims. Blank means the code lasts until the
+                  offer ends — which is also the ceiling, whatever you put here.
+                </span>
+              </div>
+            </div>
+          </fieldset>
+
           <!-- Terms (§13) -->
           <fieldset>
             <legend>Terms and conditions</legend>

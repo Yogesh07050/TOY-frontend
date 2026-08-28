@@ -90,6 +90,13 @@ export class OfferFormComponent {
 
     applicabilityType: ['shop_wide'],
 
+    // Claim rules. The defaults are the ordinary shop's answer, so a merchant
+    // who never opens this section still gets one code each, used once.
+    claimLimitPerCustomer: [1, [Validators.required, Validators.min(1), Validators.max(100)]],
+    totalClaimLimit: [null as number | null, [Validators.min(1)]],
+    claimValidityHours: [null as number | null, [Validators.min(1), Validators.max(8760)]],
+    maxRedemptionsPerClaim: [1, [Validators.required, Validators.min(1), Validators.max(100)]],
+
     minPurchase: [null as number | null],
     applicableProducts: [''],
     eligibility: [''],
@@ -218,6 +225,10 @@ export class OfferFormComponent {
           isRecurring: offer.isRecurring,
           recurrenceType: offer.recurrenceType ?? '',
           applicabilityType: offer.applicabilityType,
+          claimLimitPerCustomer: offer.claimLimitPerCustomer ?? 1,
+          totalClaimLimit: offer.totalClaimLimit,
+          claimValidityHours: offer.claimValidityHours,
+          maxRedemptionsPerClaim: offer.maxRedemptionsPerClaim ?? 1,
           minPurchase: offer.minPurchase,
           applicableProducts: offer.applicableProducts ?? '',
           eligibility: offer.eligibility ?? '',
@@ -470,6 +481,10 @@ export class OfferFormComponent {
       status,
       applicabilityType: value.applicabilityType as OfferPayload['applicabilityType'],
       branchIds: value.applicabilityType === 'selected_branches' ? this.selectedBranchIds() : [],
+      claimLimitPerCustomer: value.claimLimitPerCustomer ?? 1,
+      totalClaimLimit: value.totalClaimLimit,
+      claimValidityHours: value.claimValidityHours,
+      maxRedemptionsPerClaim: value.maxRedemptionsPerClaim ?? 1,
       images: this.images().map((image) => ({ url: image.url, thumbnailUrl: image.thumbnailUrl })),
     };
 

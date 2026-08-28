@@ -109,6 +109,21 @@ export const routes: Routes = [
     title: 'Following · OffersOffer',
     loadComponent: () => import('./features/account/following.component').then((m) => m.FollowingComponent),
   },
+  // Claim/Redemption §5, §34, §36. `:claimId` opens straight into the code and
+  // QR, which is where the "Offer claimed" notification and the QR deep link
+  // both land.
+  {
+    path: 'claims',
+    canActivate: [authGuard],
+    title: 'My claims · OffersOffer',
+    loadComponent: () => import('./features/account/claims.component').then((m) => m.ClaimsComponent),
+  },
+  {
+    path: 'claims/:claimId',
+    canActivate: [authGuard],
+    title: 'My claim · OffersOffer',
+    loadComponent: () => import('./features/account/claims.component').then((m) => m.ClaimsComponent),
+  },
   {
     path: 'notifications',
     canActivate: [authGuard],
@@ -143,6 +158,25 @@ export const routes: Routes = [
         title: 'Dashboard · OffersOffer',
         loadComponent: () =>
           import('./features/admin/dashboard.component').then((m) => m.DashboardComponent),
+      },
+      // Claim/Redemption §7-§11 and §24. Verify sits high in the admin area on
+      // purpose: it is the one screen a shopkeeper opens while a customer is
+      // standing in front of them.
+      {
+        path: 'verify-claim',
+        title: 'Verify claim · OffersOffer',
+        canActivate: [permissionGuard(PERMISSIONS.VERIFY_CLAIM)],
+        loadComponent: () =>
+          import('./features/admin/verify-claim.component').then((m) => m.VerifyClaimComponent),
+      },
+      {
+        path: 'redemptions',
+        title: 'Redemptions · OffersOffer',
+        canActivate: [permissionGuard(PERMISSIONS.VIEW_REDEMPTION_HISTORY, PERMISSIONS.VIEW_CLAIMS)],
+        loadComponent: () =>
+          import('./features/admin/redemption-history.component').then(
+            (m) => m.RedemptionHistoryComponent,
+          ),
       },
       {
         path: 'offers',

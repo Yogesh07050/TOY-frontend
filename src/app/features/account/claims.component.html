@@ -1,0 +1,150 @@
+@if (selected(); as claim) {
+  <!-- The code panel (§5, §34). Everything a shopkeeper needs, one screen. -->
+  <section class="container claim-panel">
+    <button type="button" class="btn btn-ghost btn-sm back" (click)="close()">
+      <app-icon name="arrow-back-outline" [size]="16" />
+      All my claims
+    </button>
+
+    <div class="claim-card" [class]="statusClass(claim)">
+      <p class="eyebrow">Your offer</p>
+      <h1>{{ claim.offer.offerText || claim.offer.title }}</h1>
+      <p class="shop">
+        <app-icon name="storefront-outline" [size]="16" />
+        {{ claim.shop.name }}
+      </p>
+
+      <span class="status-chip">{{ statusLabel(claim) }}</span>
+
+      @if (usable(claim)) {
+        <div class="qr-plate">
+          @if (claim.qrValue) {
+            <app-qr-code
+              [value]="claim.qrValue"
+              [size]="220"
+              label="QR code for claim {{ claim.code }}"
+            />
+          }
+        </div>
+      }
+
+      <!-- Always visible, scan or no scan (§6). -->
+      <p class="code-label">Claim code</p>
+      <button type="button" class="code" (click)="copyCode(claim.code)" title="Copy code">
+        {{ claim.code }}
+        <app-icon name="copy-outline" [size]="18" />
+      </button>
+
+      @if (usable(claim)) {
+        <p class="valid-until">
+          <app-icon name="time-outline" [size]="15" />
+          Valid until {{ expiryLabel() }}
+        </p>
+        <p class="instruction">Show this at the shop.</p>
+      } @else if (claim.status === 'redeemed') {
+        <p class="valid-until">
+          <app-icon name="checkmark-circle-outline" [size]="15" />
+          Redeemed {{ claim.redeemedAt | date: 'd MMM y, h:mm a' }}
+          @if (claim.branch) {
+            at {{ claim.branch.name }}
+          }
+        </p>
+      } @else {
+        <p class="valid-until">
+          <app-icon name="alert-circle-outline" [size]="15" />
+          This code can no longer be used.
+        </p>
+      }
+
+      <div class="panel-actions">
+        <a class="btn btn-ghost btn-sm" [routerLink]="['/offers', claim.offer.id]">View the offer</a>
+        @if (usable(claim)) {
+          <!-- Cancelling hands the claim back, which frees it against the
+               offer's per-customer limit. Only the merchant can redeem. -->
+          <button
+            type="button"
+            class="btn btn-ghost btn-sm danger"
+            [disabled]="cancelling()"
+            (click)="cancel(claim)"
+          >
+            {{ cancelling() ? 'Cancelling…' : 'Cancel this claim' }}
+          </button>
+        }
+      </div>
+    </div>
+  </section>
+} @else {
+  <section class="container">
+    <header class="page-head">
+      <h1>My claims</h1>
+      <p class="muted">Codes you have claimed, and the offers you have already used.</p>
+    </header>
+
+    <div class="tabs">
+      @for (tab of tabs; track tab.key) {
+        <button
+          type="button"
+          class="btn btn-sm"
+          [class.btn-primary]="activeTab() === tab.key"
+          [class.btn-ghost]="activeTab() !== tab.key"
+          (click)="selectTab(tab.key)"
+        >
+          {{ tab.label }}
+        </button>
+      }
+    </div>
+
+    @if (loading()) {
+      <div class="claim-list" aria-hidden="true">
+        @for (n of [1, 2, 3]; track n) {
+          <div class="claim-row skeleton-row">
+            <div class="skeleton" style="height: 46px; width: 46px; border-radius: 10px"></div>
+            <div style="flex: 1">
+              <div class="skeleton" style="height: 14px; width: 55%; margin-bottom: 8px"></div>
+              <div class="skeleton" style="height: 11px; width: 32%"></div>
+            </div>
+          </div>
+        }
+      </div>
+    } @else if (claims().length === 0) {
+      <app-empty-state
+        icon="ticket-outline"
+        title="No claims yet"
+        message="When you claim an offer, its code appears here ready to show at the shop."
+      >
+        <a class="btn btn-primary" routerLink="/offers">Browse offers</a>
+      </app-empty-state>
+    } @else {
+      <div class="claim-list">
+        @for (claim of claims(); track claim.id) {
+          <button type="button" class="claim-row" (click)="open(claim)">
+            <span class="thumb">
+              @if (claim.offer.imageUrl) {
+                <img [src]="claim.offer.imageUrl" alt="" />
+              } @else {
+                <app-icon name="ticket-outline" [size]="20" />
+              }
+            </span>
+
+            <span class="row-body">
+              <strong>{{ claim.offer.offerText || claim.offer.title }}</strong>
+              <span class="small muted">{{ claim.shop.name }}</span>
+              <span class="code-inline">{{ claim.code }}</span>
+            </span>
+
+            <span class="row-end">
+              <span class="status-chip" [class]="statusClass(claim)">{{ statusLabel(claim) }}</span>
+              @if (usable(claim)) {
+                <span class="small muted">until {{ formatExpiry(claim) }}</span>
+              }
+            </span>
+          </button>
+        }
+      </div>
+
+      @if (meta(); as pageMeta) {
+        <app-pagination [meta]="pageMeta" (pageChange)="goToPage($event)" />
+      }
+    }
+  </section>
+}

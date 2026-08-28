@@ -293,6 +293,12 @@ export class AiImproveComponent {
       status: offer.status === 'active' ? 'active' : 'draft',
       applicabilityType: offer.applicabilityType,
       branchIds: offer.branchIds ?? [],
+      // Carried through untouched, like every other rule on the offer: an
+      // "improvement" rewrites the wording and nothing else.
+      claimLimitPerCustomer: offer.claimLimitPerCustomer,
+      totalClaimLimit: offer.totalClaimLimit,
+      claimValidityHours: offer.claimValidityHours,
+      maxRedemptionsPerClaim: offer.maxRedemptionsPerClaim,
       images: (offer.images ?? []).map((image) => ({
         url: image.url,
         thumbnailUrl: image.thumbnailUrl,

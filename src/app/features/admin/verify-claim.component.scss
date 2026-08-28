@@ -1,0 +1,298 @@
+.verify {
+  max-width: 560px;
+}
+
+.page-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.1rem;
+  flex-wrap: wrap;
+
+  h1 {
+    margin-bottom: 0.2rem;
+  }
+}
+
+// Today's counters (§35): four short numbers, readable at arm's length.
+.today {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 0.6rem;
+  margin-bottom: 1.25rem;
+
+  div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    padding: 0.65rem 0.8rem;
+    background: var(--surface-alt);
+    border-radius: var(--radius-sm);
+  }
+
+  strong {
+    font-size: 1.35rem;
+    line-height: 1.1;
+  }
+
+  span {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Scanning
+// ---------------------------------------------------------------------------
+
+.scan-card {
+  padding: 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.viewport {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--surface-alt);
+  border: 1px dashed var(--border-strong);
+
+  &.live {
+    border-style: solid;
+    border-color: var(--brand);
+    background: #000;
+  }
+}
+
+.preview {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  // Hidden until the stream starts, so the empty element does not show as a
+  // black rectangle over the instructions.
+  opacity: 0;
+  transition: opacity var(--normal) var(--ease);
+
+  .live & {
+    opacity: 1;
+  }
+}
+
+.viewport-idle {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 1rem;
+
+  p {
+    margin: 0;
+    font-size: 0.9rem;
+  }
+}
+
+// A plain framing guide. It is not doing any detection - the whole frame is
+// scanned - it just tells the shopkeeper where to hold the phone.
+.reticle {
+  position: absolute;
+  width: 58%;
+  aspect-ratio: 1;
+  border: 3px solid rgb(255 255 255 / 0.9);
+  border-radius: 14px;
+  box-shadow: 0 0 0 100vmax rgb(0 0 0 / 0.35);
+}
+
+.stop {
+  position: absolute;
+  bottom: 0.7rem;
+  background: var(--surface);
+}
+
+.camera-error {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.7rem;
+  font-size: 0.85rem;
+  color: var(--danger);
+}
+
+.no-camera {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+}
+
+.or {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1.1rem 0;
+  color: var(--text-subtle);
+  font-size: 0.8rem;
+
+  &::before,
+  &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+}
+
+.code-form {
+  label {
+    display: block;
+    margin-bottom: 0.35rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+}
+
+.code-row {
+  display: flex;
+  gap: 0.5rem;
+
+  input {
+    flex: 1;
+    min-width: 0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 1.1rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Results
+// ---------------------------------------------------------------------------
+
+.result {
+  padding: 1.4rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--surface);
+
+  h2 {
+    margin: 0.5rem 0 0.2rem;
+    font-size: 1.25rem;
+  }
+
+  &.ok {
+    border-color: var(--success);
+  }
+
+  &.done {
+    border-color: var(--success);
+    text-align: center;
+  }
+
+  &.bad {
+    border-color: var(--danger);
+    text-align: center;
+  }
+}
+
+.verdict {
+  display: flex;
+  align-items: center;
+  justify-content: inherit;
+  gap: 0.45rem;
+  margin: 0 0 1rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+
+  .ok &,
+  .done & {
+    color: var(--success);
+  }
+
+  .bad & {
+    color: var(--danger);
+  }
+
+  .done &,
+  .bad & {
+    justify-content: center;
+  }
+}
+
+dl {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin: 0 0 1.3rem;
+
+  div {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: baseline;
+  }
+
+  dt {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    flex-shrink: 0;
+  }
+
+  dd {
+    margin: 0;
+    text-align: right;
+    font-weight: 600;
+  }
+
+  .ready {
+    color: var(--success);
+  }
+}
+
+.done dl {
+  margin-top: 1.1rem;
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.08em;
+}
+
+.big {
+  font-size: 1.4rem;
+  font-weight: 680;
+  margin: 0.2rem 0 0;
+}
+
+.reason {
+  margin: 0 0 0.4rem;
+  color: var(--text-muted);
+}
+
+.actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+
+  .bad &,
+  .done & {
+    justify-content: center;
+  }
+
+  .hint {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    width: 100%;
+  }
+}

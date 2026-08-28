@@ -1,0 +1,226 @@
+<section class="history">
+  <header class="page-head">
+    <div>
+      <h1>Redemptions</h1>
+      <p class="muted">Verified redemptions generated through Offers App, and every claim behind them.</p>
+    </div>
+    <div class="head-actions">
+      <a class="btn btn-primary btn-sm" routerLink="/admin/verify-claim">
+        <app-icon name="camera-outline" [size]="16" />
+        Verify a claim
+      </a>
+      @if (canExport) {
+        <button
+          type="button"
+          class="btn btn-ghost btn-sm"
+          [disabled]="exporting()"
+          (click)="exportAs('csv')"
+        >
+          <app-icon name="download-outline" [size]="16" />
+          {{ exporting() ? 'Preparing…' : 'CSV' }}
+        </button>
+        <button
+          type="button"
+          class="btn btn-ghost btn-sm"
+          [disabled]="exporting()"
+          (click)="exportAs('xlsx')"
+        >
+          <app-icon name="download-outline" [size]="16" />
+          Excel
+        </button>
+      }
+    </div>
+  </header>
+
+  <div class="tabs">
+    <button
+      type="button"
+      class="btn btn-sm"
+      [class.btn-primary]="tab() === 'redeemed'"
+      [class.btn-ghost]="tab() !== 'redeemed'"
+      (click)="selectTab('redeemed')"
+    >
+      Redeemed
+    </button>
+    <button
+      type="button"
+      class="btn btn-sm"
+      [class.btn-primary]="tab() === 'claims'"
+      [class.btn-ghost]="tab() !== 'claims'"
+      (click)="selectTab('claims')"
+    >
+      All claims
+    </button>
+  </div>
+
+  <form class="filters" (ngSubmit)="applyFilters()">
+    <div class="field grow">
+      <label for="search">Search</label>
+      <input
+        id="search"
+        name="search"
+        type="search"
+        placeholder="Claim code, offer or customer"
+        [(ngModel)]="search"
+      />
+    </div>
+
+    @if (isClaimsTab) {
+      <div class="field">
+        <label for="status">Status</label>
+        <select id="status" name="status" [(ngModel)]="status">
+          @for (option of statuses; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+      </div>
+    }
+
+    <div class="field">
+      <label for="from">From</label>
+      <input id="from" name="from" type="date" [(ngModel)]="from" />
+    </div>
+    <div class="field">
+      <label for="to">To</label>
+      <input id="to" name="to" type="date" [(ngModel)]="to" />
+    </div>
+
+    <div class="filter-actions">
+      <button type="submit" class="btn btn-primary btn-sm">Apply</button>
+      <button type="button" class="btn btn-ghost btn-sm" (click)="clearFilters()">Clear</button>
+    </div>
+  </form>
+
+  @if (loading()) {
+    <div class="rows" aria-hidden="true">
+      @for (n of [1, 2, 3, 4, 5]; track n) {
+        <div class="row">
+          <div class="skeleton" style="height: 14px; width: 24%"></div>
+          <div class="skeleton" style="height: 14px; width: 38%"></div>
+          <div class="skeleton" style="height: 14px; width: 18%"></div>
+        </div>
+      }
+    </div>
+  } @else if (rows().length === 0) {
+    <app-empty-state
+      icon="receipt-outline"
+      title="Nothing here yet"
+      message="Redemptions appear once a customer shows a claim code at your counter and it is confirmed."
+    >
+      <a class="btn btn-primary" routerLink="/admin/verify-claim">Verify a claim</a>
+    </app-empty-state>
+  } @else {
+    <div class="table-scroll">
+      <table class="rows-table">
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Offer</th>
+            <th>Customer</th>
+            <th>Branch</th>
+            <th>{{ isClaimsTab ? 'Claimed' : 'Redeemed' }}</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of rows(); track row.id) {
+            <tr>
+              <td class="mono">{{ row.code }}</td>
+              <td>
+                <a [routerLink]="['/offers', row.offer.id]">{{ row.offer.offerText || row.offer.title }}</a>
+              </td>
+              <td>{{ row.customer?.name ?? '—' }}</td>
+              <td>{{ row.branch?.name ?? '—' }}</td>
+              <td class="nowrap">
+                {{ (isClaimsTab ? row.claimedAt : row.redeemedAt) | date: 'd MMM y, h:mm a' }}
+              </td>
+              <td>
+                <span class="chip" [class]="'s-' + statusLabel(row)">{{ statusLabel(row) }}</span>
+                @if (!isClaimsTab && row.verificationMethod) {
+                  <span class="small muted block">{{ methodLabel(row.verificationMethod) }}</span>
+                }
+              </td>
+              <td class="end">
+                <button type="button" class="btn btn-ghost btn-sm" (click)="openAudit(row)">
+                  History
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (meta(); as pageMeta) {
+      <app-pagination [meta]="pageMeta" (pageChange)="goToPage($event)" />
+    }
+  }
+</section>
+
+<!-- The verification trail for one claim (§26, §30). -->
+@if (auditLoading() || audit()) {
+  <div class="drawer-backdrop" (click)="closeAudit()">
+    <aside class="drawer" (click)="$event.stopPropagation()">
+      <header>
+        <h2>Claim history</h2>
+        <button type="button" class="btn btn-ghost btn-sm" (click)="closeAudit()">
+          <app-icon name="close-outline" [size]="16" />
+        </button>
+      </header>
+
+      @if (auditLoading()) {
+        <p class="muted">Loading…</p>
+      } @else if (audit(); as detail) {
+        <p class="mono code">{{ detail.claim.code }}</p>
+        <p class="muted small">
+          {{ detail.claim.offer.offerText || detail.claim.offer.title }} ·
+          {{ detail.claim.shop.name }}
+        </p>
+
+        @if (detail.claim.revokeReason) {
+          <p class="revoked-note">
+            <app-icon name="warning-outline" [size]="15" />
+            Revoked: {{ detail.claim.revokeReason }}
+          </p>
+        }
+
+        @if (detail.events.length === 0) {
+          <p class="muted">This code has never been presented at a counter.</p>
+        } @else {
+          <ol class="trail">
+            @for (event of detail.events; track event.id) {
+              <li [class]="'a-' + event.action">
+                <span class="action">{{ event.action | titlecase }}</span>
+                @if (event.reason) {
+                  <span class="small muted">{{ reasonLabel(event.reason) }}</span>
+                }
+                <span class="small muted">
+                  {{ event.at | date: 'd MMM y, h:mm a' }}
+                  · {{ methodLabel(event.method) }}
+                  @if (event.actor) {
+                    · {{ event.actor.name }}
+                  }
+                  @if (event.branch) {
+                    · {{ event.branch.name }}
+                  }
+                </span>
+              </li>
+            }
+          </ol>
+        }
+
+        @if (canRevoke && detail.claim.status !== 'revoked') {
+          <button
+            type="button"
+            class="btn btn-ghost btn-sm danger revoke"
+            [disabled]="revoking()"
+            (click)="revoke(detail.claim)"
+          >
+            {{ revoking() ? 'Revoking…' : 'Revoke this claim' }}
+          </button>
+        }
+      }
+    </aside>
+  </div>
+}
