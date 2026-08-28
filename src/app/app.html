@@ -23,9 +23,22 @@
             }
           </button>
 
+          <!-- §41: permission refused. No "try again" here - the browser will
+               not re-prompt, and offering a button that does nothing is worse
+               than saying what will work. -->
           @if (locations.permissionDenied()) {
             <p class="dropdown-note">
-              Location access is off. Pick a city below — everything else keeps working.
+              <strong>Location access is off.</strong>
+              You can still browse offers and services. Choose a location below to see nearby
+              results, or turn location on in your browser settings.
+            </p>
+          }
+
+          <!-- §42: permission granted, no fix. Retrying is worth a button. -->
+          @if (locations.lookupFailed()) {
+            <p class="dropdown-note">
+              <strong>We couldn’t determine your location.</strong>
+              Please try again, or select a location below.
             </p>
           }
 

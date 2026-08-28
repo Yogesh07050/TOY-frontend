@@ -10,11 +10,7 @@ import { AvailableDay, Branch, Category, Service, ServicePayload, Shop } from '.
 import { PERMISSIONS } from '../../core/permissions';
 import { applyServerErrors, errorFor } from '../auth/auth-shell';
 import { IconComponent } from '../../shared/icon.component';
-
-interface UploadedImage {
-  url: string;
-  thumbnailUrl: string | null;
-}
+import { ImageUploader } from '../../shared/image-upload';
 
 const DAYS: { value: AvailableDay; label: string }[] = [
   { value: 'mon', label: 'Mon' },
@@ -46,7 +42,9 @@ export class ServiceFormComponent {
   readonly shops = signal<Shop[]>([]);
   readonly categories = signal<Category[]>([]);
   readonly branches = signal<Branch[]>([]);
-  readonly images = signal<UploadedImage[]>([]);
+  /** §48: keeps failed uploads retryable without touching the rest of the form. */
+  readonly uploader = new ImageUploader('services', 8);
+  readonly images = this.uploader.images;
   readonly selectedBranchIds = signal<number[]>([]);
   readonly selectedDays = signal<AvailableDay[]>([]);
 
@@ -54,7 +52,7 @@ export class ServiceFormComponent {
   readonly shopsLoaded = signal(false);
   readonly loading = signal(false);
   readonly saving = signal(false);
-  readonly uploading = signal(false);
+  readonly uploading = this.uploader.uploading;
   readonly formError = signal<string | null>(null);
   readonly existing = signal<Service | null>(null);
 
@@ -152,7 +150,7 @@ export class ServiceFormComponent {
           status: service.status === 'active' ? 'active' : 'draft',
         });
 
-        this.images.set(
+        this.uploader.set(
           (service.images ?? []).map((image) => ({ url: image.url, thumbnailUrl: image.thumbnailUrl })),
         );
         this.selectedBranchIds.set(service.branchIds ?? []);
@@ -219,47 +217,24 @@ export class ServiceFormComponent {
   uploadImages(event: Event): void {
     const input = event.target as HTMLInputElement;
     const files = Array.from(input.files ?? []);
+    // Cleared immediately so re-picking the same file after a failure still
+    // fires a change event.
+    input.value = '';
     if (!files.length) return;
 
-    const room = 8 - this.images().length;
-    if (room <= 0) {
+    if (this.uploader.room <= 0) {
       this.toast.info('You can attach up to 8 images.');
-      input.value = '';
       return;
     }
-
-    this.uploading.set(true);
-    let remaining = Math.min(files.length, room);
-
-    for (const file of files.slice(0, room)) {
-      this.api.uploadImage('services', file).subscribe({
-        next: (result) => {
-          this.images.update((list) => [
-            ...list,
-            { url: result.url, thumbnailUrl: result.thumbnailUrl },
-          ]);
-          if (--remaining === 0) this.uploading.set(false);
-        },
-        error: () => {
-          if (--remaining === 0) this.uploading.set(false);
-        },
-      });
-    }
-    input.value = '';
+    this.uploader.add(files);
   }
 
   removeImage(index: number): void {
-    this.images.update((list) => list.filter((_, position) => position !== index));
+    this.uploader.remove(index);
   }
 
   moveImage(index: number, direction: -1 | 1): void {
-    const target = index + direction;
-    this.images.update((list) => {
-      if (target < 0 || target >= list.length) return list;
-      const next = [...list];
-      [next[index], next[target]] = [next[target], next[index]];
-      return next;
-    });
+    this.uploader.move(index, direction);
   }
 
   // ---- Save ---------------------------------------------------------------

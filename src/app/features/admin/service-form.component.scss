@@ -180,3 +180,29 @@ fieldset {
   font-size: 0.85rem;
   line-height: 1.5;
 }
+
+/* §48, matching the offer form: a failed upload reported beside the ones that
+   worked, never in place of the form. */
+.upload-failure {
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--danger);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 0.7rem;
+  background: var(--surface-alt);
+
+  p {
+    margin: 0 0 0.3rem;
+  }
+
+  ul {
+    margin: 0 0 0.5rem;
+    padding-left: 1.1rem;
+  }
+}
+
+.upload-actions {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  align-items: center;
+}

@@ -310,6 +310,42 @@
               />
               <p class="hint mt-1">Up to 8 images. The first one is used on the service card.</p>
 
+              <!-- §48, as on the offer form: only the failures are listed, and
+                   Retry re-sends only those files. -->
+              @if (uploader.failed().length) {
+                <div class="upload-failure mt-1">
+                  <p class="small">
+                    <strong>
+                      {{ uploader.failed().length === 1
+                        ? 'We couldn’t upload this image.'
+                        : 'We couldn’t upload ' + uploader.failed().length + ' images.' }}
+                    </strong>
+                    Your other service details are still here.
+                  </p>
+                  <ul class="small subtle">
+                    @for (failure of uploader.failed(); track failure.file.name) {
+                      <li>{{ failure.file.name }} — {{ failure.message }}</li>
+                    }
+                  </ul>
+                  <div class="upload-actions">
+                    <button
+                      type="button"
+                      class="btn btn-secondary btn-sm"
+                      [disabled]="uploading()"
+                      (click)="uploader.retryFailed()"
+                    >
+                      Retry upload
+                    </button>
+                    <label class="btn btn-secondary btn-sm" for="service-images">
+                      Choose another image
+                    </label>
+                    <button type="button" class="btn-link small" (click)="uploader.dismissFailures()">
+                      Dismiss
+                    </button>
+                  </div>
+                </div>
+              }
+
               @if (images().length) {
                 <ul class="image-list">
                   @for (image of images(); track image.url; let i = $index) {

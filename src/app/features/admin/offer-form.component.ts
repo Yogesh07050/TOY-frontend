@@ -13,11 +13,7 @@ import { PERMISSIONS } from '../../core/permissions';
 import { applyServerErrors, errorFor } from '../auth/auth-shell';
 import { AiContentPanelComponent } from '../ai/ai-content-panel.component';
 import { IconComponent } from '../../shared/icon.component';
-
-interface UploadedImage {
-  url: string;
-  thumbnailUrl: string | null;
-}
+import { ImageUploader } from '../../shared/image-upload';
 
 /** Suggested headlines, matching the promotion examples in §13. */
 const HEADLINE_PRESETS = [
@@ -53,14 +49,20 @@ export class OfferFormComponent {
   readonly shops = signal<Shop[]>([]);
   readonly categories = signal<Category[]>([]);
   readonly branches = signal<Branch[]>([]);
-  readonly images = signal<UploadedImage[]>([]);
+  /**
+   * §48. Holds the gallery, and holds on to anything that failed so the
+   * merchant can retry just those files without re-sending the ones that
+   * already made it - and without losing the rest of this form.
+   */
+  readonly uploader = new ImageUploader('offers', 8);
+  readonly images = this.uploader.images;
   readonly selectedBranchIds = signal<number[]>([]);
 
   readonly offerId = signal<number | null>(null);
   readonly shopsLoaded = signal(false);
   readonly loading = signal(false);
   readonly saving = signal(false);
-  readonly uploading = signal(false);
+  readonly uploading = this.uploader.uploading;
   readonly formError = signal<string | null>(null);
   readonly existing = signal<Offer | null>(null);
 
@@ -238,7 +240,7 @@ export class OfferFormComponent {
           status: offer.status === 'active' ? 'active' : 'draft',
         });
 
-        this.images.set(
+        this.uploader.set(
           (offer.images ?? []).map((image) => ({ url: image.url, thumbnailUrl: image.thumbnailUrl })),
         );
         this.selectedBranchIds.set(offer.branchIds ?? []);
@@ -322,47 +324,25 @@ export class OfferFormComponent {
   uploadImages(event: Event): void {
     const input = event.target as HTMLInputElement;
     const files = Array.from(input.files ?? []);
+    // The picker is cleared straight away so choosing the same file twice still
+    // fires a change event - which is exactly what "choose another image" after
+    // a failure often turns out to be.
+    input.value = '';
     if (!files.length) return;
 
-    const room = 8 - this.images().length;
-    if (room <= 0) {
+    if (this.uploader.room <= 0) {
       this.toast.info('You can attach up to 8 images.');
-      input.value = '';
       return;
     }
-
-    this.uploading.set(true);
-    let remaining = Math.min(files.length, room);
-
-    for (const file of files.slice(0, room)) {
-      this.api.uploadImage('offers', file).subscribe({
-        next: (result) => {
-          this.images.update((list) => [
-            ...list,
-            { url: result.url, thumbnailUrl: result.thumbnailUrl },
-          ]);
-          if (--remaining === 0) this.uploading.set(false);
-        },
-        error: () => {
-          if (--remaining === 0) this.uploading.set(false);
-        },
-      });
-    }
-    input.value = '';
+    this.uploader.add(files);
   }
 
   removeImage(index: number): void {
-    this.images.update((list) => list.filter((_, position) => position !== index));
+    this.uploader.remove(index);
   }
 
   moveImage(index: number, direction: -1 | 1): void {
-    const target = index + direction;
-    this.images.update((list) => {
-      if (target < 0 || target >= list.length) return list;
-      const next = [...list];
-      [next[index], next[target]] = [next[target], next[index]];
-      return next;
-    });
+    this.uploader.move(index, direction);
   }
 
   // ---- AI content generation (§15-§22) ------------------------------------

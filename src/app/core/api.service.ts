@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, map } from 'rxjs';
+import { Observable, map, tap } from 'rxjs';
 
 import { environment } from '../../environments/environment';
 import {
@@ -108,6 +108,40 @@ import {
 } from './models';
 
 /** Drops undefined/null/empty values so the query string stays clean. */
+/**
+ * Idempotency keys for the actions §51 lists (claim, payment, redeem, create
+ * offer, create booking).
+ *
+ * A key identifies an *intent*, not an attempt. The same key goes out on the
+ * first request and on every retry of the same action, which is what lets the
+ * server recognise the retry and replay the original answer rather than doing
+ * the work twice (§50) - and what turns a double-click into one claim rather
+ * than one claim and one confusing conflict.
+ *
+ * Keys are held per intent for as long as the tab is open and released once
+ * the action succeeds, so a deliberate repeat later is treated as new.
+ */
+const activeIntents = new Map<string, string>();
+
+function intentKey(action: string, id: number | string): string {
+  const slot = `${action}:${id}`;
+  let key = activeIntents.get(slot);
+  if (!key) {
+    key = `${action}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+    activeIntents.set(slot, key);
+  }
+  return key;
+}
+
+function releaseIntent(action: string, id: number | string): void {
+  activeIntents.delete(`${action}:${id}`);
+}
+
+const idempotent = (key: string) => ({ headers: { 'Idempotency-Key': key } });
+
+/** The upload buckets the API accepts. Exported so callers cannot invent one. */
+export type UploadFolder = 'offers' | 'shops' | 'categories' | 'avatars' | 'banners' | 'services';
+
 function toParams(query: Record<string, unknown> = {}): HttpParams {
   let params = new HttpParams();
   for (const [key, value] of Object.entries(query)) {
@@ -161,8 +195,17 @@ export class ApiService {
     );
   }
 
+  /**
+  * §51. An offer has no natural unique key - two identical ones are legal -
+  * so nothing but this stops a double-tapped Publish from creating a pair.
+  * The intent is keyed on the shop, since that is what the merchant is
+  * publishing to and the payload may still be edited between attempts.
+  */
   createOffer(payload: OfferPayload): Observable<Offer> {
-    return this.data(this.http.post<ApiEnvelope<Offer>>(`${this.base}/offers`, payload));
+    const key = intentKey('create-offer', payload.shopId);
+    return this.data(
+      this.http.post<ApiEnvelope<Offer>>(`${this.base}/offers`, payload, idempotent(key)),
+    ).pipe(tap(() => releaseIntent('create-offer', payload.shopId)));
   }
 
   updateOffer(id: number, payload: OfferPayload): Observable<Offer> {
@@ -632,7 +675,10 @@ export class ApiService {
    * for this offer the server returns that same code rather than a second one.
    */
   claimOffer(offerId: number): Observable<Claim> {
-    return this.data(this.http.post<ApiEnvelope<Claim>>(`${this.base}/claims/${offerId}`, {}));
+    const key = intentKey('claim', offerId);
+    return this.data(
+      this.http.post<ApiEnvelope<Claim>>(`${this.base}/claims/${offerId}`, {}, idempotent(key)),
+    ).pipe(tap(() => releaseIntent('claim', offerId)));
   }
 
   cancelClaim(claimId: number): Observable<Claim> {
@@ -786,12 +832,16 @@ export class ApiService {
     plan: PlanKey,
     billingCycle: 'monthly' | 'yearly' = 'monthly',
   ): Observable<CheckoutSession> {
+    // §51 puts Payment first. A retry after a timeout must reopen the original
+    // Razorpay order, not start a second one for the same month.
+    const key = intentKey('checkout', `${shopId}:${plan}:${billingCycle}`);
     return this.data(
       this.http.post<ApiEnvelope<CheckoutSession>>(
         `${this.base}/subscriptions/shops/${shopId}/checkout`,
         { plan, billingCycle },
+        idempotent(key),
       ),
-    );
+    ).pipe(tap(() => releaseIntent('checkout', `${shopId}:${plan}:${billingCycle}`)));
   }
 
   /**
@@ -1057,10 +1107,7 @@ export class ApiService {
 
   // ---- Uploads ------------------------------------------------------------
 
-  uploadImage(
-    type: 'offers' | 'shops' | 'categories' | 'avatars' | 'banners' | 'services',
-    file: File,
-  ): Observable<UploadResult> {
+  uploadImage(type: UploadFolder, file: File): Observable<UploadResult> {
     const form = new FormData();
     form.append('image', file);
     return this.data(this.http.post<ApiEnvelope<UploadResult>>(`${this.base}/uploads/${type}`, form));
@@ -1110,7 +1157,14 @@ export class ApiService {
     id: number,
     payload: { branchId?: number | null; serviceOfferId?: number | null; requestedAt?: string | null; notes?: string | null },
   ): Observable<ServiceBooking> {
-    return this.data(this.http.post<ApiEnvelope<ServiceBooking>>(`${this.base}/services/${id}/book`, payload));
+    const key = intentKey('book', id);
+    return this.data(
+      this.http.post<ApiEnvelope<ServiceBooking>>(
+        `${this.base}/services/${id}/book`,
+        payload,
+        idempotent(key),
+      ),
+    ).pipe(tap(() => releaseIntent('book', id)));
   }
 
   updateBookingStatus(id: number, bookingId: number, status: string): Observable<ServiceBooking> {
@@ -1175,9 +1229,14 @@ export class ApiService {
   }
 
   claimServiceOffer(serviceOfferId: number): Observable<Claim> {
+    const key = intentKey('service-claim', serviceOfferId);
     return this.data(
-      this.http.post<ApiEnvelope<Claim>>(`${this.base}/service-offer-claims/${serviceOfferId}`, {}),
-    );
+      this.http.post<ApiEnvelope<Claim>>(
+        `${this.base}/service-offer-claims/${serviceOfferId}`,
+        {},
+        idempotent(key),
+      ),
+    ).pipe(tap(() => releaseIntent('service-claim', serviceOfferId)));
   }
 
   cancelServiceClaim(claimId: number): Observable<Claim> {

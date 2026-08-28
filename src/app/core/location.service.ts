@@ -55,6 +55,14 @@ export class LocationService {
   /** True once the browser has refused, so we stop offering "Use my location". */
   readonly permissionDenied = signal(false);
 
+  /**
+   * §42 - location was permitted but the fix failed (no GPS lock, a timeout,
+   * an unavailable provider). A different state from denial, and it needs a
+   * different offer: "Try Again" makes sense here and is pointless after a
+   * refusal, where the only way forward is picking a city.
+   */
+  readonly lookupFailed = signal(false);
+
   constructor() {
     // Fall back to the location saved on the user's profile when nothing has
     // been picked in this browser yet.
@@ -80,7 +88,15 @@ export class LocationService {
     return { city: value.city, latitude: value.latitude, longitude: value.longitude };
   }
 
-  /** Asks the browser for GPS. Declining is a normal outcome, not an error. */
+  /**
+   * Asks the browser for GPS.
+   *
+   * §41 and §42 are two different failures and the app must not conflate them.
+   * A refusal is a decision the customer made and re-asking is rude; a failed
+   * fix is a technical miss and retrying often works on the second attempt.
+   * Neither blocks anything - browsing continues either way (§41: "the app
+   * must not be blocked").
+   */
   requestCurrentPosition(): void {
     if (!('geolocation' in navigator)) {
       this.toast.info('This browser cannot share your location. Pick a city instead.');
@@ -89,10 +105,13 @@ export class LocationService {
     }
 
     this.requesting.set(true);
+    this.lookupFailed.set(false);
+
     navigator.geolocation.getCurrentPosition(
       (position) => {
         this.requesting.set(false);
         this.permissionDenied.set(false);
+        this.lookupFailed.set(false);
         this.set({
           label: 'Near me',
           city: null,
@@ -105,10 +124,14 @@ export class LocationService {
       (error) => {
         this.requesting.set(false);
         if (error.code === error.PERMISSION_DENIED) {
+          // §41.
           this.permissionDenied.set(true);
-          this.toast.info('Location access declined. You can still pick a city manually.');
+          this.lookupFailed.set(false);
+          this.toast.info('Location access is off. You can still browse offers — choose a location manually.');
         } else {
-          this.toast.info('Could not determine your location. Pick a city instead.');
+          // §42: POSITION_UNAVAILABLE or TIMEOUT. Retrying is worth offering.
+          this.lookupFailed.set(true);
+          this.toast.info('We couldn’t determine your location. Please try again or select a location manually.');
         }
       },
       { enableHighAccuracy: false, timeout: 10000, maximumAge: 5 * 60 * 1000 },
@@ -116,6 +139,9 @@ export class LocationService {
   }
 
   selectCity(city: { city: string; latitude: number; longitude: number }): void {
+    // Picking a city is the recovery §41 and §42 both point at, so it clears
+    // whichever failure banner was showing.
+    this.lookupFailed.set(false);
     this.set({
       label: city.city,
       city: city.city,
