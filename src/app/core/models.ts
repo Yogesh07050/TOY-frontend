@@ -236,6 +236,12 @@ export interface Shop {
   socialLinks: Record<string, string> | null;
   openingHours: OpeningHours | null;
   status: 'active' | 'inactive';
+  /**
+   * How this merchant was acquired (Business §17, §32). Sales attribution
+   * rather than a shop detail: only a Super Admin's value is stored, and the
+   * API silently ignores anyone else's.
+   */
+  acquisitionChannel?: string | null;
   branchCount?: number;
   activeOfferCount?: number;
   followerCount?: number;

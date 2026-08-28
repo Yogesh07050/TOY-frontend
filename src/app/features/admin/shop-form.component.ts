@@ -177,6 +177,9 @@ export class ShopFormComponent {
     instagram: [''],
     facebook: [''],
     status: ['active' as 'active' | 'inactive'],
+    // Business §17/§32. Super Admin only - the control is not rendered for
+    // anyone else, and the API ignores the value regardless of what is sent.
+    acquisitionChannel: [''],
 
     // The shop's own location - its primary branch (§4 + §19).
     branchName: [''],
@@ -201,8 +204,25 @@ export class ShopFormComponent {
   /** Seeds the picker's search box when a shop has an address but no pin. */
   readonly addressHint = signal('');
 
+  /**
+   * Acquisition channels already in use, offered as a datalist so the common
+   * case is picking an existing one. Loaded from the business filter options,
+   * which is the same list the dashboard groups by - so what a Super Admin is
+   * offered here is exactly what they will be able to filter on there.
+   */
+  readonly knownChannels = signal<string[]>([]);
+
   constructor() {
     this.api.listCategories({ status: 'all' }).subscribe((categories) => this.categories.set(categories));
+
+    if (this.auth.isSuperAdmin) {
+      this.api.businessFilterOptions().subscribe({
+        next: (options) => this.knownChannels.set(options.acquisitionChannels),
+        // Losing the suggestions costs the merchant nothing - the field is
+        // still free text - so this must not put an error on a shop form.
+        error: () => undefined,
+      });
+    }
     this.syncLocationValidators();
     this.form.controls.status.valueChanges.subscribe(() => this.syncLocationValidators());
 
@@ -230,6 +250,7 @@ export class ShopFormComponent {
           instagram: shop.socialLinks?.['instagram'] ?? '',
           facebook: shop.socialLinks?.['facebook'] ?? '',
           status: shop.status,
+          acquisitionChannel: shop.acquisitionChannel ?? '',
           ...this.branchPatch(branch),
         });
         this.locationSource = branch?.locationSource ?? 'MANUAL';
@@ -395,6 +416,13 @@ export class ShopFormComponent {
       status: value.status,
       categoryIds: this.selectedCategories(),
     };
+
+    // Only sent by someone who may set it. The API enforces the same rule, so
+    // this is about not sending a field the user was never shown rather than
+    // about access control.
+    if (this.auth.isSuperAdmin) {
+      payload['acquisitionChannel'] = value.acquisitionChannel.trim() || null;
+    }
 
     // Sent on create and edit alike: on edit the API treats it as the shop's
     // primary branch, which is what makes §19's "edit location" one form.

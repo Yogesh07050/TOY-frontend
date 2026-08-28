@@ -71,6 +71,39 @@
                 </select>
               </div>
 
+              <!-- Business §17/§32. Super Admin only: this is sales attribution,
+                   not a shop detail, and it feeds the retention cohort and
+                   revenue filters. A merchant has no idea which campaign found
+                   them, and the API ignores the field for anyone else. -->
+              @if (auth.isSuperAdmin) {
+                <div class="field">
+                  <label for="acquisitionChannel">Acquisition channel</label>
+                  <input
+                    id="acquisitionChannel"
+                    type="text"
+                    formControlName="acquisitionChannel"
+                    list="acquisition-channels"
+                    maxlength="60"
+                    placeholder="e.g. Field sales, Referral, Instagram"
+                    autocomplete="off"
+                  />
+                  <!-- Channels already in use, so the common case is a pick
+                       rather than a retype. Free text stays available for a new
+                       one; the API folds a case variant back onto the existing
+                       spelling so the dashboard does not grow three rows for
+                       one channel. -->
+                  <datalist id="acquisition-channels">
+                    @for (channel of knownChannels(); track channel) {
+                      <option [value]="channel"></option>
+                    }
+                  </datalist>
+                  <p class="hint">
+                    How this merchant was found. Used to compare retention and revenue by
+                    channel — merchants never see it.
+                  </p>
+                </div>
+              }
+
               <div class="field">
                 <label for="instagram">Instagram</label>
                 <input id="instagram" type="url" formControlName="instagram" placeholder="https://instagram.com/…" />
