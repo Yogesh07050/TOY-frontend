@@ -1,5 +1,25 @@
+/**
+ * Production configuration.
+ *
+ * Swapped in for `environment.ts` by the `production` build configuration in
+ * `angular.json` (`fileReplacements`). Without that entry this file is dead
+ * code that nothing imports - which is what it was until the deployment shape
+ * was settled, and the kind of thing that is only noticed after a value put
+ * here fails to take effect in a real build.
+ */
 export const environment = {
   production: true,
+  /**
+   * Relative, because the API is served from the same origin: nginx serves this
+   * bundle and forwards /api and /uploads to the Node process. It is the same
+   * arrangement `proxy.conf.json` creates in development, so the app talks to
+   * the API the same way in both.
+   *
+   * Keeping it relative is also what keeps the API host out of the bundle. If
+   * the API ever moves to its own subdomain this becomes an absolute URL - and
+   * at that point the backend's refresh cookie has to become SameSite=none,
+   * because it would then be a cross-site cookie.
+   */
   apiUrl: '/api',
   radiusOptions: [1, 5, 10, 25],
   defaultRadiusKm: 10,
