@@ -446,8 +446,49 @@ main {
     display: none;
   }
 
+  /* At 375px the row - brand, location, theme, Login, Sign Up, menu - is about
+     70px wider than the viewport, and since `.header-actions` does not shrink,
+     what fell off the right edge was the menu toggle itself: the navigation
+     became unreachable on the most common phone width. Three changes buy the
+     room back. The theme toggle moves into the menu (it is rendered there by
+     app.html), the location label truncates into a narrower box, and the gaps
+     tighten. */
+  .theme-toggle {
+    display: none;
+  }
+
   .location-btn {
-    max-width: 120px;
+    max-width: 92px;
+  }
+
+  .header-inner {
+    gap: 0.5rem;
+  }
+
+  .header-actions {
+    gap: 0.35rem;
+  }
+}
+
+/* Only ever shown inside the open mobile menu - see the media query above. */
+.nav-theme-toggle {
+  display: none;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin-top: 0.25rem;
+  padding: 0.72rem 0.8rem;
+  font: inherit;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+@media (max-width: 560px) {
+  .main-nav.open .nav-theme-toggle {
+    display: flex;
   }
 }
 

@@ -69,6 +69,14 @@
       @if (auth.canAccessAdmin()) {
         <a routerLink="/admin/dashboard" routerLinkActive="active" class="admin-link">Dashboard</a>
       }
+
+      <!-- The header runs out of room for the theme toggle on a narrow phone
+           (see app.scss), so the menu carries it there instead. Hidden on wider
+           screens, where the header button is the one on show. -->
+      <button type="button" class="nav-theme-toggle" (click)="theme.cycle()">
+        <app-icon [name]="theme.icon()" [size]="18" />
+        <span>Theme: {{ theme.label() }}</span>
+      </button>
     </nav>
 
     <div class="header-actions">

@@ -175,13 +175,21 @@ export const errorInterceptor: HttpInterceptorFn = (request, next) => {
         } else if (error.status === 429) {
           toast.error(message ?? 'Too many requests. Please slow down.');
         } else if (error.status >= 500) {
-          // §37 and §38 are two different apologies. 502/503/504 with nothing
-          // in the body means we never reached the API - a dead process, a
-          // proxy with no upstream - which is §37's wording. A 500 that
-          // answered with a message is the API itself failing, and it has
-          // already chosen §38's words; repeating our own over the top would
-          // replace a specific explanation with a vaguer one.
-          const unreachable = error.status === 502 || error.status === 503 || error.status === 504;
+          // §37 and §38 are two different apologies. A 5xx with nothing in the
+          // body means we never reached the API - a dead process, a proxy with
+          // no upstream - which is §37's wording. A 5xx that answered with our
+          // error envelope is the API itself failing, and it has already chosen
+          // §38's words; repeating our own over the top would replace a
+          // specific explanation with a vaguer one.
+          //
+          // The absent envelope is the test, not the status code. Which code a
+          // proxy invents for a dead upstream is up to the proxy - nginx says
+          // 502, the dev server says 500 - so keying on 502/503/504 alone told
+          // a customer "something went wrong on our side" at exactly the moment
+          // nothing of ours had been reached at all. Our own 5xx always carries
+          // `code`; a proxy's never does.
+          const unreachable =
+            !code || error.status === 502 || error.status === 503 || error.status === 504;
           const base =
             message ??
             (unreachable
