@@ -229,7 +229,12 @@ export class MyRequestsComponent {
       next: (ticket) => {
         // Guard against a slow response for a row that has since been closed
         // or replaced by another - otherwise the wrong thread lands in it.
-        if (this.expanded() === id) this.detail.set(ticket);
+        if (this.expanded() !== id) return;
+        // `replace` rather than `detail.set`, so the collapsed row above is
+        // corrected too. The list is fetched once and the thread per row, so a
+        // reply that arrived after the list loaded left the header reading
+        // "Open" above a conversation that plainly was not.
+        this.replace(ticket);
       },
       error: () => {
         if (this.expanded() === id) this.detailFailed.set(true);
