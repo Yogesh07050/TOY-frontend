@@ -85,6 +85,14 @@
             <p class="small muted mb-0">No contact details published.</p>
           }
 
+          <!-- Shops are merchant-submitted, so the same route out exists here
+               as on an offer or a service. -->
+          <p class="report-listing small">
+            <a [routerLink]="['/support']" [queryParams]="{ report: 'shop', id: s.id }">
+              <app-icon name="warning-outline" [size]="14" /> Report this shop
+            </a>
+          </p>
+
           @if (openingHours(s.openingHours); as week) {
             <h3 class="small mt-2">Opening hours</h3>
             <ul class="hours">

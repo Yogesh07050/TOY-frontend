@@ -105,6 +105,10 @@ import {
   ServicePerformance,
   ServiceQuery,
   UnifiedListing,
+  SupportContact,
+  SupportQuery,
+  SupportTicket,
+  SupportTicketPayload,
 } from './models';
 
 /** Drops undefined/null/empty values so the query string stays clean. */
@@ -140,7 +144,14 @@ function releaseIntent(action: string, id: number | string): void {
 const idempotent = (key: string) => ({ headers: { 'Idempotency-Key': key } });
 
 /** The upload buckets the API accepts. Exported so callers cannot invent one. */
-export type UploadFolder = 'offers' | 'shops' | 'categories' | 'avatars' | 'banners' | 'services';
+export type UploadFolder =
+  | 'offers'
+  | 'shops'
+  | 'categories'
+  | 'avatars'
+  | 'banners'
+  | 'services'
+  | 'support';
 
 function toParams(query: Record<string, unknown> = {}): HttpParams {
   let params = new HttpParams();
@@ -1398,5 +1409,74 @@ export class ApiService {
 
   businessFilterOptions(): Observable<BusinessFilterOptions> {
     return this.business<BusinessFilterOptions>('filters');
+  }
+
+  // ---- Support ------------------------------------------------------------
+
+  /** Public. The Support and Contact pages read the desk's own details. */
+  supportContact(): Observable<SupportContact> {
+    return this.data(this.http.get<ApiEnvelope<SupportContact>>(`${this.base}/support/contact`));
+  }
+
+  /**
+   * Raises a support request. Deliberately callable without a session — a
+   * customer who cannot sign in is the one who most needs to reach support.
+   *
+   * Idempotent on the subject, so a double-submitted form is one ticket and
+   * one reference rather than two of each. Keyed on the subject rather than a
+   * constant because filing a second, genuinely different request minutes
+   * later has to still work.
+   */
+  createSupportTicket(payload: SupportTicketPayload): Observable<SupportTicket> {
+    const key = intentKey('support-ticket', payload.subject);
+    return this.data(
+      this.http.post<ApiEnvelope<SupportTicket>>(
+        `${this.base}/support/tickets`,
+        payload,
+        idempotent(key),
+      ),
+    ).pipe(tap(() => releaseIntent('support-ticket', payload.subject)));
+  }
+
+  /** The signed-in customer's own requests. */
+  mySupportTickets(query: SupportQuery = {}): Observable<Page<SupportTicket>> {
+    return this.page<SupportTicket>(
+      `${this.base}/support/tickets/mine`,
+      query as Record<string, unknown>,
+    );
+  }
+
+  /** The support queue. Requires VIEW_SUPPORT_TICKETS, enforced by the API. */
+  supportTickets(query: SupportQuery = {}): Observable<Page<SupportTicket>> {
+    return this.page<SupportTicket>(`${this.base}/support/tickets`, query as Record<string, unknown>);
+  }
+
+  supportTicket(id: number): Observable<SupportTicket> {
+    return this.data(this.http.get<ApiEnvelope<SupportTicket>>(`${this.base}/support/tickets/${id}`));
+  }
+
+  openSupportTicketCount(): Observable<{ open: number }> {
+    return this.data(
+      this.http.get<ApiEnvelope<{ open: number }>>(`${this.base}/support/tickets/count`),
+    );
+  }
+
+  /** Returns the whole ticket, thread included, so the view needs no refetch. */
+  replyToSupportTicket(id: number, body: string, isInternal = false): Observable<SupportTicket> {
+    return this.data(
+      this.http.post<ApiEnvelope<SupportTicket>>(`${this.base}/support/tickets/${id}/messages`, {
+        body,
+        isInternal,
+      }),
+    );
+  }
+
+  updateSupportTicket(
+    id: number,
+    changes: { status?: string; priority?: string; assignedTo?: number | null },
+  ): Observable<SupportTicket> {
+    return this.data(
+      this.http.patch<ApiEnvelope<SupportTicket>>(`${this.base}/support/tickets/${id}`, changes),
+    );
   }
 }

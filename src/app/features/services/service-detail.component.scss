@@ -350,3 +350,21 @@ dl.facts dd {
     color: var(--success);
   }
 }
+
+/* Quiet, like the one on an offer: reporting matters, but it is not what most
+   people opened this page to do. */
+.report-listing {
+  margin: 0.9rem 0 0;
+  text-align: center;
+}
+
+.report-listing a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--text-subtle);
+}
+
+.report-listing a:hover {
+  color: var(--danger);
+}

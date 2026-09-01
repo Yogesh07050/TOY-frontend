@@ -96,6 +96,47 @@ export const routes: Routes = [
       import('./features/services/service-detail.component').then((m) => m.ServiceDetailComponent),
   },
 
+  // ---- Company, support and legal ------------------------------------------
+  //
+  // All public. A privacy policy behind a login is not a policy anyone can
+  // consult before deciding whether to sign up, and someone who cannot log in
+  // is exactly the person who needs the support form.
+  {
+    path: 'about',
+    title: 'About Offers App · OffersOffer',
+    loadComponent: () => import('./features/pages/about.component').then((m) => m.AboutComponent),
+  },
+  {
+    path: 'support',
+    title: 'Support · OffersOffer',
+    loadComponent: () =>
+      import('./features/pages/support.component').then((m) => m.SupportComponent),
+  },
+  {
+    path: 'support/requests',
+    canActivate: [authGuard],
+    title: 'My support requests · OffersOffer',
+    loadComponent: () =>
+      import('./features/pages/my-requests.component').then((m) => m.MyRequestsComponent),
+  },
+  {
+    path: 'contact',
+    title: 'Contact us · OffersOffer',
+    loadComponent: () =>
+      import('./features/pages/contact.component').then((m) => m.ContactComponent),
+  },
+  {
+    path: 'privacy',
+    title: 'Privacy Policy · OffersOffer',
+    loadComponent: () =>
+      import('./features/pages/privacy.component').then((m) => m.PrivacyComponent),
+  },
+  {
+    path: 'terms',
+    title: 'Terms & Conditions · OffersOffer',
+    loadComponent: () => import('./features/pages/terms.component').then((m) => m.TermsComponent),
+  },
+
   // ---- Signed-in customer areas -------------------------------------------
   {
     path: 'favorites',
@@ -587,6 +628,13 @@ export const routes: Routes = [
           import('./features/admin/overrides/feature-overrides.component').then(
             (m) => m.FeatureOverridesComponent,
           ),
+      },
+      {
+        path: 'support',
+        title: 'Support · OffersOffer',
+        canActivate: [permissionGuard(PERMISSIONS.VIEW_SUPPORT_TICKETS)],
+        loadComponent: () =>
+          import('./features/admin/support-manage.component').then((m) => m.SupportManageComponent),
       },
       {
         path: 'reviews',

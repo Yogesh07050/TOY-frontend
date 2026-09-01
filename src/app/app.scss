@@ -404,6 +404,38 @@ main {
   text-decoration: none;
 }
 
+/* The bottom strip: copyright on one side, the links people go looking for on
+   the other. Wraps to two centred rows on a phone rather than squeezing. */
+.footer-legal {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem 1rem;
+  margin-top: 2rem;
+  padding-top: 1.1rem;
+  border-top: 1px solid var(--border);
+}
+
+.footer-legal nav {
+  display: flex;
+  gap: 1.15rem;
+}
+
+.footer-legal a {
+  color: var(--text-subtle);
+}
+
+.footer-legal a:hover {
+  color: var(--brand);
+}
+
+@media (max-width: 520px) {
+  .footer-legal {
+    justify-content: center;
+  }
+}
+
 /* ---- Responsive ---------------------------------------------------------- */
 
 @media (max-width: 960px) {
@@ -467,6 +499,20 @@ main {
 
   .header-actions {
     gap: 0.35rem;
+  }
+}
+
+/* Help lives in the footer on a desktop, where there is room for it. On a
+   phone the footer is a long scroll past whatever went wrong, so the menu
+   carries it too - and only there, since the desktop header is already the
+   control that ran out of width. */
+.nav-help {
+  display: none;
+}
+
+@media (max-width: 560px) {
+  .main-nav.open .nav-help {
+    display: block;
   }
 }
 

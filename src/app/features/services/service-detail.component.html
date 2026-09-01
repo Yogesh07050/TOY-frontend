@@ -369,6 +369,14 @@
             </dl>
           </div>
         </section>
+
+        <!-- Services are merchant-submitted too, so the same route out exists
+             here as on an offer. -->
+        <p class="report-listing small">
+          <a [routerLink]="['/support']" [queryParams]="{ report: 'service', id: s.id }">
+            <app-icon name="warning-outline" [size]="14" /> Report this service
+          </a>
+        </p>
       </aside>
     </div>
   </div>

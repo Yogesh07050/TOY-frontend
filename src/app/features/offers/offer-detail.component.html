@@ -425,6 +425,16 @@
             </dl>
           </div>
         </section>
+
+        <!-- Offers are published by the shops themselves, so a customer needs
+             a way to tell us when one is wrong, misleading, expired or worse.
+             The link carries the offer with it, so the report arrives already
+             pointing at the listing rather than describing it. -->
+        <p class="report-listing small">
+          <a [routerLink]="['/support']" [queryParams]="{ report: 'offer', id: o.id }">
+            <app-icon name="warning-outline" [size]="14" /> Report this offer
+          </a>
+        </p>
       </aside>
     </div>
   </div>

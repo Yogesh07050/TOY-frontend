@@ -69,6 +69,12 @@ export const PERMISSIONS = {
   USE_AI_ASSISTANT: 'USE_AI_ASSISTANT',
   USE_AI_CONTENT: 'USE_AI_CONTENT',
   MANAGE_SUBSCRIPTIONS: 'MANAGE_SUBSCRIPTIONS',
+
+  // Support. Reading a queue of customer problems and answering on the
+  // platform's behalf are separate grants — a ticket carries the reporter's
+  // name, email and phone whether or not they ever had an account.
+  VIEW_SUPPORT_TICKETS: 'VIEW_SUPPORT_TICKETS',
+  MANAGE_SUPPORT_TICKETS: 'MANAGE_SUPPORT_TICKETS',
 } as const;
 
 export type PermissionName = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];

@@ -275,6 +275,7 @@ export class AdminShellComponent {
     },
     { label: 'Categories', route: '/admin/categories', icon: 'albums-outline', permissions: [PERMISSIONS.MANAGE_CATEGORIES] },
     { label: 'Reviews', route: '/admin/reviews', icon: 'star-outline', permissions: [PERMISSIONS.MODERATE_REVIEWS] },
+    { label: 'Support', route: '/admin/support', icon: 'chatbubbles-outline', permissions: [PERMISSIONS.VIEW_SUPPORT_TICKETS] },
     { label: 'Users', route: '/admin/users', icon: 'people-outline', permissions: [PERMISSIONS.VIEW_USERS] },
     // The platform owner's own dashboard (Business §1). Sits above the
     // Super Admin configuration entries because it is read daily, whereas

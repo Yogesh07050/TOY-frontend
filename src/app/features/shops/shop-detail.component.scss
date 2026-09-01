@@ -114,3 +114,19 @@
   color: var(--text);
   font-weight: 600;
 }
+
+/* Quiet, like the ones on an offer and a service. */
+.report-listing {
+  margin: 0.85rem 0 0;
+}
+
+.report-listing a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--text-subtle);
+}
+
+.report-listing a:hover {
+  color: var(--danger);
+}
