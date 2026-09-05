@@ -109,6 +109,27 @@ import {
   SupportQuery,
   SupportTicket,
   SupportTicketPayload,
+  FeaturedCampaign,
+  FeaturedCampaignPayload,
+  FeaturedCampaignPerformance,
+  FeaturedSlot,
+  FrequencyLimit,
+  ListingPromotability,
+  ListingQualityDetail,
+  MerchantSlotOptions,
+  PlacementType,
+  RankingExclusion,
+  RankingFactor,
+  RankingWeightsResponse,
+  ResolvedVisibility,
+  RotationReport,
+  VisibilityDashboard,
+  VisibilityEntitlement,
+  VisibilityLevel,
+  VisibilityMeta,
+  VisibilityPremiumInsights,
+  VisibilityRulesResponse,
+  VisibilitySurface,
 } from './models';
 
 /** Drops undefined/null/empty values so the query string stays clean. */
@@ -1477,6 +1498,341 @@ export class ApiService {
   ): Observable<SupportTicket> {
     return this.data(
       this.http.patch<ApiEnvelope<SupportTicket>>(`${this.base}/support/tickets/${id}`, changes),
+    );
+  }
+
+  // ---- Visibility & Promotion System --------------------------------------
+  //
+  // Four groups, mirroring the four routers: the customer's ranked discovery,
+  // the merchant's campaigns, the merchant's reach reporting, and the platform
+  // owner's controls. The split matters here as well as on the server - it is
+  // what stops a merchant screen accidentally calling an admin endpoint and
+  // discovering the 403 in production (§22, §24).
+
+  /** The event, surface and placement vocabulary, plus §21's fixed wording. */
+  visibilityMeta(): Observable<VisibilityMeta> {
+    return this.data(this.http.get<ApiEnvelope<VisibilityMeta>>(`${this.base}/visibility/meta`));
+  }
+
+  // ---- Super Admin controls (§22) -----------------------------------------
+
+  rankingWeights(): Observable<RankingWeightsResponse> {
+    return this.data(
+      this.http.get<ApiEnvelope<RankingWeightsResponse>>(`${this.base}/visibility/admin/weights`),
+    );
+  }
+
+  /**
+   * Answers with the whole weights document, not a summary of the change.
+   * Every weight endpoint returns the same shape, so a caller never has to
+   * know which of them it happened to call.
+   */
+  setRankingWeight(payload: {
+    surface: VisibilitySurface;
+    factor: RankingFactor;
+    weight: number;
+    isActive?: boolean;
+  }): Observable<RankingWeightsResponse> {
+    return this.data(
+      this.http.put<ApiEnvelope<RankingWeightsResponse>>(
+        `${this.base}/visibility/admin/weights`,
+        payload,
+      ),
+    );
+  }
+
+  resetRankingWeights(surface?: VisibilitySurface): Observable<RankingWeightsResponse> {
+    return this.data(
+      this.http.post<ApiEnvelope<RankingWeightsResponse>>(
+        `${this.base}/visibility/admin/weights/reset`,
+        { surface },
+      ),
+    );
+  }
+
+  visibilityRules(): Observable<VisibilityRulesResponse> {
+    return this.data(
+      this.http.get<ApiEnvelope<VisibilityRulesResponse>>(`${this.base}/visibility/admin/rules`),
+    );
+  }
+
+  setVisibilityRule(
+    ruleKey: string,
+    value: number | boolean | Record<string, number>,
+  ): Observable<VisibilityRulesResponse> {
+    return this.data(
+      this.http.put<ApiEnvelope<VisibilityRulesResponse>>(`${this.base}/visibility/admin/rules`, {
+        ruleKey,
+        value,
+      }),
+    );
+  }
+
+  visibilitySlots(query: Record<string, unknown> = {}): Observable<FeaturedSlot[]> {
+    return this.data(
+      this.http.get<ApiEnvelope<FeaturedSlot[]>>(`${this.base}/visibility/admin/slots`, {
+        params: toParams(query),
+      }),
+    );
+  }
+
+  saveVisibilitySlot(payload: Partial<FeaturedSlot> & { code: string }): Observable<FeaturedSlot> {
+    return this.data(
+      this.http.put<ApiEnvelope<FeaturedSlot>>(`${this.base}/visibility/admin/slots`, payload),
+    );
+  }
+
+  /** §10's fairness audit: has exposure actually circulated in this slot? */
+  slotRotation(code: string, days = 7): Observable<RotationReport> {
+    return this.data(
+      this.http.get<ApiEnvelope<RotationReport>>(
+        `${this.base}/visibility/admin/slots/${code}/rotation`,
+        { params: toParams({ days }) },
+      ),
+    );
+  }
+
+  frequencyLimits(): Observable<FrequencyLimit[]> {
+    return this.data(
+      this.http.get<ApiEnvelope<FrequencyLimit[]>>(`${this.base}/visibility/admin/frequency-limits`),
+    );
+  }
+
+  saveFrequencyLimit(payload: {
+    scope: FrequencyLimit['scope'];
+    placementType?: PlacementType | null;
+    appliesTo: FrequencyLimit['appliesTo'];
+    maxImpressions: number;
+    windowMinutes: number;
+    status?: FrequencyLimit['status'];
+  }): Observable<{ frequencyLimits: unknown[] }> {
+    return this.data(
+      this.http.put<ApiEnvelope<{ frequencyLimits: unknown[] }>>(
+        `${this.base}/visibility/admin/frequency-limits`,
+        payload,
+      ),
+    );
+  }
+
+  rankingExclusions(query: Record<string, unknown> = {}): Observable<RankingExclusion[]> {
+    return this.data(
+      this.http.get<ApiEnvelope<RankingExclusion[]>>(`${this.base}/visibility/admin/exclusions`, {
+        params: toParams(query),
+      }),
+    );
+  }
+
+  createRankingExclusion(payload: {
+    scope: 'listing' | 'shop';
+    listingType?: string;
+    listingId?: number;
+    shopId?: number;
+    reason: string;
+    expiresAt?: string | null;
+  }): Observable<RankingExclusion> {
+    return this.data(
+      this.http.post<ApiEnvelope<RankingExclusion>>(
+        `${this.base}/visibility/admin/exclusions`,
+        payload,
+      ),
+    );
+  }
+
+  liftRankingExclusion(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/visibility/admin/exclusions/${id}`);
+  }
+
+  /** The platform-wide approval queue. Deliberately not shop-scoped (§22). */
+  adminFeaturedCampaigns(query: Record<string, unknown> = {}): Observable<FeaturedCampaign[]> {
+    return this.data(
+      this.http.get<ApiEnvelope<FeaturedCampaign[]>>(`${this.base}/visibility/admin/campaigns`, {
+        params: toParams(query),
+      }),
+    );
+  }
+
+  approveFeaturedCampaign(id: number): Observable<FeaturedCampaign> {
+    return this.data(
+      this.http.post<ApiEnvelope<FeaturedCampaign>>(
+        `${this.base}/visibility/admin/campaigns/${id}/approve`,
+        {},
+      ),
+    );
+  }
+
+  rejectFeaturedCampaign(id: number, reason: string): Observable<FeaturedCampaign> {
+    return this.data(
+      this.http.post<ApiEnvelope<FeaturedCampaign>>(
+        `${this.base}/visibility/admin/campaigns/${id}/reject`,
+        { reason },
+      ),
+    );
+  }
+
+  setFeaturedCampaignStatusAsAdmin(id: number, status: string): Observable<FeaturedCampaign> {
+    return this.data(
+      this.http.post<ApiEnvelope<FeaturedCampaign>>(
+        `${this.base}/visibility/admin/campaigns/${id}/status`,
+        { status },
+      ),
+    );
+  }
+
+  // ---- §23: visibility entitlements granted outside the subscription ------
+
+  visibilityEntitlements(query: Record<string, unknown> = {}): Observable<VisibilityEntitlement[]> {
+    return this.data(
+      this.http.get<ApiEnvelope<VisibilityEntitlement[]>>(
+        `${this.base}/visibility/admin/entitlements`,
+        { params: toParams(query) },
+      ),
+    );
+  }
+
+  resolvedVisibility(shopId: number): Observable<ResolvedVisibility> {
+    return this.data(
+      this.http.get<ApiEnvelope<ResolvedVisibility>>(
+        `${this.base}/visibility/admin/entitlements/shop/${shopId}`,
+      ),
+    );
+  }
+
+  grantVisibility(payload: {
+    shopId: number;
+    level: VisibilityLevel;
+    reason?: string;
+    featuredAccess?: boolean;
+    expiresAt?: string | null;
+  }): Observable<VisibilityEntitlement> {
+    return this.data(
+      this.http.post<ApiEnvelope<VisibilityEntitlement>>(
+        `${this.base}/visibility/admin/entitlements`,
+        payload,
+      ),
+    );
+  }
+
+  revokeVisibility(shopId: number): Observable<VisibilityEntitlement> {
+    return this.data(
+      this.http.delete<ApiEnvelope<VisibilityEntitlement>>(
+        `${this.base}/visibility/admin/entitlements/shop/${shopId}`,
+      ),
+    );
+  }
+
+  // ---- Merchant: Featured campaigns (§7, §8, §9) --------------------------
+
+  merchantSlots(shopId: number): Observable<MerchantSlotOptions> {
+    return this.data(
+      this.http.get<ApiEnvelope<MerchantSlotOptions>>(
+        `${this.base}/featured-campaigns/slots/${shopId}`,
+      ),
+    );
+  }
+
+  listFeaturedCampaigns(query: Record<string, unknown> = {}): Observable<FeaturedCampaign[]> {
+    return this.data(
+      this.http.get<ApiEnvelope<FeaturedCampaign[]>>(`${this.base}/featured-campaigns`, {
+        params: toParams(query),
+      }),
+    );
+  }
+
+  getFeaturedCampaign(id: number): Observable<FeaturedCampaign> {
+    return this.data(
+      this.http.get<ApiEnvelope<FeaturedCampaign>>(`${this.base}/featured-campaigns/${id}`),
+    );
+  }
+
+  createFeaturedCampaign(payload: FeaturedCampaignPayload): Observable<FeaturedCampaign> {
+    return this.data(
+      this.http.post<ApiEnvelope<FeaturedCampaign>>(`${this.base}/featured-campaigns`, payload),
+    );
+  }
+
+  updateFeaturedCampaign(
+    id: number,
+    payload: Partial<FeaturedCampaignPayload>,
+  ): Observable<FeaturedCampaign> {
+    return this.data(
+      this.http.put<ApiEnvelope<FeaturedCampaign>>(`${this.base}/featured-campaigns/${id}`, payload),
+    );
+  }
+
+  /**
+   * Pause or resume only. Approval is a Super Admin action (§22) and the API
+   * refuses it here, so the merchant screen never offers it.
+   */
+  setFeaturedCampaignStatus(
+    id: number,
+    status: 'paused' | 'approved' | 'archived',
+  ): Observable<FeaturedCampaign> {
+    return this.data(
+      this.http.post<ApiEnvelope<FeaturedCampaign>>(`${this.base}/featured-campaigns/${id}/status`, {
+        status,
+      }),
+    );
+  }
+
+  deleteFeaturedCampaign(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/featured-campaigns/${id}`);
+  }
+
+  /** §9's checklist for one listing, before it is added to a campaign. */
+  listingPromotability(
+    listingType: string,
+    listingId: number,
+  ): Observable<ListingPromotability> {
+    return this.data(
+      this.http.get<ApiEnvelope<ListingPromotability>>(
+        `${this.base}/featured-campaigns/eligibility/${listingType}/${listingId}`,
+      ),
+    );
+  }
+
+  // ---- Merchant: visibility analytics (§15, §16, §17, §27) ----------------
+
+  visibilityDashboard(query: Record<string, unknown> = {}): Observable<VisibilityDashboard> {
+    return this.data(
+      this.http.get<ApiEnvelope<VisibilityDashboard>>(`${this.base}/visibility/analytics/dashboard`, {
+        params: toParams(query),
+      }),
+    );
+  }
+
+  visibilityPremium(query: Record<string, unknown> = {}): Observable<VisibilityPremiumInsights> {
+    return this.data(
+      this.http.get<ApiEnvelope<VisibilityPremiumInsights>>(
+        `${this.base}/visibility/analytics/premium`,
+        { params: toParams(query) },
+      ),
+    );
+  }
+
+  visibilityCampaignPerformance(
+    query: Record<string, unknown> = {},
+  ): Observable<{
+    range: { from: string; to: string; label: string };
+    campaigns: { campaign: FeaturedCampaign; performance: FeaturedCampaignPerformance }[];
+  }> {
+    return this.data(
+      this.http.get<
+        ApiEnvelope<{
+          range: { from: string; to: string; label: string };
+          campaigns: { campaign: FeaturedCampaign; performance: FeaturedCampaignPerformance }[];
+        }>
+      >(`${this.base}/visibility/analytics/campaigns`, { params: toParams(query) }),
+    );
+  }
+
+  listingQuality(
+    listingType: string,
+    listingId: number,
+  ): Observable<ListingQualityDetail> {
+    return this.data(
+      this.http.get<ApiEnvelope<ListingQualityDetail>>(
+        `${this.base}/visibility/analytics/listings/${listingType}/${listingId}/quality`,
+      ),
     );
   }
 }

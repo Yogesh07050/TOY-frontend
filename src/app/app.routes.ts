@@ -629,6 +629,74 @@ export const routes: Routes = [
             (m) => m.FeatureOverridesComponent,
           ),
       },
+      // ---- Visibility & Promotion System ----
+      // Merchant-facing first, then the three Super Admin screens. The guards
+      // are navigation convenience only: §24 requires that a merchant cannot
+      // reach the ranking controls, and the API enforces that independently on
+      // every call — hiding the link is never the check.
+      {
+        path: 'visibility',
+        title: 'Visibility & reach · OffersOffer',
+        canActivate: [permissionGuard(PERMISSIONS.VIEW_VISIBILITY_ANALYTICS)],
+        loadComponent: () =>
+          import('./features/admin/visibility/visibility-dashboard.component').then(
+            (m) => m.VisibilityDashboardComponent,
+          ),
+      },
+      {
+        path: 'featured-campaigns',
+        title: 'Featured campaigns · OffersOffer',
+        canActivate: [permissionGuard(PERMISSIONS.MANAGE_FEATURED_CAMPAIGNS)],
+        loadComponent: () =>
+          import('./features/admin/visibility/featured-campaigns.component').then(
+            (m) => m.FeaturedCampaignsComponent,
+          ),
+      },
+      {
+        path: 'featured-campaigns/new',
+        title: 'New featured campaign · OffersOffer',
+        canActivate: [permissionGuard(PERMISSIONS.MANAGE_FEATURED_CAMPAIGNS)],
+        loadComponent: () =>
+          import('./features/admin/visibility/featured-campaign-form.component').then(
+            (m) => m.FeaturedCampaignFormComponent,
+          ),
+      },
+      {
+        path: 'featured-campaigns/:id/edit',
+        title: 'Edit featured campaign · OffersOffer',
+        canActivate: [permissionGuard(PERMISSIONS.MANAGE_FEATURED_CAMPAIGNS)],
+        loadComponent: () =>
+          import('./features/admin/visibility/featured-campaign-form.component').then(
+            (m) => m.FeaturedCampaignFormComponent,
+          ),
+      },
+      {
+        path: 'visibility-controls',
+        title: 'Visibility controls · OffersOffer',
+        canActivate: [superAdminGuard],
+        loadComponent: () =>
+          import('./features/admin/visibility/visibility-controls.component').then(
+            (m) => m.VisibilityControlsComponent,
+          ),
+      },
+      {
+        path: 'campaign-approvals',
+        title: 'Campaign approvals · OffersOffer',
+        canActivate: [superAdminGuard],
+        loadComponent: () =>
+          import('./features/admin/visibility/campaign-approvals.component').then(
+            (m) => m.CampaignApprovalsComponent,
+          ),
+      },
+      {
+        path: 'visibility-entitlements',
+        title: 'Visibility entitlements · OffersOffer',
+        canActivate: [superAdminGuard],
+        loadComponent: () =>
+          import('./features/admin/visibility/visibility-entitlements.component').then(
+            (m) => m.VisibilityEntitlementsComponent,
+          ),
+      },
       {
         path: 'support',
         title: 'Support · OffersOffer',

@@ -262,6 +262,18 @@ export class AdminShellComponent {
     },
     { label: 'Analytics', route: '/admin/analytics', icon: 'bar-chart-outline', permissions: [PERMISSIONS.VIEW_ANALYTICS] },
     {
+      label: 'Visibility & reach',
+      route: '/admin/visibility',
+      icon: 'eye-outline',
+      permissions: [PERMISSIONS.VIEW_VISIBILITY_ANALYTICS],
+    },
+    {
+      label: 'Featured campaigns',
+      route: '/admin/featured-campaigns',
+      icon: 'megaphone-outline',
+      permissions: [PERMISSIONS.MANAGE_FEATURED_CAMPAIGNS],
+    },
+    {
       label: 'Service analytics',
       route: '/admin/service-analytics',
       icon: 'pulse-outline',
@@ -283,6 +295,12 @@ export class AdminShellComponent {
     { label: 'Business dashboard', route: '/admin/business', icon: 'trending-up-outline', superAdminOnly: true },
     { label: 'Roles & permissions', route: '/admin/roles', icon: 'lock-closed-outline', superAdminOnly: true },
     { label: 'Feature overrides', route: '/admin/feature-overrides', icon: 'gift-outline', superAdminOnly: true },
+    // §22, §23. Deliberately Super Admin only: a merchant who could tune the
+    // ranking weights, or approve their own campaign onto the home page, is
+    // exactly what §24 forbids.
+    { label: 'Visibility controls', route: '/admin/visibility-controls', icon: 'options-outline', superAdminOnly: true },
+    { label: 'Campaign approvals', route: '/admin/campaign-approvals', icon: 'checkmark-circle-outline', superAdminOnly: true },
+    { label: 'Visibility grants', route: '/admin/visibility-entitlements', icon: 'ribbon-outline', superAdminOnly: true },
     { label: 'Subscriptions & AI', route: '/admin/subscriptions', icon: 'wallet-outline', superAdminOnly: true },
     { label: 'Audit logs', route: '/admin/audit-logs', icon: 'receipt-outline', permissions: [PERMISSIONS.VIEW_AUDIT_LOGS] },
   ];

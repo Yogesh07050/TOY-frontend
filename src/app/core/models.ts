@@ -2251,3 +2251,372 @@ export interface SupportContact {
   phones: string[];
   categories: string[];
 }
+
+// ---------------------------------------------------------------------------
+// Visibility & Promotion System
+//
+// Mirrors `src/config/visibility.js` and the `/visibility` API in the backend.
+// Nothing here is an access check: the API resolves entitlements and
+// permissions independently on every call (§22, §24), and these types only
+// decide what a screen can render.
+// ---------------------------------------------------------------------------
+
+export type VisibilitySurface = 'SEARCH' | 'NEAR_ME' | 'HOME' | 'CATEGORY' | 'ENDING_SOON';
+
+export type PlacementType =
+  | 'HOME_FEATURED'
+  | 'CATEGORY_FEATURED'
+  | 'NEAR_ME_FEATURED'
+  | 'SEASONAL_CAMPAIGN'
+  | 'ENDING_SOON_FEATURED';
+
+export type VisibilityLevel = 'BASIC' | 'ENHANCED' | 'PRIORITY';
+
+export type RankingFactor =
+  | 'RELEVANCE'
+  | 'DISTANCE'
+  | 'FRESHNESS'
+  | 'ENGAGEMENT'
+  | 'OFFER_QUALITY'
+  | 'SUBSCRIPTION'
+  | 'CUSTOMER_PREFERENCE'
+  | 'AVAILABILITY'
+  | 'PLACEMENT';
+
+export type FeaturedCampaignStatus =
+  | 'draft'
+  | 'pending_approval'
+  | 'approved'
+  | 'active'
+  | 'paused'
+  | 'completed'
+  | 'rejected'
+  | 'archived';
+
+export type VisibilityListingType = 'offer' | 'service_offer' | 'shop';
+
+/**
+ * §21's fixed wording, served by the API rather than composed here.
+ *
+ * Deliberately not a constant in the frontend: the one thing the platform must
+ * never say is "guaranteed #1", and a promise duplicated in the UI is a promise
+ * that can drift out of step with the one the backend stands behind.
+ */
+export interface VisibilityPromise {
+  headline: string;
+  explanation: string;
+  disclaimer: string;
+}
+
+export interface VisibilityMeta {
+  events: { all: string[]; client: string[] };
+  surfaces: VisibilitySurface[];
+  placementTypes: PlacementType[];
+  visibilityLevels: { key: VisibilityLevel; rank: number; label: string }[];
+  promise: VisibilityPromise;
+  defaultRadiusKm: number;
+}
+
+export type RankingWeights = Record<VisibilitySurface, Record<RankingFactor, number>>;
+
+export interface RankingWeightsResponse {
+  surfaces: VisibilitySurface[];
+  factors: { key: RankingFactor; label: string }[];
+  weights: RankingWeights;
+  defaults: RankingWeights;
+  /** §13's recommended search priority, for labelling what the numbers express. */
+  searchPriority: string[];
+}
+
+/** Curve shapes and fairness limits. Values are numbers or small objects. */
+export type VisibilityRules = Record<string, number | boolean | Record<string, number>>;
+
+export interface VisibilityRulesResponse {
+  rules: VisibilityRules;
+  defaults: VisibilityRules;
+}
+
+export interface FeaturedSlot {
+  id: number;
+  code: string;
+  placementType: PlacementType;
+  name: string;
+  description: string | null;
+  capacity: number;
+  minPlanRank: number;
+  categoryId: number | null;
+  city: string | null;
+  status: 'active' | 'inactive';
+  activeCampaigns: number;
+  /** Present only on the merchant's slot list: may this shop book it? */
+  eligible?: boolean;
+}
+
+export interface FrequencyLimit {
+  id: number;
+  scope: 'offer' | 'shop' | 'campaign' | 'placement';
+  placementType: PlacementType | null;
+  appliesTo: 'user' | 'session';
+  maxImpressions: number;
+  windowMinutes: number;
+  status: 'active' | 'inactive';
+  updatedBy: string | null;
+  updatedAt: string;
+}
+
+export interface RankingExclusion {
+  id: number;
+  scope: 'listing' | 'shop';
+  listingType: VisibilityListingType | null;
+  listingId: number | null;
+  shopId: number | null;
+  shopName: string | null;
+  source: 'admin' | 'auto';
+  reason: string | null;
+  expiresAt: string | null;
+  status: 'active' | 'lifted';
+  createdBy: string | null;
+  createdAt: string;
+}
+
+export interface FeaturedCampaignPlacement {
+  id: number;
+  listingType: VisibilityListingType;
+  listingId: number;
+  displayOrder: number;
+  status: 'active' | 'paused';
+  exposureCount: number;
+  lastShownAt: string | null;
+}
+
+export interface FeaturedCampaign {
+  id: number;
+  shopId: number;
+  shopName: string | null;
+  slotId: number;
+  slotCode: string | null;
+  slotName: string | null;
+  campaignId: number | null;
+  name: string;
+  description: string | null;
+  placementType: PlacementType;
+  target: {
+    categoryId: number | null;
+    categoryName: string | null;
+    city: string | null;
+    latitude: number | null;
+    longitude: number | null;
+    radiusKm: number | null;
+  };
+  startAt: string;
+  endAt: string;
+  priority: number;
+  status: FeaturedCampaignStatus;
+  exposureCount: number;
+  lastShownAt: string | null;
+  placementCount: number;
+  approvedBy: number | null;
+  approvedAt: string | null;
+  rejectionReason: string | null;
+  createdAt: string;
+  updatedAt: string;
+  placements?: FeaturedCampaignPlacement[];
+  /**
+   * The live §9 verdict, recomputed on read. A campaign can be `approved` and
+   * still not display because one of its own offers expired underneath it, and
+   * this is what lets the merchant be told so instead of guessing.
+   */
+  eligibility?: { eligible: boolean; reasons: string[] };
+}
+
+export interface FeaturedCampaignPayload {
+  shopId: number;
+  slotId: number;
+  campaignId?: number | null;
+  name: string;
+  description?: string | null;
+  targetCategoryId?: number | null;
+  targetCity?: string | null;
+  targetRadiusKm?: number | null;
+  startAt: string;
+  endAt: string;
+  listings: { listingType: VisibilityListingType; listingId: number }[];
+}
+
+export interface MerchantSlotOptions {
+  visibilityLevel: VisibilityLevel;
+  featuredAccess: boolean;
+  promise: VisibilityPromise;
+  slots: FeaturedSlot[];
+}
+
+export interface ListingPromotability {
+  listingType: VisibilityListingType;
+  listingId: number;
+  eligible: boolean;
+  reasons: string[];
+}
+
+/** §23's grant: a visibility *level*, with a reason and an expiry. */
+export interface VisibilityEntitlement {
+  id: number;
+  shopId: number;
+  shopName: string | null;
+  level: VisibilityLevel;
+  reason: string | null;
+  featuredAccess: boolean;
+  startsAt: string;
+  expiresAt: string | null;
+  status: 'active' | 'revoked' | 'expired';
+  grantedBy: number | null;
+  grantedByName: string | null;
+  revokedAt: string | null;
+  createdAt: string;
+}
+
+export interface ResolvedVisibility {
+  shopId: number;
+  planKey: PlanKey;
+  features: string[];
+  visibilityLevel: VisibilityLevel;
+  visibilityRank: number;
+  subscriptionScore: number;
+  featuredAccess: boolean;
+  featuredSource: string | null;
+  /** 'plan', 'override' or 'plan+override' — §11G's "Access:" line. */
+  source: string;
+  override: {
+    id: number;
+    level: VisibilityLevel;
+    reason: string | null;
+    featuredAccess: boolean;
+    startsAt: string;
+    expiresAt: string | null;
+  } | null;
+  promise: VisibilityPromise;
+}
+
+export interface RotationReport {
+  slot: FeaturedSlot;
+  windowDays: number;
+  totalImpressions: number;
+  campaigns: {
+    campaignId: number;
+    name: string;
+    shopId: number;
+    shopName: string;
+    impressions: number;
+    /** The number that answers "is the rotation fair?" (§10). */
+    sharePercent: number;
+    exposureCount: number;
+    lastShownAt: string | null;
+  }[];
+}
+
+export interface VisibilityOverview {
+  impressions: number;
+  organicImpressions: number;
+  featuredImpressions: number;
+  views: number;
+  saves: number;
+  claims: number;
+  redemptions: number;
+  profileVisits: number;
+  directionsClicks: number;
+  searchClicks: number;
+  searchAppearances: number;
+  uniqueCustomers: number;
+}
+
+export interface VisibilityBreakdown {
+  nearMeImpressions: number;
+  searchImpressions: number;
+  featuredImpressions: number;
+  categoryImpressions: number;
+  bySurface: Record<VisibilitySurface, { organic: number; featured: number }>;
+  byCategory: { categoryId: number; categoryName: string | null; impressions: number }[];
+  averagePosition: number | null;
+  positionRange: { best: number; worst: number } | null;
+  rankedImpressions: number;
+}
+
+export interface VisibilityFunnel {
+  stages: { key: string; label: string; value: number; rateFromPrevious: number | null }[];
+  overallConversion: number | null;
+}
+
+export interface VisibilityDashboard {
+  range: { from: string; to: string; label: string };
+  overview: VisibilityOverview;
+  visibility: VisibilityBreakdown;
+  funnel: VisibilityFunnel;
+  visibilityLevel: VisibilityLevel | null;
+  visibilitySource: string | null;
+  promise: VisibilityPromise;
+}
+
+export interface VisibilityPremiumInsights {
+  range: { from: string; to: string; label: string };
+  byBranch: { branchId: number; impressions: number; customers: number }[];
+  byLocation: { city: string; impressions: number; customers: number }[];
+  bestPerformingOffers: {
+    listingType: VisibilityListingType;
+    listingId: number;
+    impressions: number;
+    views: number;
+    saves: number;
+    claims: number;
+    redemptions: number;
+  }[];
+  bestPerformingDays: { date: string; impressions: number; views: number; redemptions: number }[];
+  bestPerformingHours: { hour: number; events: number; views: number }[];
+  bestPerformingWeekdays: { weekday: string | null; events: number; views: number }[];
+  searchPerformance: {
+    term: string;
+    appearances: number;
+    clicks: number;
+    clickThroughRate: number | null;
+  }[];
+}
+
+export interface FeaturedCampaignPerformance {
+  campaignId: number;
+  totals: {
+    impressions: number;
+    bannerClicks: number;
+    offerViews: number;
+    saves: number;
+    claims: number;
+    redemptions: number;
+    shopVisits: number;
+    directionsClicks: number;
+    uniqueCustomers: number;
+  };
+  daily: {
+    date: string;
+    impressions: number;
+    bannerClicks: number;
+    offerViews: number;
+    saves: number;
+    claims: number;
+    redemptions: number;
+  }[];
+  rates: {
+    clickThrough: number | null;
+    viewToClaim: number | null;
+    claimToRedemption: number | null;
+  };
+}
+
+/** §27's actionable half: what the merchant can actually fix. */
+export interface ListingQualityDetail {
+  listingType: VisibilityListingType;
+  listingId: number;
+  qualityScore: number;
+  engagementScore: number;
+  checklist: Record<string, boolean>;
+  missing: string[];
+  engagement: Record<string, number> | null;
+  computedAt: string;
+  suggestions?: string[];
+}

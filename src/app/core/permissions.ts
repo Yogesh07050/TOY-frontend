@@ -70,6 +70,16 @@ export const PERMISSIONS = {
   USE_AI_CONTENT: 'USE_AI_CONTENT',
   MANAGE_SUBSCRIPTIONS: 'MANAGE_SUBSCRIPTIONS',
 
+  // Visibility & Promotion (§22, §24). Split by who is trusted with what: a
+  // merchant builds and measures their own promotional campaigns, only the
+  // platform owner tunes ranking or approves a campaign onto a shared space.
+  // §24 is explicit that an Admin cannot set their own ranking score, which is
+  // why MANAGE_VISIBILITY is never on a merchant's role.
+  MANAGE_VISIBILITY: 'MANAGE_VISIBILITY',
+  MANAGE_FEATURED_CAMPAIGNS: 'MANAGE_FEATURED_CAMPAIGNS',
+  APPROVE_FEATURED_CAMPAIGN: 'APPROVE_FEATURED_CAMPAIGN',
+  VIEW_VISIBILITY_ANALYTICS: 'VIEW_VISIBILITY_ANALYTICS',
+
   // Support. Reading a queue of customer problems and answering on the
   // platform's behalf are separate grants — a ticket carries the reporter's
   // name, email and phone whether or not they ever had an account.
